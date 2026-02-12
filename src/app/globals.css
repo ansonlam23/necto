@@ -138,4 +138,55 @@
       linear-gradient(90deg, oklch(0.25 0.005 270 / 0.3) 1px, transparent 1px);
     background-size: 20px 20px;
   }
+
+  .react-flow__pane {
+    background-color: #ffffff !important;
+  }
+
+  .react-flow__viewport {
+    background-color: #ffffff !important;
+  }
+
+  .react-flow__renderer {
+    background-color: #ffffff !important;
+  }
+
+  .react-flow {
+    background-color: #ffffff !important;
+  }
+
+  .dark .react-flow__pane {
+    background-color: #ffffff !important;
+  }
+
+  .dark .react-flow__viewport {
+    background-color: #ffffff !important;
+  }
+
+  .dark .react-flow__renderer {
+    background-color: #ffffff !important;
+  }
+
+  .dark .react-flow {
+    background-color: #ffffff !important;
+  }
+
+  .workflow-canvas-white,
+  .workflow-canvas-white *,
+  .workflow-canvas-white .react-flow__pane,
+  .workflow-canvas-white .react-flow__viewport,
+  .workflow-canvas-white .react-flow__renderer {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  .dark .workflow-canvas-white,
+  .dark .workflow-canvas-white *,
+  .dark .workflow-canvas-white .react-flow__pane,
+  .dark .workflow-canvas-white .react-flow__viewport,
+  .dark .workflow-canvas-white .react-flow__renderer {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
 }
