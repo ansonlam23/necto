@@ -1,30 +1,22 @@
 "use client"
 
 import * as React from "react"
-import { Activity, Wallet, WifiOff, Wifi, AlertCircle } from "lucide-react"
+import { Activity, WifiOff, Wifi, AlertCircle } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { WalletConnect } from "@/components/wallet-connect"
 
 // Mock agent status - would come from real state in production
 type AgentStatus = "connected" | "disconnected" | "error"
-type WalletStatus = "connected" | "disconnected"
 
 interface StatusIndicatorProps {
-  status: AgentStatus | WalletStatus
+  status: AgentStatus
   label: string
 }
 
 function StatusIndicator({ status, label }: StatusIndicatorProps) {
-  const getStatusColor = (status: AgentStatus | WalletStatus) => {
+  const getStatusColor = (status: AgentStatus) => {
     switch (status) {
       case "connected":
         return "text-green-500"
@@ -37,7 +29,7 @@ function StatusIndicator({ status, label }: StatusIndicatorProps) {
     }
   }
 
-  const getStatusIcon = (status: AgentStatus | WalletStatus) => {
+  const getStatusIcon = (status: AgentStatus) => {
     if (label.includes("Agent")) {
       switch (status) {
         case "connected":
@@ -78,19 +70,8 @@ function StatusIndicator({ status, label }: StatusIndicatorProps) {
 }
 
 export function AppHeader() {
-  // Mock states - would be managed by proper state management in production
+  // Mock state - would be managed by proper state management in production
   const [agentStatus] = React.useState<AgentStatus>("connected")
-  const [walletStatus] = React.useState<WalletStatus>("disconnected")
-  const [walletAddress] = React.useState<string | null>(null)
-
-  const handleWalletConnect = () => {
-    // Mock wallet connection logic
-    console.log("Wallet connect clicked")
-  }
-
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b border-sidebar-border bg-sidebar">
@@ -113,40 +94,7 @@ export function AppHeader() {
         <Separator orientation="vertical" className="h-4" />
 
         {/* Wallet Connection */}
-        {walletStatus === "connected" && walletAddress ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                <Wallet className="mr-2 h-4 w-4" />
-                <span className="terminal-data">
-                  {truncateAddress(walletAddress)}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-48">
-              <DropdownMenuItem className="flex items-center gap-2">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium">Connected Wallet</span>
-                  <span className="text-xs text-muted-foreground terminal-data">
-                    {walletAddress}
-                  </span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Copy Address</DropdownMenuItem>
-              <DropdownMenuItem>View on Explorer</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
-                Disconnect Wallet
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button onClick={handleWalletConnect} size="sm" className="h-8">
-            <Wallet className="mr-2 h-4 w-4" />
-            Connect Wallet
-          </Button>
-        )}
+        <WalletConnect />
       </div>
     </header>
   )

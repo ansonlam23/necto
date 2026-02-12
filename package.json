@@ -13,6 +13,7 @@
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-navigation-menu": "^1.2.14",
     "@radix-ui/react-slot": "^1.2.4",
+    "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
     "@xyflow/react": "^12.10.0",
     "class-variance-authority": "^0.7.1",
@@ -24,6 +25,8 @@
     "react-dom": "19.2.3",
     "recharts": "^3.7.0",
     "tailwind-merge": "^3.4.0",
+    "viem": "^2.45.3",
+    "wagmi": "^3.4.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
