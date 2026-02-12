@@ -48,13 +48,18 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     const id = nodeData.id || `${nodeData.type}-${Date.now()}`
     const newNode: WorkflowNode = {
       id,
-      type: nodeData.type || 'custom',
+      type: nodeData.category || nodeData.type || 'default', // Use category as type for React Flow
       position: nodeData.position || { x: 100, y: 100 },
       data: nodeData.data || {},
       category: nodeData.category,
       config: nodeData.config || {}
     }
-    set({ nodes: [...get().nodes, newNode] })
+    const currentNodes = get().nodes
+    console.log('Store: Adding node', newNode)
+    console.log('Store: Current nodes count:', currentNodes.length)
+    set({ nodes: [...currentNodes, newNode] })
+    console.log('Store: New nodes count:', get().nodes.length)
+    console.log('Store: All nodes now:', get().nodes)
   },
 
   selectNode: (nodeId) => {

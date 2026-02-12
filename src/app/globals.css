@@ -190,3 +190,38 @@
   }
 
 }
+
+/* FORCE React Flow Canvas to be WHITE */
+.react-flow {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.react-flow__viewport {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.react-flow__renderer {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.react-flow__pane {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* Force container white */
+div[style*="background"] {
+  background-color: #ffffff !important;
+}
+
+/* Make sure nodes are visible */
+.react-flow__node {
+  color: #1e293b !important;
+}
+
+.react-flow__edge-path {
+  stroke: #475569 !important;
+}

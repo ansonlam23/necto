@@ -7,13 +7,13 @@ import {
   Controls,
   MiniMap,
   BackgroundVariant,
-  useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { useWorkflowStore } from '@/lib/workflow-store'
 import { nodeTypes } from './custom-nodes'
 
+// Main component - no need for wrapper since we're inside ReactFlowProvider
 export function WorkflowCanvas() {
   const {
     nodes,
@@ -24,34 +24,47 @@ export function WorkflowCanvas() {
     addNode,
     selectNode,
   } = useWorkflowStore()
-  const { screenToFlowPosition } = useReactFlow()
+
+  console.log('WorkflowCanvas rendering with nodes:', nodes)
+  console.log('WorkflowCanvas nodes count:', nodes.length)
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault()
+      console.log('Drop event triggered')
 
       const data = event.dataTransfer.getData('application/reactflow')
+      console.log('Drag data received:', data)
 
       if (typeof data === 'undefined' || !data) {
+        console.log('No drag data found')
         return
       }
 
-      const { nodeType, nodeData } = JSON.parse(data)
+      try {
+        const { nodeType, nodeData } = JSON.parse(data)
+        console.log('Parsed node data:', { nodeType, nodeData })
 
-      // Use screenToFlowPosition for accurate positioning
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      })
+        // Calculate position relative to the canvas
+        const bounds = event.currentTarget.getBoundingClientRect()
+        const position = {
+          x: event.clientX - bounds.left,
+          y: event.clientY - bounds.top,
+        }
+        console.log('Calculated position:', position)
 
-      addNode({
-        type: nodeType,
-        position,
-        data: nodeData,
-        category: nodeData.category
-      })
+        addNode({
+          type: nodeType,
+          position,
+          data: nodeData,
+          category: nodeData.category
+        })
+        console.log('Node added to store')
+      } catch (error) {
+        console.error('Error parsing drag data:', error)
+      }
     },
-    [addNode, screenToFlowPosition]
+    [addNode]
   )
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -67,19 +80,32 @@ export function WorkflowCanvas() {
     selectNode(null)
   }, [selectNode])
 
-  return (
-    <div className="flex-1 h-full bg-white">
-      {/* Canvas placeholder text */}
-      {nodes.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="text-4xl font-mono text-gray-400 select-none">
-            canvas
-          </div>
-        </div>
-      )}
+  // Use default nodes for testing if custom nodes aren't working
+  const displayNodes = nodes.map(node => ({
+    ...node,
+    type: 'default', // Force default type for now
+    style: {
+      backgroundColor: '#1e293b',
+      color: '#fff',
+      border: '2px solid #3b82f6',
+      borderRadius: '8px',
+      padding: '10px',
+      fontSize: '12px',
+    }
+  }))
 
+  return (
+    <div
+      className="flex-1 h-full overflow-hidden"
+      style={{
+        backgroundColor: '#ffffff',
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+      }}
+    >
       <ReactFlow
-        nodes={nodes}
+        nodes={displayNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -88,20 +114,19 @@ export function WorkflowCanvas() {
         onDragOver={onDragOver}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
-        fitView
-        className="bg-white workflow-canvas-white"
-        style={{ backgroundColor: '#ffffff !important' }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        style={{ backgroundColor: '#ffffff', width: '100%', height: '100%' }}
         defaultEdgeOptions={{
-          style: { stroke: '#475569', strokeWidth: 2 },
+          style: { stroke: '#374151', strokeWidth: 2 },
           type: 'smoothstep',
         }}
+        proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1}
-          color="#9ca3af"
+          color="#e5e7eb"
         />
         <Controls
           className="bg-card border-border"
@@ -117,7 +142,7 @@ export function WorkflowCanvas() {
             borderColor: 'hsl(var(--border))',
           }}
           nodeStrokeWidth={3}
-          nodeColor="#475569"
+          nodeColor="#374151"
           maskColor="hsl(var(--card) / 0.9)"
         />
       </ReactFlow>

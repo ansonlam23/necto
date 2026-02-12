@@ -10,7 +10,8 @@ import {
   Settings,
   Activity,
   ChevronUp,
-  User2
+  User2,
+  FlaskConical
 } from "lucide-react"
 
 import {
@@ -44,6 +45,11 @@ const navigationItems = [
     title: "Workflow Builder",
     url: "/builder",
     icon: Boxes,
+  },
+  {
+    title: "Test Builder",
+    url: "/test-builder",
+    icon: FlaskConical,
   },
   {
     title: "Audit Log",

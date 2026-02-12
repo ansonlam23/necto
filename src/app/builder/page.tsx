@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ReactFlowProvider } from '@xyflow/react'
 import { NodePalette } from "@/components/workflow/node-palette"
 import { WorkflowCanvas } from "@/components/workflow/workflow-canvas"
+import { TestCanvas } from "@/components/workflow/test-canvas"
 import { ConfigPanel } from "@/components/workflow/config-panel"
 import { useWorkflowStore } from "@/lib/workflow-store"
 
@@ -42,19 +43,19 @@ export default function WorkflowBuilderPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left Sidebar - Node Palette */}
-        <NodePalette />
+      {/* Main Content - Wrapped in ReactFlowProvider */}
+      <ReactFlowProvider>
+        <div className="flex-1 flex min-h-0">
+          {/* Left Sidebar - Node Palette */}
+          <NodePalette />
 
-        {/* Main Canvas */}
-        <ReactFlowProvider>
+          {/* Main Canvas */}
           <WorkflowCanvas />
-        </ReactFlowProvider>
 
-        {/* Right Sidebar - Configuration Panel */}
-        <ConfigPanel />
-      </div>
+          {/* Right Sidebar - Configuration Panel */}
+          <ConfigPanel />
+        </div>
+      </ReactFlowProvider>
 
       {/* Status Bar */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-card/50 text-xs text-muted-foreground">

@@ -13,11 +13,13 @@ export function NodePalette() {
   }
 
   const handleAddNode = (nodeData: any) => {
+    console.log('Node clicked in palette:', nodeData)
     // Add node to a random position for click-to-add functionality
     const position = {
       x: Math.random() * 300 + 100,
       y: Math.random() * 300 + 100
     }
+    console.log('Generated position for clicked node:', position)
 
     addNode({
       type: nodeData.type,
@@ -25,6 +27,7 @@ export function NodePalette() {
       data: nodeData,
       category: nodeData.category
     })
+    console.log('Node added via click')
   }
 
   const sections = [
