@@ -26,12 +26,12 @@ export type { TrackedIdentity, ActivityEntry, TeamSpending, MemberSpending };
 const ETH_ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
 
 /**
- * Validate Ethereum address format
+ * Validate Ethereum address format (internal)
  * 
  * @param address - Address to validate
  * @returns True if valid Ethereum address
  */
-export function isValidEthereumAddress(address: string): boolean {
+function isValidEthereumAddress(address: string): boolean {
   return ETH_ADDRESS_REGEX.test(address);
 }
 
