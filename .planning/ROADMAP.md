@@ -1,112 +1,107 @@
-# Roadmap: Necto - Institutional DePIN Router Interface
+# Roadmap: Synapse - Two-Sided Compute Marketplace
 
-**Project:** Necto
-**Created:** February 11, 2026
-**Depth:** Standard (5-8 phases)
-**Coverage:** 26/26 requirements mapped ✓
+**Project:** Synapse  
+**Created:** February 12, 2026  
+**Timeline:** 1-Week Hackathon  
+**Coverage:** 23/23 requirements mapped ✓
 
 ## Overview
 
-Transform institutional infrastructure procurement through seamless automation across DePIN networks. Each phase delivers a complete capability that enables enterprise teams to procure compliant compute resources without Web3 complexity. The roadmap progresses from foundation (UI shell) through core features (resource discovery) to enterprise capabilities (compliance and optimization).
+Build a two-sided compute marketplace with AI routing agent, 0G Storage reasoning logs, and ADI Chain settlement. Progresses from smart contract foundation through agent logic to buyer/seller interfaces.
 
 ## Phases
 
-### Phase 1 - Foundation Interface
-**Goal:** Users can navigate the platform and see real-time cost advantages
+### Phase 1 - Core Infrastructure (Days 1-2)
+**Goal:** Smart contracts deployed, agent logic functional, 0G integration working
 
 **Dependencies:** None (foundation)
 
-**Requirements:** UI-01, UI-02, UI-05, DISC-02
+**Requirements:** AGENT-01 through AGENT-06, 0G-01, 0G-02, ADI-01 through ADI-04
 
 **Success Criteria:**
-1. User can navigate between Dashboard, Builder, and Audit sections via sidebar
-2. User can see live KPI cards showing TVL, Compute utilization, and Compliance status
-3. User can view Active Jobs Table with basic procurement activity
-4. User can experience cyberpunk-professional aesthetics with consistent dark theme (bg-slate-950, text-slate-200, blue-600 accents)
-5. User can see 70%+ cost savings displayed prominently vs traditional cloud providers
+1. ComputeRouter.sol deployed to ADI Testnet with provider registry and escrow
+2. Agent can normalize pricing from 6-8 providers into effective USD/GPU-hr
+3. Agent uploads reasoning trace to 0G and receives content hash
+4. Job creation locks USDC in escrow; completion releases payment
+5. Tracked/Untracked mode logic implemented (identity handling)
 
-### Phase 2 - Resource Discovery Engine
-**Goal:** Users can discover and compare resources across multiple DePIN networks
+### Phase 2 - Buyer & Seller Interfaces (Days 3-4)
+**Goal:** Complete UI for job submission, price comparison, and provider management
 
-**Dependencies:** Phase 1 (requires UI foundation)
+**Dependencies:** Phase 1 (requires agent logic and contracts)
 
-**Requirements:** UI-03, DISC-01, DISC-03, DISC-04, NET-04
-
-**Success Criteria:**
-1. User can access workflow builder with 3-pane drag-and-drop interface (Node Palette, Canvas, Configuration)
-2. User can see real-time resource availability aggregated from Akash, Render, and Aethir networks
-3. User can filter resources by compute type, performance specifications, and geographical location
-4. User can compare resource options across different networks through consistent interface
-5. User can create workflow diagrams using React Flow components for compute procurement strategies
-
-### Phase 3 - Core Network Integration
-**Goal:** Users can execute compute procurement on primary DePIN networks with full audit visibility
-
-**Dependencies:** Phase 2 (requires resource discovery)
-
-**Requirements:** NET-01, NET-02, COMP-01, COMP-03, RES-03, UI-04
+**Requirements:** BUYER-01 through BUYER-03, SELLER-01 through SELLER-03, ADI-05
 
 **Success Criteria:**
-1. User can successfully deploy workloads on Akash Network through platform interface
-2. User can provision GPU compute resources via Render Network integration
-3. User can access comprehensive audit log with TanStack table showing all procurement activities
-4. User can view raw JSON proof data in slide-over panel for regulatory compliance
-5. User can monitor real-time performance metrics with enterprise-grade dashboards
+1. Buyer can submit job with requirements, constraints, and mode toggle
+2. Live price comparison table displays normalized rates from all providers
+3. Agent activity feed shows real-time scanning progress
+4. Seller can list hardware with pricing configuration
+5. Seller can toggle capacity status and set availability windows
+6. Lightweight RBAC working for Tracked mode team access
 
-### Phase 4 - Enterprise Compliance & Optimization
-**Goal:** Users can operate with full regulatory compliance while achieving optimal cost efficiency
+### Phase 3 - Verification & Polish (Days 5-6)
+**Goal:** Audit trails, verification UI, dashboards complete
 
-**Dependencies:** Phase 3 (requires audit foundation and core networks)
+**Dependencies:** Phase 2 (requires interfaces for verification)
 
-**Requirements:** NET-03, BILL-01, BILL-02, BILL-03, BILL-04, COMP-02, COMP-04, RES-01, RES-02, RES-04
+**Requirements:** BUYER-04, BUYER-05, SELLER-04, SELLER-05, 0G-03
 
 **Success Criteria:**
-1. User can access Aethir network resources completing multi-network coverage
-2. User can pay in USD without cryptocurrency exposure through automated stablecoin conversion
-3. User can receive enterprise invoicing with detailed cost breakdown by network and resource
-4. User can set budget limits and receive automated alerts for cost management
-5. User can see provider compliance status with KYC/ISO verification indicators
-6. User can benefit from automated job routing to lowest cost compliant providers
-7. User can rely on basic failover when primary providers become unavailable
+1. "Verify Decision" modal fetches and displays full reasoning trace from 0G
+2. Team spending dashboard shows per-user costs (Tracked mode)
+3. Audit log links to ADI Explorer and 0G Storage
+4. Seller earnings dashboard shows revenue and utilization
+5. Usage log displays job history with appropriate identity handling
+6. Both Tracked and Untracked flows work end-to-end
+
+### Phase 4 - Demo & Documentation (Day 7)
+**Goal:** Demo video, README, deployment instructions, pitch preparation
+
+**Dependencies:** Phase 3 (requires complete features)
+
+**Success Criteria:**
+1. Demo video shows seller listing compute and buyer purchasing (both modes)
+2. README with architecture, setup, and deployment instructions
+3. All bounty features prominently visible for judges
+4. Pitch deck highlighting two-sided marketplace value
 
 ## Progress
 
-| Phase | Status | Completion | Est. Duration |
-|-------|--------|------------|---------------|
-| Phase 1 - Foundation Interface | Pending | 0% | 2-3 weeks |
-| Phase 2 - Resource Discovery Engine | Pending | 0% | 3-4 weeks |
-| Phase 3 - Core Network Integration | Pending | 0% | 4-5 weeks |
-| Phase 4 - Enterprise Compliance & Optimization | Pending | 0% | 4-5 weeks |
-
-**Total Estimated Duration:** 13-17 weeks
+| Phase | Status | Completion | Duration |
+|-------|--------|------------|----------|
+| Phase 1 - Core Infrastructure | Pending | 0% | Days 1-2 |
+| Phase 2 - Buyer & Seller Interfaces | Pending | 0% | Days 3-4 |
+| Phase 3 - Verification & Polish | Pending | 0% | Days 5-6 |
+| Phase 4 - Demo & Documentation | Pending | 0% | Day 7 |
 
 ## Dependencies Flow
 
 ```
-Phase 1 (Foundation)
-    ↓ (UI foundation required)
-Phase 2 (Discovery)
-    ↓ (Resource discovery required)
-Phase 3 (Core Networks + Audit)
-    ↓ (Audit foundation + core networks required)
-Phase 4 (Full Compliance + Optimization)
+Phase 1 (Infrastructure)
+    ↓ (Contracts + agent required)
+Phase 2 (Interfaces)
+    ↓ (UI required for verification)
+Phase 3 (Verification)
+    ↓ (Complete features required)
+Phase 4 (Demo)
 ```
 
 ## Key Milestones
 
-- **Phase 1 Complete:** Professional platform shell with live cost comparison data
-- **Phase 2 Complete:** Multi-network resource discovery with workflow building capability
-- **Phase 3 Complete:** Full procurement execution on Akash and Render with audit trails
-- **Phase 4 Complete:** Enterprise-ready platform with full compliance and optimization features
+- **Phase 1 Complete:** Contracts deployed, agent ranking providers, 0G integration working
+- **Phase 2 Complete:** Buyer can submit jobs, seller can list capacity, full UI functional
+- **Phase 3 Complete:** Verification modals, dashboards, both Tracked/Untracked flows working
+- **Phase 4 Complete:** Demo video recorded, README complete, ready for submission
 
 ## Success Metrics
 
-- **User Adoption:** Navigation between all sections works seamlessly
-- **Cost Advantage:** 70%+ savings vs traditional cloud clearly visible and achievable
-- **Network Coverage:** Successful integration with Akash, Render, and Aethir networks
-- **Compliance Ready:** Full audit trails and regulatory reporting capabilities
-- **Automation Level:** Automated routing and failover reduce manual intervention by 80%
+- **Routing:** Agent provides ranked recommendations in <10 seconds
+- **Coverage:** 6-8 providers including 2-3 Synapse-listed orgs
+- **Verification:** 0G reasoning trace accessible and complete
+- **Settlement:** USDC escrow functional on ADI Testnet
+- **Modes:** Both Tracked and Untracked flows fully functional
 
 ---
-*Roadmap created: February 11, 2026*
-*Next: Execute Phase 1 via `/gsd:plan-phase 1`*
+*Roadmap created: February 12, 2026*
+*Next: Execute Phase 1 via `/gsd-execute-phase 1`*

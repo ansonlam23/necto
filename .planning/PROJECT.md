@@ -1,73 +1,110 @@
-# Necto - Institutional DePIN Router Interface
+# Synapse - Two-Sided Compute Marketplace
 
 ## What This Is
 
-Necto is a "financial terminal" style interface that serves as an institutional compliance gateway for accessing decentralized compute resources. It allows infrastructure teams at AI labs, universities, and enterprises to procure cost-effective compute across fragmented DePIN networks without managing the complexity or regulatory risk of individual Web3 providers directly.
+Synapse is a two-sided compute marketplace powered by an AI routing agent. It connects buyers (developers, researchers, small teams) with sellers (organizations with idle compute capacity) through an intelligent layer that normalizes pricing across three fundamentally different models.
 
 ## Core Value
 
-Infrastructure teams can execute compliant compute procurement with seamless automation - if the system can't find verified providers, route jobs automatically, and maintain audit trails for regulators, the entire value proposition fails for enterprise adoption.
+**For buyers:** Eliminates decision fatigue when finding cheapest cloud compute. Users describe what they need; the agent scans every connected provider, normalizes pricing, and recommends the best deal in seconds.
+
+**For sellers:** Easy on-ramp to monetize idle compute. Organizations list available GPUs/CPUs, set pricing terms, and immediately access a pool of cost-conscious buyers without building their own marketplace.
+
+## The Problem
+
+The compute market is fragmented across dozens of providers with incompatible pricing models:
+
+1. **Fixed-Rate:** Posted USD/stablecoin rates (Akash reserved, Lambda Labs, AWS reserved)
+2. **Dynamic/Spot:** Floats with supply/demand (AWS Spot, Akash reverse-auction, io.net)
+3. **Token-Based:** Native crypto tokens (Render RNDR, Nosana NOS) with volatile USD cost
+
+Buyers can't easily compare. Sellers can't easily reach buyers. Synapse solves both.
+
+## Two Operating Modes
+
+### Tracked Mode (Default)
+For teams and organizations using shared compute. Maintains lightweight audit trail with user identity — which user ran what job, on which provider, at what cost. Team leads see spending; finance reconciles bills.
+
+### Untracked Mode
+For individual builders who value privacy. Strips user-identifying information while preserving full audit trail of what happened (logged to 0G, settled on ADI). Full verifiability, zero identity exposure.
 
 ## Requirements
 
 ### Validated
-
-(None yet — ship to validate)
+(None yet — hackathon demo will validate)
 
 ### Active
 
-- [ ] Global Shell with sidebar navigation (Dashboard, Builder, Audit) and header with Wallet Connect & Agent Status
-- [ ] Dashboard with 3 KPI cards (TVL, Compute, Compliance) and Active Jobs Table
-- [ ] Workflow Builder with 3-pane drag-and-drop interface using React Flow (Node Palette, Canvas, Configuration)
-- [ ] Audit Log with TanStack table and slide-over panel for raw JSON proof viewing
-- [ ] Cyberpunk-professional design system with deep dark mode (bg-slate-950, text-slate-200, blue-600 accent)
-- [ ] Real-time provider compliance verification (KYC/ISO status tracking)
-- [ ] Cost optimization via automated arbitrage routing
-- [ ] Risk management through automated failover and diversified allocation
-- [ ] Comprehensive audit trails for regulatory compliance
+- [ ] **AGENT-01:** Multi-provider price aggregation across 6-8 providers (Akash, io.net, Lambda Labs, AWS Spot, Render, Synapse-listed)
+- [ ] **AGENT-02:** Pricing model normalization (fixed, spot/auction, token-based → effective USD/GPU-hr)
+- [ ] **AGENT-03:** Real-time token price feed for token-based providers
+- [ ] **AGENT-04:** Constraint-aware filtering (max price, region, GPU type, pricing model exclusions)
+- [ ] **AGENT-05:** Dynamic ranking engine by effective cost
+- [ ] **AGENT-06:** Tracked/Untracked mode toggle with identity handling
 
-### Out of Scope
+- [ ] **BUYER-01:** Job submission form with requirements and constraints
+- [ ] **BUYER-02:** Live price comparison table with normalized rates
+- [ ] **BUYER-03:** Agent activity feed (real-time scanning updates)
+- [ ] **BUYER-04:** Team spending dashboard (Tracked mode only)
+- [ ] **BUYER-05:** Audit log with links to on-chain records and 0G reasoning
 
-- Consumer-facing interfaces — Enterprise/institutional focus only
-- Direct Web3 wallet management — Abstracted through compliance gateway
-- Individual DePIN protocol integrations — Handled by backend routing layer
+- [ ] **SELLER-01:** Provider dashboard for listing hardware
+- [ ] **SELLER-02:** Flexible pricing configuration (fixed/dynamic/token)
+- [ ] **SELLER-03:** Capacity management (available/reserved/offline)
+- [ ] **SELLER-04:** Earnings dashboard with utilization metrics
+- [ ] **SELLER-05:** Usage log (Tracked shows pseudonymous user; Untracked shows anonymous)
 
-## Context
+- [ ] **0G-01:** Upload agent reasoning trace to 0G Storage
+- [ ] **0G-02:** Include 0G hash in on-chain job record
+- [ ] **0G-03:** "Verify Decision" modal fetching reasoning from 0G
 
-**Target Users:** Infrastructure teams at AI labs, universities, and enterprises who need enterprise-grade compute procurement without Web3 complexity.
+- [ ] **ADI-01:** Deploy ComputeRouter.sol to ADI Testnet
+- [ ] **ADI-02:** Provider registry (registerProvider, updateProviderRate)
+- [ ] **ADI-03:** Job registry (createJob, completeJob)
+- [ ] **ADI-04:** USDC escrow settlement
+- [ ] **ADI-05:** Lightweight access control for Tracked mode
 
-**Success Metrics:** All four outcomes are interdependent for institutional adoption:
-- Seamless execution (reduces operational overhead)
-- Cost savings (20-40% vs traditional cloud while maintaining SLAs)
-- Risk mitigation (zero compliance violations, minimal downtime)
-- Operational efficiency (single interface vs managing dozens of providers)
+### Out of Scope (v1)
 
-**Core Workflows:**
-1. **Resource procurement** — Finding and allocating compute capacity across DePIN providers
-2. **Compliance verification** — Ensuring providers meet institutional security/audit requirements
-3. **Cost optimization** — Real-time arbitrage routing to cheapest compliant options
-4. **Risk management** — Automated failover and diversified allocation strategies
-
-**Technical Environment:** Next.js 14 ecosystem with modern React patterns, institutional-grade TypeScript requirements, and specific design system constraints for professional trading terminal aesthetics.
+- Real-time re-routing mid-job (stretch goal only)
+- Production API integrations (use mocked data for demo)
+- Advanced SLA guarantees
+- ML-based predictive optimization
 
 ## Constraints
 
-- **Tech Stack**: Next.js 14 (App Router), Tailwind CSS, Shadcn UI, React Flow — No deviations
-- **Design System**: Strict cyberpunk-professional theme (bg-slate-950, text-slate-200, blue-600 accent, monospace data fonts)
-- **Icon Library**: lucide-react only
-- **Charts**: recharts only
-- **TypeScript**: Strict typing required, no any types
-- **Component Architecture**: Small, modular components for maintainability
-- **Development Agent**: Use frontend-developer subagent from agents folder for all UI implementation
+- **Timeline:** 1-week hackathon build
+- **Tech Stack:** Next.js 14 (App Router), TypeScript throughout, Tailwind CSS, Shadcn UI
+- **Blockchain:** Viem/Wagmi for ADI Chain, 0G JS/TS SDK
+- **Contracts:** Hardhat with TypeScript config
+- **Pricing Data:** Hardcoded/mocked for 6-8 providers including 2-3 "Synapse-listed" orgs
+- **Design:** Can reuse Necto cyberpunk-professional aesthetic
+
+## Context
+
+**Target Users:**
+- **Buyers:** ML researchers, indie developers, hackathon builders, startups, data engineers
+- **Sellers:** Research labs, startups with over-provisioned infra, enterprises with off-peak capacity
+
+**Success Metrics:**
+- Buyer can submit job and get ranked recommendations in <10 seconds
+- Seller can list hardware and receive jobs
+- Full Tracked and Untracked flows working end-to-end
+- 0G reasoning logs verifiable
+- ADI on-chain settlement functional
+
+**Bounty Requirements:**
+- **0G Bounty:** Immutable reasoning logs, proof of routing, user-facing verification
+- **ADI Bounty:** On-chain job registry, escrow settlement, provider management
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| React Flow for workflow builder | Proven drag-and-drop library for complex node-based interfaces | — Pending |
-| TanStack for audit table | Performance requirements for large audit datasets | — Pending |
-| Financial terminal UX paradigm | Users expect Bloomberg/trading desk density and speed | — Pending |
-| Deep dark theme (slate-950) | Professional appearance for institutional environments | — Pending |
+| Decision | Rationale | Status |
+|----------|-----------|--------|
+| Unified TypeScript stack | Single language for frontend, agent, contracts simplifies 1-week timeline | — Pending |
+| Hardcoded pricing data | No time for 6-8 API integrations; realistic mocked data sufficient for demo | — Pending |
+| Reuse Necto UI foundation | shadcn/ui components, layout patterns, wallet connection already built | — Pending |
+| Tracked/Untracked as toggle | Single code path; only difference is user identity in logs | — Pending |
 
 ---
-*Last updated: 2026-02-11 after initialization*
+*Last updated: 2026-02-12 for Synapse pivot*

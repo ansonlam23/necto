@@ -1,33 +1,34 @@
-# Project State: Necto - Institutional DePIN Router Interface
+# Project State: Synapse - Two-Sided Compute Marketplace
 
-**Created:** February 11, 2026
-**Last Updated:** February 11, 2026
+**Created:** February 12, 2026  
+**Last Updated:** February 12, 2026  
+**Previous:** Necto (institutional DePIN router) - pivoted to Synapse
 
 ## Project Reference
 
-**Core Value:** Infrastructure teams can execute compliant compute procurement with seamless automation - if the system can't find verified providers, route jobs automatically, and maintain audit trails for regulators, the entire value proposition fails for enterprise adoption.
+**Core Value:** AI-powered compute routing that normalizes pricing across fixed, spot, and token-based models; two-sided marketplace connecting buyers to cheapest compute and sellers to monetize idle capacity.
 
-**Current Focus:** Transform institutional infrastructure procurement through seamless automation across DePIN networks without Web3 complexity.
+**Current Focus:** Build two-sided compute marketplace with 0G Storage reasoning logs and ADI Chain settlement for 1-week hackathon.
 
-**Success Depends On:** Seamless execution, 70%+ cost savings vs traditional cloud, zero compliance violations, and operational efficiency through single interface.
+**Success Depends On:** Agent routing accuracy, 0G verification working, ADI escrow functional, both Tracked/Untracked modes operational.
 
 ## Current Position
 
 ### Active Phase
-**Phase 1 - Foundation Interface**
-- **Goal:** Users can navigate the platform and see real-time cost advantages
-- **Status:** Not Started
+**Phase 1 - Core Infrastructure**  
+- **Goal:** Smart contracts deployed, agent logic functional, 0G integration working  
+- **Status:** Not Started  
 - **Progress:** ████░░░░░░ 0%
 
 ### Current Plan
-No active execution plan. Roadmap complete, ready for phase planning.
+No active execution plan. Roadmap complete, ready for Phase 1 implementation.
 
-**Next Action:** Execute `/gsd:plan-phase 1` to begin Phase 1 implementation.
+**Next Action:** Execute `/gsd-execute-phase 1` to begin Phase 1 infrastructure build.
 
 ### Roadmap Status
 - **Total Phases:** 4
 - **Phases Complete:** 0/4
-- **Requirements Mapped:** 26/26 ✓
+- **Requirements Mapped:** 23/23 ✓
 - **Coverage:** 100%
 
 ## Performance Metrics
@@ -35,37 +36,38 @@ No active execution plan. Roadmap complete, ready for phase planning.
 ### Development Velocity
 - **Plans Executed:** 0
 - **Phases Completed:** 0
-- **Avg Phase Duration:** TBD
-- **On-Track Percentage:** N/A (project start)
+- **Hackathon Day:** Day 0 (planning complete)
 
 ### Quality Indicators
 - **Requirements Coverage:** 100% ✓
-- **Success Criteria per Phase:** 4-7 (well-scoped)
-- **Phase Dependencies:** Clear and logical
-- **Research Integration:** High (comprehensive domain research completed)
+- **Bounty Alignment:** 0G + ADI requirements mapped ✓
+- **Existing Codebase:** Mapped (can reuse UI foundation)
+- **Timeline:** Aggressive but achievable (1 week)
 
 ### Risk Assessment
-- **Technical Risk:** Medium (Next.js 14 + DePIN integration complexity)
-- **Compliance Risk:** High (enterprise regulatory requirements)
-- **Market Risk:** Medium (DePIN network reliability dependencies)
-- **Execution Risk:** Low (clear phase structure with observable success criteria)
+- **Technical Risk:** Medium (smart contracts + 0G + ADI integrations)
+- **Time Risk:** High (1-week deadline)
+- **Integration Risk:** Medium (0G SDK, ADI Testnet stability)
+- **Scope Risk:** Medium (must resist feature creep)
 
 ## Accumulated Context
 
 ### Key Decisions Made
-1. **Phase Structure:** 4 phases derived from natural requirement groupings and dependencies
-2. **Foundation First:** UI shell and cost visualization before complex integrations
-3. **Progressive Network Integration:** Akash/Render in Phase 3, Aethir in Phase 4
-4. **Audit Early:** Compliance framework starts in Phase 3 to support enterprise adoption
+1. **Pivot from Necto:** Shifted from institutional compliance to two-sided marketplace
+2. **Unified TypeScript:** Single language for frontend, agent, contracts tooling
+3. **Hardcoded Pricing:** No time for live API integrations; realistic mock data
+4. **Reuse Necto UI:** shadcn/ui components, layout patterns already built
+5. **Tracked/Untracked Toggle:** Single code path with identity stripping
 
 ### Active Todos
 - [ ] Execute Phase 1 planning and implementation
-- [ ] Validate cyberpunk-professional design system approach
-- [ ] Confirm DePIN network API access and integration requirements
-- [ ] Establish enterprise compliance framework baseline
+- [ ] Deploy ComputeRouter.sol to ADI Testnet
+- [ ] Build price normalization module
+- [ ] Integrate 0G Storage SDK
+- [ ] Implement Tracked/Untracked mode logic
 
 ### Resolved Blockers
-None yet - project initialization complete.
+None yet - project pivot complete, planning finished.
 
 ### Open Blockers
 None identified - ready to proceed with Phase 1.
@@ -73,28 +75,41 @@ None identified - ready to proceed with Phase 1.
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Created project roadmap from requirements
-- **Outcome:** 4-phase roadmap with 100% requirement coverage
-- **Key Insight:** Foundation → Discovery → Integration → Optimization provides natural progression
-- **Files Created:** ROADMAP.md, STATE.md
-- **Files Updated:** REQUIREMENTS.md (traceability section)
+- **Action:** Mapped existing Necto codebase, pivoted planning to Synapse
+- **Outcome:** 7 codebase documents created, 4 planning documents updated for Synapse
+- **Key Insight:** Can reuse significant UI foundation (shadcn/ui, wallet connection, layout)
+- **Files Created:** .planning/codebase/*.md, updated PROJECT/REQUIREMENTS/ROADMAP/STATE.md
+- **Branch:** pivot-adi (new branch for Synapse work)
 
 ### Context for Next Session
-The roadmap provides a clear path from basic UI foundation through full enterprise compliance. Phase 1 focuses on establishing the professional platform shell with live cost comparison data - the foundation that makes the value proposition immediately visible to enterprise users.
+The pivot is complete. We have a clear 4-phase roadmap for the 1-week hackathon:
 
-Key research insights inform implementation:
-- **Stack:** Next.js 14 App Router, Shadcn UI, React Flow, TanStack for high-performance tables
-- **Architecture:** Event-driven microservices with financial terminal patterns
-- **Pitfalls:** Focus on regulatory compliance early, avoid real-time system failures
+1. **Phase 1 (Days 1-2):** Smart contracts, agent logic, 0G integration
+2. **Phase 2 (Days 3-4):** Buyer/seller interfaces
+3. **Phase 3 (Days 5-6):** Verification, dashboards, polish
+4. **Phase 4 (Day 7):** Demo video, documentation, pitch
 
-**Ready for:** Phase 1 planning and execution via `/gsd:plan-phase 1`
+Existing Necto code provides:
+- Wallet connection infrastructure (wagmi/viem)
+- shadcn/ui component library
+- Layout patterns (sidebar, header)
+- TypeScript strict mode setup
+
+New Synapse code needed:
+- ComputeRouter.sol (Solidity)
+- Agent logic (price normalization, ranking)
+- 0G Storage integration
+- ADI Chain integration
+- Buyer/seller specific UI
+
+**Ready for:** Phase 1 execution via `/gsd-execute-phase 1`
 
 ### Continuity Artifacts
-- **ROADMAP.md:** Complete phase structure and success criteria
-- **REQUIREMENTS.md:** Updated with phase mappings and traceability
-- **PROJECT.md:** Core value and constraints reference
-- **research/*.md:** Comprehensive domain research for implementation guidance
+- **ROADMAP.md:** 4-phase hackathon plan
+- **REQUIREMENTS.md:** 23 mapped requirements
+- **PROJECT.md:** Core value and constraints
+- **codebase/*.md:** Existing code context for reuse
 
 ---
-*State tracking for project: Necto*
-*Project initiated: February 11, 2026*
+*State tracking for project: Synapse*  
+*Pivot completed: February 12, 2026*
