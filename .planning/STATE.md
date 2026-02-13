@@ -1,7 +1,7 @@
 # Project State: Synapse - Two-Sided Compute Marketplace
 
 **Created:** February 12, 2026  
-**Last Updated:** February 13, 2026 (03:38 UTC)  
+**Last Updated:** February 13, 2026 (04:15 UTC)  
 **Previous:** Necto (institutional DePIN router) - pivoted to Synapse
 
 ## Project Reference
@@ -18,19 +18,19 @@
 **Phase 1 - Core Infrastructure**  
 - **Goal:** Smart contracts deployed, agent logic functional, 0G integration working  
 - **Status:** In Progress  
-- **Current Plan:** 01-06 (Provider Ranking Engine - Complete)
-- **Progress:** [████████░░] 70%
+- **Current Plan:** 01-09 (ADI Testnet Deployment - Complete with checkpoint)
+- **Progress:** [█████████░] 90%
 
 ### Current Plan
-**01-06: Provider Ranking Engine** - ✅ COMPLETE
-- Constraint filtering: price, region, GPU type, pricing model exclusions (AGENT-04)
-- Weighted scoring: price (60%), latency (15%), reputation (15%), geography (10%) (AGENT-05)
-- Ranker class: Orchestrates filter → score → rank pipeline with parallel quote fetching
-- Top-3 recommendations with tradeoff analysis (price vs quality, latency, reputation)
-- Reasoning trace: Full decision tree for 0G Storage with top 5 candidates, rejections, metadata
-- Key files: src/lib/agent/{filter,scorer,ranker,reasoning,index}.ts
+**01-09: ADI Testnet Deployment** - ✅ COMPLETE (with checkpoint)
+- TypeScript deployment scripts (deploy.ts, verify.ts)
+- Frontend contract configuration with ABIs and Wagmi integration
+- 0G Testnet chain definition (Chain ID 16602)
+- Comprehensive deployment documentation (DEPLOY.md, CONTRACTS.md)
+- **Checkpoint:** Task 2 requires user to fund wallet and deploy contracts
+- Key files: scripts/{deploy,verify}.ts, src/config/contracts.ts, src/lib/wagmi.ts
 
-**Next Action:** Continue with Phase 2 (Buyer/Seller Interfaces) or `/gsd-execute-phase 1`
+**Next Action:** User completes wallet setup and contract deployment per DEPLOY.md, then continue Phase 2
 
 ### Roadmap Status
 - **Total Phases:** 4
@@ -41,7 +41,7 @@
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 6 (01-01, 01-02, 01-03, 01-04, 01-05, 01-06)
+- **Plans Executed:** 9 (01-01, 01-02, 01-03, 01-04, 01-05, 01-06, 01-07, 01-08, 01-09)
 - **Phases Completed:** 0
 - **Hackathon Day:** Day 1 (infrastructure building)
 
@@ -81,6 +81,11 @@
 19. **Top-3 Recommendations:** Human-readable tradeoff analysis showing price vs quality decisions
 20. **Reasoning Trace Scope:** Top 5 candidates + all rejections for complete 0G Storage audit trail
 21. **Parallel Quote Fetching:** 5-second timeout with graceful degradation for provider failures
+22. **TypeScript Deployment Scripts:** Converted from JavaScript for better type safety and IDE support
+23. **Auto-Deploy MockUSDC:** Deployment script automatically deploys MockUSDC when USDC_ADDRESS not set
+24. **Environment-Based Contract Config:** Frontend addresses via NEXT_PUBLIC_ variables for per-environment configuration
+25. **0G Testnet as Default:** Chain ID 16602 configured as primary target in Wagmi
+26. **Separate Verification Script:** Standalone verify.ts for post-deployment contract testing
 
 ### Active Todos
 - [x] Deploy ComputeRouter.sol smart contracts (01-01) ✅
@@ -90,27 +95,34 @@
 - [x] Integrate 0G Storage SDK for reasoning logs (01-05) ✅
 - [x] Implement provider ranking engine (01-06) ✅
 - [x] Implement Tracked/Untracked mode logic (01-07) ✅
-- [ ] Deploy contracts to ADI Testnet (scripts ready)
+- [x] Deployment scripts ready for ADI Testnet (01-09) ✅
+- [ ] Deploy contracts to ADI Testnet (requires user: fund wallet, run deploy)
 
 ### Resolved Blockers
 None yet - project pivot complete, planning finished.
 
 ### Open Blockers
 - **User Setup Required:** 0G Storage requires funded wallet and .env configuration (see 01-USER-SETUP.md)
+- **Contract Deployment Checkpoint:** Task 2 of 01-09 requires user action:
+  1. Create/fund wallet on 0G Testnet
+  2. Get A0G tokens from https://faucet.0g.ai
+  3. Run: `npx hardhat run scripts/deploy.ts --network 0g-testnet`
+  4. See DEPLOY.md for complete instructions
 
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Executed Plan 01-06: Provider Ranking Engine
-- **Outcome:** Complete ranking engine with constraint filtering, weighted scoring, and reasoning traces
-- **Key Insight:** Pipeline pattern (filter → score → rank) provides clear separation and testability
-- **Files Created:** src/lib/agent/{filter,scorer,ranker,reasoning,index}.ts, 01-06-SUMMARY.md
-- **Commits:** 5 atomic commits (464dccc, 2cb9039, e641fe0, a26fc79, 3948e3c) - one per task + index
+- **Action:** Executed Plan 01-09: ADI Testnet Deployment
+- **Outcome:** TypeScript deployment scripts, frontend contract config, and comprehensive docs ready
+- **Key Insight:** Checkpoint pattern works well for deployment steps requiring user credentials
+- **Files Created:** scripts/{deploy,verify}.ts, src/config/contracts.ts, DEPLOY.md, CONTRACTS.md
+- **Commits:** 3 atomic commits (51f8c13, 1786e0c, ffc3e05) - deployment, docs, frontend config
 - **Deviations:** None - plan executed exactly as written
+- **Checkpoint:** Task 2 requires user to fund wallet and deploy contracts
 - **Branch:** pivot-adi
 
 ### Context for Next Session
-Phase 1 complete. All core infrastructure ready for Phase 2 (Buyer/Seller Interfaces).
+Phase 1 nearly complete. Deployment infrastructure ready, awaiting user action for actual contract deployment.
 
 **Phase 1 Progress:**
 - ✅ Plan 01-01: Smart contracts complete (ComputeRouter, ProviderRegistry, JobRegistry, Escrow)
@@ -118,17 +130,20 @@ Phase 1 complete. All core infrastructure ready for Phase 2 (Buyer/Seller Interf
 - ✅ Plan 01-03: Provider adapters complete
 - ✅ Plan 01-04: Agent routing logic complete
 - ✅ Plan 01-05: 0G Storage integration complete
-- ✅ Plan 01-06: Provider ranking engine complete (filter, scorer, ranker, reasoning)
+- ✅ Plan 01-06: Provider ranking engine complete
 - ✅ Plan 01-07: Tracked/Untracked identity modes complete
-- ⏳ Next: Phase 2 (buyer/seller interfaces)
+- ✅ Plan 01-08: Agent orchestrator complete
+- ✅ Plan 01-09: ADI Testnet deployment scripts ready (checkpoint: awaiting user action)
+- ⏳ Next: User deploys contracts, then Phase 2 (buyer/seller interfaces)
 
-**Smart Contract System Ready For:**
-- ADI Testnet deployment (scripts ready, needs AOG tokens)
-- Frontend integration with TypeScript types
-- Agent routing with on-chain provider registry
-- USDC payment flows via ComputeRouter
+**Smart Contract System:**
+- ✅ Contracts implemented (ComputeRouter, ProviderRegistry, JobRegistry, Escrow, MockUSDC)
+- ✅ TypeScript deployment scripts ready (deploy.ts, verify.ts)
+- ✅ Frontend configuration complete (ABIs, addresses, Wagmi)
+- ✅ Documentation complete (DEPLOY.md, CONTRACTS.md)
+- ⏳ **Awaiting:** User to deploy to ADI Testnet (fund wallet, get A0G, run deploy)
 
-**Next Action:** Continue with Phase 2 buyer/seller interfaces or deploy contracts to ADI Testnet
+**Next Action:** User completes deployment per DEPLOY.md, then continue with Phase 2
 
 ### Continuity Artifacts
 - **ROADMAP.md:** 4-phase hackathon plan
