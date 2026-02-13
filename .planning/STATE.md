@@ -1,7 +1,7 @@
 # Project State: Synapse - Two-Sided Compute Marketplace
 
 **Created:** February 12, 2026  
-**Last Updated:** February 13, 2026 (03:12 UTC)  
+**Last Updated:** February 13, 2026 (03:37 UTC)  
 **Previous:** Necto (institutional DePIN router) - pivoted to Synapse
 
 ## Project Reference
@@ -18,21 +18,20 @@
 **Phase 1 - Core Infrastructure**  
 - **Goal:** Smart contracts deployed, agent logic functional, 0G integration working  
 - **Status:** In Progress  
-- **Current Plan:** 01-05 (0G Storage Integration - Complete)  
-- **Progress:** [█████░░░░░] 56%
+- **Current Plan:** 01-07 (Tracked/Untracked Identity - Complete)  
+- **Progress:** [████████░░] 70%
 
 ### Current Plan
-**01-05: 0G Storage Integration** - ✅ COMPLETE
-- @0glabs/0g-ts-sdk installed with ethers compatibility handling
-- StorageService: Connection management for 0G Galileo Testnet (Chain ID 16602)
-- Uploader: JSON/file upload with Merkle tree calculation, 10MB size warnings
-- Retriever: Download by content hash, metadata retrieval, 404 handling
-- Retry logic: Exponential backoff with jitter (3 attempts, 1s/2s/4s delays)
-- uploadReasoningTrace(): High-level API for persisting agent decision traces
-- retrieveTrace(): Fetch and validate traces by content hash
-- Environment variables: OG_PRIVATE_KEY, OG_RPC_URL, OG_INDEXER_URL, OG_FLOW_CONTRACT
+**01-07: Tracked/Untracked Identity Modes** - ✅ COMPLETE
+- Identity types: TrackedIdentity (full storage) and UntrackedIdentity (keccak256 hashes)
+- Hashing utilities: keccak256 with salt 'synapse-identity-v1', audit ID generation
+- Tracked mode: Full identity with wallet, org, team member IDs and activity logging
+- Untracked mode: Privacy-preserving with PII detection and anonymous audit trails
+- IdentityService: Unified interface with mode delegation and type guards
+- Type discrimination: isTrackedIdentity() and isUntrackedIdentity() guards
+- Key files: src/lib/identity/{hashing,tracked,untracked,index}.ts, src/types/identity.ts
 
-**Next Action:** Execute Plan 06 (Agent Routing Logic) or `/gsd-execute-phase 1` to continue Phase 1
+**Next Action:** Continue with Phase 2 (Buyer/Seller Interfaces) or `/gsd-execute-phase 1`
 
 ### Roadmap Status
 - **Total Phases:** 4
@@ -75,6 +74,10 @@
 11. **7-Day Refund Timeout:** Buyers can reclaim funds if job never completes
 12. **Cancun EVM:** Solidity 0.8.24 with Cancun for 0G Chain compatibility
 13. **Ethers Version Bridging:** Use explicit `any` type assertions to handle SDK peer dependency version mismatches (ethers v6.13.1 vs v6.16.0)
+14. **keccak256 for Identity Hashing:** Ethereum-standard hashing for blockchain ecosystem compatibility
+15. **Hardcoded Salt Pattern:** Single constant salt ('synapse-identity-v1') prevents rainbow tables while maintaining deterministic verification
+16. **Type Discrimination:** Union types with type guards provide compile-time safety for mode switching
+17. **PII Detection in Untracked Mode:** Warning logs (not errors) to alert on potential identity leakage without breaking flows
 
 ### Active Todos
 - [x] Deploy ComputeRouter.sol smart contracts (01-01) ✅
@@ -82,7 +85,7 @@
 - [x] Implement provider adapter pattern (01-03) ✅
 - [x] Build agent routing logic with price normalization (01-04) ✅
 - [x] Integrate 0G Storage SDK for reasoning logs (01-05) ✅
-- [ ] Implement Tracked/Untracked mode logic
+- [x] Implement Tracked/Untracked mode logic (01-07) ✅
 - [ ] Deploy contracts to ADI Testnet (scripts ready)
 
 ### Resolved Blockers
@@ -94,12 +97,12 @@ None yet - project pivot complete, planning finished.
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Executed Plan 01-05: 0G Storage Integration
-- **Outcome:** Full 0G Storage SDK integration with upload/download for agent reasoning traces
-- **Key Insight:** Ethers version bridging requires explicit type assertions when SDK peer dependency mismatches project version
-- **Files Created:** src/lib/storage/index.ts, uploader.ts, retrieval.ts, retry.ts, 01-05-SUMMARY.md, 01-USER-SETUP.md
-- **Commits:** 1 combined commit (cdeb658) for all 3 tasks due to high interdependency
-- **Deviations:** 6 auto-fixed (ethers version mismatch, SDK API expectations, AbstractFile internal, npm peer deps, combined commits, OG_PRIVATE_KEY validation)
+- **Action:** Executed Plan 01-07: Tracked/Untracked Identity Modes
+- **Outcome:** Complete identity system with both compliance and privacy modes
+- **Key Insight:** Type discrimination with union types and guards provides compile-time safety for mode switching
+- **Files Created:** src/types/identity.ts, src/lib/identity/{hashing,tracked,untracked,index}.ts, 01-07-SUMMARY.md
+- **Commits:** 4 atomic commits (d543e91, ab463b8, 66b6458, 70f82d1) - one per task
+- **Deviations:** 2 auto-fixed (duplicate export, type declaration format)
 - **Branch:** pivot-adi
 
 ### Context for Next Session
@@ -111,8 +114,8 @@ Plan 01-01 complete. Smart contracts ready for ADI Testnet deployment.
 - ✅ Plan 01-03: Provider adapters complete
 - ✅ Plan 01-04: Agent routing logic complete
 - ✅ Plan 01-05: 0G Storage integration complete
-- ⏳ Next: Plan 01-06: Tracked/Untracked mode logic
-- ⏳ Then: Phase 2 (buyer/seller interfaces)
+- ✅ Plan 01-07: Tracked/Untracked identity modes complete
+- ⏳ Next: Phase 2 (buyer/seller interfaces)
 
 **Smart Contract System Ready For:**
 - ADI Testnet deployment (scripts ready, needs AOG tokens)
