@@ -1,9 +1,15 @@
 'use client'
 
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
-import { mainnet, sepolia } from 'wagmi/chains'
+import {
+  useConnection,
+  useConnect,
+  useDisconnect,
+  useChainId,
+  useSwitchChain,
+  useConnectors,
+} from 'wagmi'
 
-export interface WalletState {
+interface WalletState {
   address: `0x${string}` | undefined
   isConnected: boolean
   isConnecting: boolean
@@ -11,18 +17,19 @@ export interface WalletState {
   chainId: number | undefined
 }
 
-export interface WalletActions {
+interface WalletActions {
   connect: () => Promise<void>
   disconnect: () => Promise<void>
   switchChain: (chainId: number) => Promise<void>
 }
 
 export function useWallet(): WalletState & WalletActions {
-  const { address, isConnected, isConnecting, isDisconnected } = useAccount()
+  const { address, isConnected, isConnecting, isDisconnected } = useConnection()
   const chainId = useChainId()
-  const { connectAsync, connectors } = useConnect()
-  const { disconnectAsync } = useDisconnect()
-  const { switchChainAsync } = useSwitchChain()
+  const connectors = useConnectors()
+  const { mutateAsync: connectAsync } = useConnect()
+  const { mutateAsync: disconnectAsync } = useDisconnect()
+  const { mutateAsync: switchChainAsync } = useSwitchChain()
 
   const connect = async () => {
     try {
@@ -68,4 +75,4 @@ export function useWallet(): WalletState & WalletActions {
   }
 }
 
-export { mainnet, sepolia }
+
