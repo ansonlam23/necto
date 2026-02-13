@@ -18,6 +18,19 @@ Build a two-sided compute marketplace with AI routing agent, 0G Storage reasonin
 
 **Requirements:** AGENT-01 through AGENT-06, 0G-01, 0G-02, ADI-01 through ADI-04
 
+**Plans:** 9 plans in 4 waves
+
+**Plan List:**
+- [ ] 01-01-PLAN.md — Smart Contract Foundation (ComputeRouter, ProviderRegistry, JobRegistry, Escrow)
+- [ ] 01-02-PLAN.md — Agent Core Types (Provider, Job, Pricing, Reasoning type definitions)
+- [ ] 01-03-PLAN.md — Provider Adapters (8 provider implementations: Akash, Lambda, Filecoin, io.net, 4 mocks)
+- [ ] 01-04-PLAN.md — Pricing Normalization (CoinGecko integration, GPU ratios, hidden costs, normalizer)
+- [ ] 01-05-PLAN.md — 0G Storage Integration (SDK setup, upload with retry, reasoning trace storage)
+- [ ] 01-06-PLAN.md — Provider Ranking Engine (filtering, weighted scoring, top-3 recommendations)
+- [ ] 01-07-PLAN.md — Tracked/Untracked Identity (identity modes, hashing, audit trails)
+- [ ] 01-08-PLAN.md — Agent Orchestration (pipeline coordination, HTTP API, integration)
+- [ ] 01-09-PLAN.md — Contract Deployment (ADI Testnet deployment, frontend config, verification)
+
 **Success Criteria:**
 1. ComputeRouter.sol deployed to ADI Testnet with provider registry and escrow
 2. Agent can normalize pricing from 6-8 providers into effective USD/GPU-hr
