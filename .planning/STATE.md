@@ -18,19 +18,21 @@
 **Phase 1 - Core Infrastructure**  
 - **Goal:** Smart contracts deployed, agent logic functional, 0G integration working  
 - **Status:** In Progress  
-- **Current Plan:** 01-01 (Smart Contract Infrastructure - Complete)  
-- **Progress:** [██████░░░░] 60%
+- **Current Plan:** 01-05 (0G Storage Integration - Complete)  
+- **Progress:** [█████░░░░░] 56%
 
 ### Current Plan
-**01-01: Smart Contract Infrastructure** - ✅ COMPLETE
-- ComputeRouter.sol: Main orchestration with RBAC and USDC payments
-- ProviderRegistry.sol: Provider registration and rate management
-- JobRegistry.sol: Job lifecycle tracking (Pending → Settled)
-- Escrow.sol: USDC locking with 7-day refund timeout
-- Hardhat configured for ADI Testnet (Chain ID 16602, Cancun EVM)
-- TypeScript types generated for frontend integration
+**01-05: 0G Storage Integration** - ✅ COMPLETE
+- @0glabs/0g-ts-sdk installed with ethers compatibility handling
+- StorageService: Connection management for 0G Galileo Testnet (Chain ID 16602)
+- Uploader: JSON/file upload with Merkle tree calculation, 10MB size warnings
+- Retriever: Download by content hash, metadata retrieval, 404 handling
+- Retry logic: Exponential backoff with jitter (3 attempts, 1s/2s/4s delays)
+- uploadReasoningTrace(): High-level API for persisting agent decision traces
+- retrieveTrace(): Fetch and validate traces by content hash
+- Environment variables: OG_PRIVATE_KEY, OG_RPC_URL, OG_INDEXER_URL, OG_FLOW_CONTRACT
 
-**Next Action:** Execute Plan 02 (Agent Logic) or `/gsd-execute-phase 1` to continue Phase 1
+**Next Action:** Execute Plan 06 (Agent Routing Logic) or `/gsd-execute-phase 1` to continue Phase 1
 
 ### Roadmap Status
 - **Total Phases:** 4
@@ -41,7 +43,7 @@
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 1 (01-01)
+- **Plans Executed:** 5 (01-01, 01-02, 01-03, 01-04, 01-05)
 - **Phases Completed:** 0
 - **Hackathon Day:** Day 1 (infrastructure building)
 
@@ -72,13 +74,14 @@
 10. **USDC-Only Payments:** ERC20 transfers only, no native token complexity
 11. **7-Day Refund Timeout:** Buyers can reclaim funds if job never completes
 12. **Cancun EVM:** Solidity 0.8.24 with Cancun for 0G Chain compatibility
+13. **Ethers Version Bridging:** Use explicit `any` type assertions to handle SDK peer dependency version mismatches (ethers v6.13.1 vs v6.16.0)
 
 ### Active Todos
 - [x] Deploy ComputeRouter.sol smart contracts (01-01) ✅
 - [x] Create core TypeScript type definitions (01-02) ✅
 - [x] Implement provider adapter pattern (01-03) ✅
-- [ ] Build agent routing logic with price normalization
-- [ ] Integrate 0G Storage SDK for reasoning logs
+- [x] Build agent routing logic with price normalization (01-04) ✅
+- [x] Integrate 0G Storage SDK for reasoning logs (01-05) ✅
 - [ ] Implement Tracked/Untracked mode logic
 - [ ] Deploy contracts to ADI Testnet (scripts ready)
 
@@ -86,17 +89,17 @@
 None yet - project pivot complete, planning finished.
 
 ### Open Blockers
-None identified - ready to proceed with Phase 1.
+- **User Setup Required:** 0G Storage requires funded wallet and .env configuration (see 01-USER-SETUP.md)
 
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Executed Plan 01-01: Smart Contract Infrastructure
-- **Outcome:** 4 production-ready Solidity contracts with Hardhat environment
-- **Key Insight:** Contract composition pattern (Router owns child contracts) simplifies deployment
-- **Files Created:** contracts/*.sol, hardhat.config.js, scripts/deploy.js, src/types/contracts.ts, 01-01-SUMMARY.md
-- **Commits:** 3 atomic commits (87cf3f9, d2a3308, 0a2f68d)
-- **Deviations:** 4 auto-fixed (Solidity version, import paths, Hardhat version, TypeChain generation)
+- **Action:** Executed Plan 01-05: 0G Storage Integration
+- **Outcome:** Full 0G Storage SDK integration with upload/download for agent reasoning traces
+- **Key Insight:** Ethers version bridging requires explicit type assertions when SDK peer dependency mismatches project version
+- **Files Created:** src/lib/storage/index.ts, uploader.ts, retrieval.ts, retry.ts, 01-05-SUMMARY.md, 01-USER-SETUP.md
+- **Commits:** 1 combined commit (cdeb658) for all 3 tasks due to high interdependency
+- **Deviations:** 6 auto-fixed (ethers version mismatch, SDK API expectations, AbstractFile internal, npm peer deps, combined commits, OG_PRIVATE_KEY validation)
 - **Branch:** pivot-adi
 
 ### Context for Next Session
@@ -106,7 +109,9 @@ Plan 01-01 complete. Smart contracts ready for ADI Testnet deployment.
 - ✅ Plan 01-01: Smart contracts complete (ComputeRouter, ProviderRegistry, JobRegistry, Escrow)
 - ✅ Plan 01-02: Type definitions complete
 - ✅ Plan 01-03: Provider adapters complete
-- ⏳ Next: Plan 01-04: Agent routing logic
+- ✅ Plan 01-04: Agent routing logic complete
+- ✅ Plan 01-05: 0G Storage integration complete
+- ⏳ Next: Plan 01-06: Tracked/Untracked mode logic
 - ⏳ Then: Phase 2 (buyer/seller interfaces)
 
 **Smart Contract System Ready For:**
@@ -115,7 +120,7 @@ Plan 01-01 complete. Smart contracts ready for ADI Testnet deployment.
 - Agent routing with on-chain provider registry
 - USDC payment flows via ComputeRouter
 
-**Next Action:** Continue with `/gsd-execute-phase 1` to execute Plan 04
+**Next Action:** Continue with `/gsd-execute-phase 1` to execute Plan 06
 
 ### Continuity Artifacts
 - **ROADMAP.md:** 4-phase hackathon plan
