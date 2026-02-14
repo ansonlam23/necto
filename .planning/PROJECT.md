@@ -1,12 +1,12 @@
-# Necto - Institutional DePIN Router Interface
+# Necto - Two-Sided Compute Marketplace with Intelligent Routing
 
 ## What This Is
 
-Necto is a "financial terminal" style interface that serves as an institutional compliance gateway for accessing decentralized compute resources. It allows infrastructure teams at AI labs, universities, and enterprises to procure cost-effective compute across fragmented DePIN networks without managing the complexity or regulatory risk of individual Web3 providers directly.
+Necto is a two-sided compute marketplace powered by an AI routing agent that eliminates decision fatigue in the fragmented compute market. For buyers (developers, researchers, small teams), it scans every connected provider, normalizes wildly different pricing models into comparable metrics, and recommends the best deal in seconds. For sellers (companies, labs, institutions with spare capacity), it provides an easy on-ramp to monetize idle compute by connecting them to cost-conscious buyers without building their own marketplace infrastructure.
 
 ## Core Value
 
-Infrastructure teams can execute compliant compute procurement with seamless automation - if the system can't find verified providers, route jobs automatically, and maintain audit trails for regulators, the entire value proposition fails for enterprise adoption.
+The cheapest GPU always finds its buyer, and idle hardware always finds a job - if the system can't normalize pricing across three fundamentally different models (fixed-rate, spot/auction, token-based), provide verifiable routing decisions, and handle both tracked and untracked modes, the entire marketplace value proposition fails.
 
 ## Requirements
 
@@ -16,58 +16,81 @@ Infrastructure teams can execute compliant compute procurement with seamless aut
 
 ### Active
 
-- [ ] Global Shell with sidebar navigation (Dashboard, Builder, Audit) and header with Wallet Connect & Agent Status
-- [ ] Dashboard with 3 KPI cards (TVL, Compute, Compliance) and Active Jobs Table
-- [ ] Workflow Builder with 3-pane drag-and-drop interface using React Flow (Node Palette, Canvas, Configuration)
-- [ ] Audit Log with TanStack table and slide-over panel for raw JSON proof viewing
-- [ ] Cyberpunk-professional design system with deep dark mode (bg-slate-950, text-slate-200, blue-600 accent)
-- [ ] Real-time provider compliance verification (KYC/ISO status tracking)
-- [ ] Cost optimization via automated arbitrage routing
-- [ ] Risk management through automated failover and diversified allocation
-- [ ] Comprehensive audit trails for regulatory compliance
+#### A. Compute Routing Agent (Core Product — Demand Side)
+- [ ] Multi-Provider Price Aggregation across Akash, io.net, Lambda Labs, AWS Spot, Render, and Necto-listed providers
+- [ ] Pricing Model Normalization converting fixed-rate, spot/auction, and token-based pricing into unified effective-USD-per-GPU-hour metric
+- [ ] Token Price Feed integration (CoinGecko API) for real-time crypto token price conversion
+- [ ] Constraint-Aware Filtering with user-defined hard constraints (max price, region, GPU type, pricing-model exclusions)
+- [ ] Dynamic Ranking Engine sorting by effective cost with secondary criteria (latency, uptime, rating)
+- [ ] Tracked/Untracked Mode Toggle for user identity handling in job records
+
+#### B. Provider Onboarding & Listing (Supply Side)
+- [ ] Provider Dashboard for organizations to list available hardware with specs, location, availability windows
+- [ ] Flexible Pricing Configuration supporting fixed rate, dynamic, or token-based pricing models
+- [ ] Capacity Management with simple controls to mark hardware as available, reserved, or offline
+- [ ] Earnings Dashboard showing incoming jobs, revenue, utilization rates, and payout history
+- [ ] Usage Log showing all jobs (with user visibility based on tracking mode)
+
+#### C. Verifiable Decision-Making (0G Integration)
+- [ ] Immutable Reasoning Logs saved as structured JSON files to 0G Storage for every routing decision
+- [ ] Proof of Routing with on-chain job records including 0G file hash for cryptographic linking
+- [ ] User-Facing Verification with "Verify Decision" button to inspect full reasoning trace
+
+#### D. On-Chain Job Registry & Settlement (ADI Integration)
+- [ ] Job Registry Contract storing every job (Job ID, provider, price, status, 0G reasoning hash)
+- [ ] Escrow Settlement with USDC deposits locked until job completion, then released to provider
+- [ ] Lightweight Access Control for tracked mode (Admin, Viewer, User roles)
+
+#### E. The Dashboard (Frontend)
+- [ ] Job Submission Form with compute requirements specification and Tracked/Untracked toggle
+- [ ] Live Price Comparison Table showing all providers with normalized USD/GPU-hr rates
+- [ ] Agent Activity Feed with real-time updates during scanning and ranking process
+- [ ] Team Spending Dashboard (Tracked Mode) with user spend breakdown and provider analytics
+- [ ] Audit Log with links to on-chain records and 0G reasoning files
 
 ### Out of Scope
 
-- Consumer-facing interfaces — Enterprise/institutional focus only
-- Direct Web3 wallet management — Abstracted through compliance gateway
-- Individual DePIN protocol integrations — Handled by backend routing layer
+- Enterprise-grade compliance features — Focus on SMB and individual users
+- Real-time re-routing during job execution — Single routing decision per job
+- Custom blockchain development — Use existing ADI Chain and 0G Storage
+- Advanced ML model training — Use simple ranking algorithms initially
+- Mobile applications — Web-first approach
 
 ## Context
 
-**Target Users:** Infrastructure teams at AI labs, universities, and enterprises who need enterprise-grade compute procurement without Web3 complexity.
-
-**Success Metrics:** All four outcomes are interdependent for institutional adoption:
-- Seamless execution (reduces operational overhead)
-- Cost savings (20-40% vs traditional cloud while maintaining SLAs)
-- Risk mitigation (zero compliance violations, minimal downtime)
-- Operational efficiency (single interface vs managing dozens of providers)
+**Target Users:**
+- **Demand Side:** Independent ML researchers, indie developers, startups, hackathon builders, data engineers running batch jobs
+- **Supply Side:** Research labs, startups with over-provisioned infrastructure, enterprises with off-peak capacity, small hosting companies
 
 **Core Workflows:**
-1. **Resource procurement** — Finding and allocating compute capacity across DePIN providers
-2. **Compliance verification** — Ensuring providers meet institutional security/audit requirements
-3. **Cost optimization** — Real-time arbitrage routing to cheapest compliant options
-4. **Risk management** — Automated failover and diversified allocation strategies
+1. **Buyer Flow:** Submit job request → Agent scans providers → Pricing normalization → Ranking/recommendation → 0G logging → On-chain registration → Settlement
+2. **Seller Flow:** Register hardware → Configure pricing → Manage capacity → Receive routed jobs → Earn revenue → View usage analytics
 
-**Technical Environment:** Next.js 14 ecosystem with modern React patterns, institutional-grade TypeScript requirements, and specific design system constraints for professional trading terminal aesthetics.
+**Pricing Models Supported:**
+- **Fixed-Rate:** Posted rates in USD/stablecoin per hour (Akash reserved, Lambda Labs, traditional cloud)
+- **Dynamic/Auction/Spot:** Floating rates with supply/demand (AWS Spot, Akash auctions, io.net dynamic)
+- **Token-Based:** Rates in native crypto tokens with USD conversion (Render RNDR, Nosana NOS)
+
+**Technical Environment:** Next.js 14 monorepo with TypeScript throughout, viem/wagmi for blockchain interaction, Anthropic Claude SDK for LLM integration.
 
 ## Constraints
 
-- **Tech Stack**: Next.js 14 (App Router), Tailwind CSS, Shadcn UI, React Flow — No deviations
-- **Design System**: Strict cyberpunk-professional theme (bg-slate-950, text-slate-200, blue-600 accent, monospace data fonts)
-- **Icon Library**: lucide-react only
-- **Charts**: recharts only
-- **TypeScript**: Strict typing required, no any types
-- **Component Architecture**: Small, modular components for maintainability
-- **Development Agent**: Use frontend-developer subagent from agents folder for all UI implementation
+- **Tech Stack**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Shadcn UI — Unified language stack
+- **Blockchain**: ADI Chain for settlements, 0G Storage for reasoning logs
+- **LLM Provider**: Anthropic Claude SDK for natural language job parsing
+- **Pricing Data**: Hardcoded/mocked for demo, live APIs for production
+- **Timeline**: 1-week hackathon build focused on core marketplace functionality
+- **Architecture**: Monorepo structure with shared types and utilities across frontend/backend
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| React Flow for workflow builder | Proven drag-and-drop library for complex node-based interfaces | — Pending |
-| TanStack for audit table | Performance requirements for large audit datasets | — Pending |
-| Financial terminal UX paradigm | Users expect Bloomberg/trading desk density and speed | — Pending |
-| Deep dark theme (slate-950) | Professional appearance for institutional environments | — Pending |
+| TypeScript monorepo | Single language for frontend, backend, and contracts simplifies hackathon development | — Pending |
+| Tracked vs Untracked modes | Serves both teams needing visibility and individuals wanting privacy | — Pending |
+| Three pricing model support | Addresses complete fragmentation in current compute market | — Pending |
+| 0G + ADI integration | Provides verifiable routing with immutable audit trail | — Pending |
+| Agent-centric UX | Eliminates decision fatigue by automating provider comparison | — Pending |
 
 ---
-*Last updated: 2026-02-11 after initialization*
+*Last updated: 2026-02-13 after marketplace pivot*

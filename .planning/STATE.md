@@ -1,21 +1,21 @@
-# Project State: Necto - Institutional DePIN Router Interface
+# Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026
-**Last Updated:** February 11, 2026
+**Last Updated:** February 13, 2026
 
 ## Project Reference
 
-**Core Value:** Infrastructure teams can execute compliant compute procurement with seamless automation - if the system can't find verified providers, route jobs automatically, and maintain audit trails for regulators, the entire value proposition fails for enterprise adoption.
+**Core Value:** The cheapest GPU always finds its buyer, and idle hardware always finds a job - if the system can't normalize pricing across three fundamentally different models (fixed-rate, spot/auction, token-based), provide verifiable routing decisions, and handle both tracked and untracked modes, the entire marketplace value proposition fails.
 
-**Current Focus:** Transform institutional infrastructure procurement through seamless automation across DePIN networks without Web3 complexity.
+**Current Focus:** Build a two-sided compute marketplace that connects buyers seeking the cheapest GPU compute with sellers monetizing idle hardware through AI routing agent automation.
 
-**Success Depends On:** Seamless execution, 70%+ cost savings vs traditional cloud, zero compliance violations, and operational efficiency through single interface.
+**Success Depends On:** Effective price normalization across all pricing models, verifiable agent decisions through 0G Storage, seamless on-chain settlement via ADI Chain, and both tracked/untracked modes for different privacy needs.
 
 ## Current Position
 
 ### Active Phase
-**Phase 1 - Foundation Interface**
-- **Goal:** Users can navigate the platform and see real-time cost advantages
+**Phase 1 - Foundation & Core Agent**
+- **Goal:** Users can submit jobs and see the agent find the cheapest provider
 - **Status:** Not Started
 - **Progress:** ████░░░░░░ 0%
 
@@ -40,29 +40,29 @@ No active execution plan. Roadmap complete, ready for phase planning.
 
 ### Quality Indicators
 - **Requirements Coverage:** 100% ✓
-- **Success Criteria per Phase:** 4-7 (well-scoped)
+- **Success Criteria per Phase:** 5-7 (well-scoped)
 - **Phase Dependencies:** Clear and logical
 - **Research Integration:** High (comprehensive domain research completed)
 
 ### Risk Assessment
-- **Technical Risk:** Medium (Next.js 14 + DePIN integration complexity)
-- **Compliance Risk:** High (enterprise regulatory requirements)
-- **Market Risk:** Medium (DePIN network reliability dependencies)
+- **Technical Risk:** Medium (Next.js 14 + blockchain integration complexity)
+- **Pricing Risk:** High (normalizing three different pricing models)
+- **Market Risk:** Medium (DePIN network reliability and token volatility)
 - **Execution Risk:** Low (clear phase structure with observable success criteria)
 
 ## Accumulated Context
 
 ### Key Decisions Made
-1. **Phase Structure:** 4 phases derived from natural requirement groupings and dependencies
-2. **Foundation First:** UI shell and cost visualization before complex integrations
-3. **Progressive Network Integration:** Akash/Render in Phase 3, Aethir in Phase 4
-4. **Audit Early:** Compliance framework starts in Phase 3 to support enterprise adoption
+1. **Phase Structure:** 4 phases aligned with hackathon timeline (Days 1-2, 3-4, 5-6, 7)
+2. **Foundation First:** Core agent with price normalization before advanced features
+3. **Two-Sided Approach:** Demand side first (Phase 1-2), supply side second (Phase 3)
+4. **Verification Layer:** 0G Storage integration for immutable reasoning logs (Phase 4)
 
 ### Active Todos
 - [ ] Execute Phase 1 planning and implementation
-- [ ] Validate cyberpunk-professional design system approach
-- [ ] Confirm DePIN network API access and integration requirements
-- [ ] Establish enterprise compliance framework baseline
+- [ ] Implement pricing normalization for fixed-rate, spot, and token-based models
+- [ ] Integrate ComputeRouter.sol smart contract with ADI Testnet
+- [ ] Create mock provider data covering 6-8 providers
 
 ### Resolved Blockers
 None yet - project initialization complete.
@@ -73,28 +73,29 @@ None identified - ready to proceed with Phase 1.
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Created project roadmap from requirements
-- **Outcome:** 4-phase roadmap with 100% requirement coverage
-- **Key Insight:** Foundation → Discovery → Integration → Optimization provides natural progression
-- **Files Created:** ROADMAP.md, STATE.md
-- **Files Updated:** REQUIREMENTS.md (traceability section)
+- **Action:** Complete project pivot from institutional DePIN interface to two-sided marketplace
+- **Outcome:** All planning documents updated with new marketplace concept
+- **Key Insight:** AI routing agent eliminates decision fatigue by normalizing all pricing models
+- **Files Created:** Updated ROADMAP.md, REQUIREMENTS.md, PROJECT.md, STATE.md
+- **Files Updated:** Complete rewrite of all planning documents for marketplace focus
 
 ### Context for Next Session
-The roadmap provides a clear path from basic UI foundation through full enterprise compliance. Phase 1 focuses on establishing the professional platform shell with live cost comparison data - the foundation that makes the value proposition immediately visible to enterprise users.
+The roadmap provides a clear hackathon timeline from core agent through full marketplace with verification. Phase 1 focuses on building the MVP agent that demonstrates price normalization across fixed-rate, spot, and token-based providers - the core value proposition that makes the cheapest GPU findable.
 
-Key research insights inform implementation:
-- **Stack:** Next.js 14 App Router, Shadcn UI, React Flow, TanStack for high-performance tables
-- **Architecture:** Event-driven microservices with financial terminal patterns
-- **Pitfalls:** Focus on regulatory compliance early, avoid real-time system failures
+Key implementation focus:
+- **Stack:** Next.js 14 App Router, TypeScript throughout, Shadcn UI, viem/wagmi
+- **Architecture:** Monorepo with shared types, API routes for agent, pricing normalization module
+- **Priority:** Mock provider data first, then live API integrations in later phases
 
 **Ready for:** Phase 1 planning and execution via `/gsd:plan-phase 1`
 
 ### Continuity Artifacts
-- **ROADMAP.md:** Complete phase structure and success criteria
-- **REQUIREMENTS.md:** Updated with phase mappings and traceability
-- **PROJECT.md:** Core value and constraints reference
+- **ROADMAP.md:** 4-phase hackathon timeline with bounty integration points
+- **REQUIREMENTS.md:** 26 marketplace requirements with phase mapping
+- **PROJECT.md:** Two-sided marketplace concept with core value proposition
 - **research/*.md:** Comprehensive domain research for implementation guidance
 
 ---
 *State tracking for project: Necto*
 *Project initiated: February 11, 2026*
+*Major pivot completed: February 13, 2026*
