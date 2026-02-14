@@ -21,7 +21,7 @@ Build a two-sided compute marketplace that connects buyers seeking the cheapest 
 **Success Criteria:**
 1. User can submit job request with GPU type, quantity, duration through clean form interface
 2. Agent scans mock provider data covering fixed-rate (Lambda Labs), spot (AWS), and token-based (Render) pricing
-3. Pricing normalization converts all models into effective USD/GPU-hr for direct comparison
+3. Pricing normalization converts all models into effective USD/Compute-hr for direct comparison
 4. Live price comparison table displays all providers with normalized rates and pricing model badges
 5. Agent returns ranked recommendation with clear cost breakdown and reasoning
 
@@ -47,7 +47,7 @@ Build a two-sided compute marketplace that connects buyers seeking the cheapest 
 5. Agent handles token price volatility by fetching real-time rates from CoinGecko API
 
 **Implementation Focus:**
-- Constraint filtering logic in agent
+- Constraint filtering logic in agent and UI
 - Real-time UI updates with server-sent events
 - Token price feed integration (CoinGecko API)
 - Enhanced ranking algorithm with multiple criteria

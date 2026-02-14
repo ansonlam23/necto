@@ -107,3 +107,6 @@ src/
 - Use `useCallback` for event handlers passed to child components
 - Use `React.memo` for expensive renders
 - Lazy load heavy components with `next/dynamic`
+
+### MCP
+- Every time you use documentation from a provider, call the context7 mcp. This is the source of truth for all provider information.
