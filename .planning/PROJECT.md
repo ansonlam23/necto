@@ -6,7 +6,21 @@ Necto is a two-sided compute marketplace powered by an AI routing agent that eli
 
 ## Core Value
 
-The cheapest GPU always finds its buyer, and idle hardware always finds a job - if the system can't normalize pricing across three fundamentally different models (fixed-rate, spot/auction, token-based), provide verifiable routing decisions, and handle both tracked and untracked modes, the entire marketplace value proposition fails.
+The cheapest Compute always finds its buyer, and idle hardware always finds a job - if the system can't normalize pricing across three fundamentally different models (fixed-rate, spot/auction, token-based), provide verifiable routing decisions, and handle both tracked and untracked modes, the entire marketplace value proposition fails.
+
+## Current Milestone: v2.0 Feature-Complete Marketplace
+
+**Goal:** Reorganize for 2-person parallel development with complete vertical features rather than horizontal scaffolding
+
+**Target features:**
+- Buyer Discovery (complete job submission → routing → on-chain recording)
+- Dynamic Routing (constraints + real-time activity + enhanced contracts)
+- Provider Platform (full onboarding + registry + capacity management)
+- Settlement & Verification (escrow + 0G integration + dashboards)
+
+**Team Structure:**
+- **Offchain:** Frontend + agent logic + API routes
+- **Onchain:** Smart contracts + blockchain integrations
 
 ## Requirements
 
@@ -50,11 +64,12 @@ The cheapest GPU always finds its buyer, and idle hardware always finds a job - 
 
 ### Out of Scope
 
-- Enterprise-grade compliance features — Focus on SMB and individual users
-- Real-time re-routing during job execution — Single routing decision per job
-- Custom blockchain development — Use existing ADI Chain and 0G Storage
-- Advanced ML model training — Use simple ranking algorithms initially
-- Mobile applications — Web-first approach
+- **Enterprise-grade compliance features** — Focus on SMB and individual users
+- **Real-time re-routing during job execution** — Single routing decision per job
+- **Custom blockchain development** — Use existing ADI Chain and 0G Storage
+- **Advanced ML model training** — Use simple ranking algorithms initially
+- **Mobile applications** — Web-first approach
+- **Full on-chain provider registry** — Metadata stored off-chain for cost efficiency; only commitments on-chain
 
 ## Context
 
@@ -91,6 +106,7 @@ The cheapest GPU always finds its buyer, and idle hardware always finds a job - 
 | Three pricing model support | Addresses complete fragmentation in current compute market | — Pending |
 | 0G + ADI integration | Provides verifiable routing with immutable audit trail | — Pending |
 | Agent-centric UX | Eliminates decision fatigue by automating provider comparison | — Pending |
+| **Hybrid on-chain/off-chain architecture** | Metadata (specs, availability) off-chain for cheap updates; commitments (address, rate) and settlement on-chain for trustlessness | — Pending |
 
 ---
-*Last updated: 2026-02-13 after marketplace pivot*
+*Last updated: 2026-02-14 after roadmap reorganization for parallel development*

@@ -84,7 +84,7 @@ Final delivery includes:
 - Provide clear next steps or integration points
 
 Completion message format:
-"UI components delivered successfully. Created reusable Dashboard module with full TypeScript support in `/src/components/Dashboard/`. Includes responsive design, WCAG compliance, and 90% test coverage. Ready for integration with backend APIs."
+"UI components delivered successfully. Created reusable Dashboard module with full TypeScript support in `/offchain/src/components/Dashboard/`. Includes responsive design, WCAG compliance, and 90% test coverage. Ready for integration with backend APIs."
 
 TypeScript configuration:
 

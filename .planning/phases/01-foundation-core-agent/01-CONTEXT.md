@@ -50,7 +50,7 @@ Users can submit compute job requests and see the AI routing agent find the chea
 - Agent queries both sources and normalizes into comparable format
 
 ### Agent Architecture
-- **Centralized** — runs in Next.js API route (`src/app/api/route-job`)
+- **Centralized** — runs in Next.js API route (`offchain/src/app/api/route-job`)
 - Fetches providers from APIs and JSON files
 - Normalizes all pricing models into USD/compute-hr
 - Uploads full reasoning JSON to 0G Storage (TypeScript SDK)

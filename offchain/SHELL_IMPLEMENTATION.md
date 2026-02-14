@@ -8,18 +8,18 @@ The global shell layout for the Necto institutional DePIN interface has been suc
 
 ### Core Components
 
-1. **AppShell** (`/src/components/layout/AppShell.tsx`)
+1. **AppShell** (`/offchain/src/components/layout/AppShell.tsx`)
    - Main layout wrapper using ShadCN sidebar provider
    - Handles responsive behavior and sidebar state management
    - Provides consistent layout structure across all pages
 
-2. **AppSidebar** (`/src/components/layout/AppSidebar.tsx`)
+2. **AppSidebar** (`/offchain/src/components/layout/AppSidebar.tsx`)
    - Collapsible navigation sidebar with icon mode
    - Navigation items: Dashboard, Workflow Builder, Audit Log, Settings
    - User profile dropdown with account management
    - Built using ShadCN sidebar components for accessibility
 
-3. **AppHeader** (`/src/components/layout/AppHeader.tsx`)
+3. **AppHeader** (`/offchain/src/components/layout/AppHeader.tsx`)
    - Top header with sidebar trigger and page context
    - Wallet connection status and controls
    - Agent status indicators with real-time visual feedback
@@ -28,7 +28,7 @@ The global shell layout for the Necto institutional DePIN interface has been suc
 ### Route Structure
 
 ```
-/src/app/
+/offchain/src/app/
 ├── page.tsx                 # Dashboard (home)
 ├── builder/page.tsx         # Workflow Builder
 ├── audit/page.tsx           # Audit Log
@@ -115,17 +115,17 @@ The shell is automatically applied to all pages through the root layout. Pages s
 ## File Structure
 
 ```
-/src/components/layout/
+/offchain/src/components/layout/
 ├── AppShell.tsx           # Main layout wrapper
 ├── AppSidebar.tsx         # Navigation sidebar
 ├── AppHeader.tsx          # Top header with controls
 └── index.ts              # Component exports
 
-/src/components/dashboard/
+/offchain/src/components/dashboard/
 ├── DashboardStats.tsx     # Metrics cards
 └── NetworkStatus.tsx      # Network status display
 
-/src/components/ui/
+/offchain/src/components/ui/
 └── badge.tsx             # Status badge component
 ```
 

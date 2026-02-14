@@ -1,154 +1,205 @@
-# Roadmap: Necto - Two-Sided Compute Marketplace
+# Roadmap: Necto - Feature-Complete Marketplace
 
 **Project:** Necto
-**Created:** February 13, 2026
-**Timeline:** 1-Week Hackathon Build
+**Created:** February 13, 2026 (Original)
+**Reorganized:** February 14, 2026
 **Coverage:** 26/26 requirements mapped ✓
 
 ## Overview
 
-Build a two-sided compute marketplace that connects buyers seeking the cheapest GPU compute with sellers monetizing idle hardware. The AI routing agent eliminates decision fatigue by normalizing three different pricing models (fixed-rate, spot/auction, token-based) into comparable metrics and automatically recommending the best deal. Each phase delivers a complete capability following the hackathon build plan structure.
+Build a two-sided compute marketplace with parallel development: offchain specialist owns frontend + agent logic, onchain specialist owns smart contracts. Each phase delivers a complete, functional feature that both developers integrate at the end.
+
+## Team Structure
+
+**Offchain Developer:**
+- Frontend UI components (React/Next.js)
+- Agent logic and price normalization
+- API routes and data flow
+- Real-time updates and UX
+
+**Onchain Developer:**
+- Smart contract development
+- Blockchain integrations (ADI Chain, 0G Storage)
+- Wallet connections and transaction handling
+- On-chain data structures and events
 
 ## Phases
 
-### Phase 1 - Foundation & Core Agent (Days 1-2)
-**Goal:** Users can submit jobs and see the agent find the cheapest provider
+### Phase 1: Buyer Discovery (Complete Feature)
+**Goal:** Buyers can submit jobs and see complete routing recommendations with working contracts
 
 **Dependencies:** None (foundation)
 
-**Requirements:** AGT-01, AGT-02, AGT-03, BUY-01, BUY-02, SYS-01, SYS-02, SYS-03, SYS-04
+**Requirements:** AGT-01, AGT-02, AGT-03, BUY-01, BUY-02, SYS-01, SYS-02, SYS-03, SYS-04, SET-01
+
+**Plans:** 2 plans
+- [ ] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet)
+- [ ] 01-02-PLAN.md — Offchain: Job Submission + Agent Routing + Price Comparison
+
+**Offchain Work:**
+- Job submission form with GPU requirements
+- Price comparison table with normalized rates
+- Agent logic: provider aggregation + normalization (off-chain provider data)
+- TypeScript types and API structure
+- UI for viewing routing results
+
+**Onchain Work:**
+- ComputeRouter.sol: store job ID, hashes, provider, amount (minimal on-chain data)
+- Basic contract structure and events
+- Deployment to ADI Testnet
+- ABI generation and integration points
+
+**Integration Point:**
+- Agent writes job record to ComputeRouter on submission
+- Frontend reads job status from contract
+- Provider data stays off-chain (cheap reads via API)
 
 **Success Criteria:**
-1. User can submit job request with GPU type, quantity, duration through clean form interface
-2. Agent scans mock provider data covering fixed-rate (Lambda Labs), spot (AWS), and token-based (Render) pricing
-3. Pricing normalization converts all models into effective USD/Compute-hr for direct comparison
-4. Live price comparison table displays all providers with normalized rates and pricing model badges
-5. Agent returns ranked recommendation with clear cost breakdown and reasoning
+1. Buyer submits job → sees routing recommendation immediately
+2. Job record exists on-chain with correct data
+3. Price comparison shows normalized rates for all 3 pricing models
+4. Both developers' code works together end-to-end
 
-**Implementation Focus:**
-- Next.js 14 monorepo scaffold with TypeScript throughout
-- ComputeRouter.sol smart contract deployed to ADI Testnet
-- Price normalization module with hardcoded provider data (6-8 providers)
-- Basic job submission form and price comparison UI
-- API route for agent that queries, normalizes, and ranks providers
+---
 
-### Phase 2 - Dynamic Agent & Real-Time UX (Days 3-4)
-**Goal:** Users see live agent activity and can apply constraints to find optimal providers
+### Phase 2: Dynamic Routing (Complete Feature)
+**Goal:** Buyers can apply constraints and see real-time agent activity with enhanced contracts
 
-**Dependencies:** Phase 1 (requires core agent functionality)
+**Dependencies:** Phase 1 (requires job submission flow)
 
 **Requirements:** AGT-04, AGT-05, BUY-03, SYS-05
 
+**Offchain Work:**
+- Constraint filters (max price, region, GPU type, pricing model)
+- Dynamic ranking engine with secondary criteria
+- Agent activity feed with progress updates
+- Server-sent events for real-time UX
+- CoinGecko API integration for token prices
+
+**Onchain Work:**
+- Enhanced JobRegistry with constraint storage
+- Events for constraint changes
+- Gas optimization for frequent reads
+- Integration testing with offchain filters
+
+**Integration Point:**
+- Constraints stored on-chain, agent reads from contract
+- Activity feed reflects on-chain job state
+
 **Success Criteria:**
-1. User can set hard constraints (max price, region, GPU type, pricing model exclusions) that filter results
-2. Dynamic ranking engine sorts by cost with secondary criteria (latency, uptime, provider rating)
-3. Agent activity feed shows real-time progress ("Scanning Akash... Fetching RNDR price... Ranking complete")
-4. Live updates use server-sent events or WebSocket for seamless UX
-5. Agent handles token price volatility by fetching real-time rates from CoinGecko API
+1. Buyer sets constraints → agent respects them in recommendations
+2. Activity feed shows real-time progress with on-chain status updates
+3. Token price volatility handled correctly in rankings
+4. Complete feature works without scaffolding gaps
 
-**Implementation Focus:**
-- Constraint filtering logic in agent and UI
-- Real-time UI updates with server-sent events
-- Token price feed integration (CoinGecko API)
-- Enhanced ranking algorithm with multiple criteria
-- Activity feed component with live progress indicators
+---
 
-### Phase 3 - Supply Side & Settlement (Days 5-6)
-**Goal:** Providers can list hardware and receive payments through on-chain escrow
+### Phase 3: Provider Platform (Complete Feature)
+**Goal:** Providers can fully onboard and list hardware with off-chain registry + on-chain commitments
 
 **Dependencies:** Phase 2 (requires working demand side)
 
-**Requirements:** PROV-01, PROV-02, PROV-03, SET-01, SET-02, SET-03
+**Requirements:** PROV-01, PROV-02, PROV-03, SET-03
+
+**Offchain Work:**
+- Provider dashboard UI with full metadata management
+- Hardware listing forms (specs, location, detailed availability windows)
+- Pricing configuration interface (3 models with current rates)
+- Capacity management controls (online/offline/reserved)
+- Provider profiles stored in database/API
+
+**Onchain Work:**
+- ProviderRegistry.sol: provider address, base rate, pricing model type, reputation score
+- Lightweight commitment (not full metadata)
+- Events for provider registration and updates
+- Agent reads provider list from chain, details from API
+
+**Integration Point:**
+- Provider registers on-chain (commitment) + off-chain (full profile)
+- Agent discovers providers from chain, reads details from API
+- Capacity changes update off-chain immediately (free), on-chain for commitments (gas-efficient)
 
 **Success Criteria:**
-1. Provider can register hardware through dashboard form (GPU specs, location, availability windows)
-2. Flexible pricing configuration supports fixed-rate, dynamic, and token-based models
-3. Capacity management lets providers mark hardware as available, reserved, or offline
-4. On-chain provider registry stores hardware listings and pricing that agent can discover
-5. USDC escrow system locks buyer funds and releases to provider on job completion
-6. End-to-end flow: seller lists → buyer finds via agent → on-chain settlement completes
+1. Provider can register hardware with full details
+2. Pricing configuration stored on-chain
+3. Capacity changes reflect immediately in agent discovery
+4. Complete provider experience from onboarding to live listing
 
-**Implementation Focus:**
-- Provider dashboard with hardware listing forms
-- On-chain provider registry contract integration
-- USDC escrow settlement with viem/wagmi
-- Provider capacity management interface
-- Integration between provider listings and agent discovery
+---
 
-### Phase 4 - Verification & Tracking Modes (Days 7)
-**Goal:** Users can verify agent decisions and choose between tracked/untracked modes
+### Phase 4: Settlement & Verification (Complete Feature)
+**Goal:** Full payment flow with escrow, earnings tracking, and verifiable routing
 
-**Dependencies:** Phase 3 (requires complete marketplace flow)
+**Dependencies:** Phase 3 (requires provider listings)
 
-**Requirements:** VER-01, VER-02, VER-03, VER-04, AGT-06, BUY-04, BUY-05, PROV-04, PROV-05, SET-04
+**Requirements:** VER-01, VER-02, VER-03, VER-04, AGT-06, BUY-04, BUY-05, PROV-04, PROV-05, SET-02, SET-04
 
-**Success Criteria:**
-1. Every routing decision uploads structured reasoning JSON to 0G Storage with immutable hash
-2. On-chain job records include 0G reasoning hash for cryptographic proof of agent logic
-3. "Verify Decision" button lets users inspect full reasoning trace from 0G Storage
-4. Tracked mode stores user identity in job records and enables team spending dashboard
-5. Untracked mode preserves full audit trail but omits user identity for privacy
-6. Provider earnings dashboard shows revenue, utilization, and job history
-7. Team dashboard (tracked mode) displays per-user spending and provider breakdown
+**Offchain Work:**
+- USDC payment integration (viem/wagmi)
+- Team spending dashboard (tracked mode)
+- Provider earnings dashboard
+- "Verify Decision" UI with 0G lookup
+- Audit log with on-chain links
+- Tracked/Untracked mode toggle
 
-**Implementation Focus:**
+**Onchain Work:**
+- Escrow contract: lock USDC, release on completion
 - 0G Storage integration for reasoning logs
-- Tracked/Untracked mode implementation
-- Verification UI for inspecting reasoning traces
-- Team spending dashboard with user analytics
-- Provider earnings and usage analytics
-- Demo preparation and bounty feature highlighting
+- Access control contract (Admin/Viewer/User roles)
+- Job completion verification
+- On-chain analytics events
+
+**Integration Point:**
+- Payment flows through escrow with on-chain settlement
+- 0G reasoning hash stored in job record
+- Verification UI reads from 0G via on-chain hash
+
+**Success Criteria:**
+1. Buyer pays → funds locked in escrow → provider receives on completion
+2. Every routing decision has verifiable 0G reasoning log
+3. Team spending dashboard shows accurate on-chain data
+4. Provider earnings calculated from settlement events
+5. Tracked/untracked modes work end-to-end
+
+---
 
 ## Progress Tracking
 
-| Phase | Status | Duration | Focus Area |
-|-------|--------|----------|------------|
-| Phase 1 - Foundation & Core Agent | Pending | Days 1-2 | MVP agent with price normalization |
-| Phase 2 - Dynamic Agent & Real-Time UX | Pending | Days 3-4 | Constraints, ranking, live updates |
-| Phase 3 - Supply Side & Settlement | Pending | Days 5-6 | Provider onboarding, escrow settlement |
-| Phase 4 - Verification & Tracking | Pending | Day 7 | 0G integration, tracking modes, demo polish |
+| Phase | Feature | Status | Offchain | Onchain |
+|-------|---------|--------|----------|---------|
+| 1 | Buyer Discovery | Pending | Form + Agent + UI | JobRegistry contract |
+| 2 | Dynamic Routing | Pending | Constraints + Activity | Enhanced registry |
+| 3 | Provider Platform | Pending | Dashboard + Listing | ProviderRegistry |
+| 4 | Settlement & Verification | Pending | Payments + Dashboards | Escrow + 0G + Access |
 
-**Total Timeline:** 7 days (hackathon schedule)
+**Total Timeline:** Flexible based on team velocity
 
-## Dependencies Flow
+## Development Workflow
 
-```
-Phase 1 (Core Agent)
-    ↓ (Agent functionality required)
-Phase 2 (Enhanced Agent + UX)
-    ↓ (Demand side complete)
-Phase 3 (Supply Side + Settlement)
-    ↓ (Complete marketplace flow)
-Phase 4 (Verification + Modes)
-```
+**Each Phase:**
+1. Both developers plan integration points
+2. Work in parallel on their components
+3. Regular sync on interface/contracts
+4. Integration testing at phase end
+5. Feature demo before moving to next
 
-## Key Milestones
-
-- **Phase 1 Complete:** Working agent that finds cheapest provider across pricing models
-- **Phase 2 Complete:** Live agent with constraints and real-time activity feed
-- **Phase 3 Complete:** Full two-sided marketplace with provider onboarding and escrow settlement
-- **Phase 4 Complete:** Verifiable decisions with 0G integration and tracked/untracked modes
+**Integration Checklist per Phase:**
+- [ ] Offchain can call onchain functions
+- [ ] Onchain events readable by frontend
+- [ ] End-to-end user flow works
+- [ ] No scaffolding or placeholder code
+- [ ] Feature is demo-ready
 
 ## Bounty Integration Points
 
 **0G Storage Bounty:**
-- Phase 4: Immutable reasoning logs stored as JSON files on 0G
-- Phase 4: User-facing verification linking on-chain jobs to 0G reasoning traces
-- Phase 4: Structured JSON preserving complete agent decision logic
+- Phase 4: Full 0G integration with reasoning logs
+- Phase 4: Verify Decision UI with 0G lookup
 
 **ADI Chain Bounty:**
-- Phase 1: ComputeRouter.sol contract deployment and basic structure
-- Phase 3: Provider registry and USDC escrow settlement implementation
-- Phase 4: Job registry with 0G hash references for verifiable routing
-
-## Demo Flow Preparation
-
-**Seller Flow:** Provider registers 8x A100 GPUs at $1.25/GPU-hr → Agent includes in discovery → Buyer routes job to them → Escrow settlement completes
-
-**Buyer Flow (Tracked):** User submits "2x A100 for 8 hours" → Agent scans all providers → Recommends Render at $1.19/GPU-hr → User verifies 0G reasoning trace → Team dashboard shows spend
-
-**Buyer Flow (Untracked):** Same agent logic and verification but job registered anonymously for privacy-focused users
+- Phase 1: JobRegistry deployment
+- Phase 3: ProviderRegistry deployment  
+- Phase 4: Escrow settlement with USDC
 
 ---
-*Created: February 13, 2026 for marketplace pivot*
-*Estimated completion: February 20, 2026*
+*Reorganized: February 14, 2026 for parallel team development*

@@ -10,7 +10,7 @@ This is a Next.js 16 + React 19 + TypeScript project with Tailwind CSS v4 and sh
 | Build | `npm run build` |
 | Production | `npm run start` |
 | Lint | `npm run lint` |
-| Lint file | `npx eslint src/path/to/file.tsx` |
+| Lint file | `npx eslint offchain/src/path/to/file.tsx` |
 
 **Note:** No test framework is configured. If adding tests, install and configure Vitest or Jest first.
 
@@ -85,7 +85,7 @@ function Button({ className, variant = "default", ...props }: ButtonProps) {
 
 ### File Structure
 ```
-src/
+offchain/src/
   app/              # Next.js App Router pages
   components/
     ui/             # shadcn/ui components
@@ -99,7 +99,7 @@ src/
 
 ### shadcn/ui Guidelines
 - Install new components with: `npx shadcn add <component>`
-- Components live in `src/components/ui/`
+- Components live in `offchain/src/components/ui/`
 - Use existing components as templates for new UI components
 - Follow the cva (class-variance-authority) pattern for variant components
 

@@ -15,7 +15,7 @@ npm run dev      # Start development server (http://localhost:3000)
 npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint on entire project
-npx eslint src/path/to/file.tsx  # Lint specific file
+npx eslint offchain/src/path/to/file.tsx  # Lint specific file
 ```
 
 **Note**: No test framework is configured. Install Vitest or Jest if adding tests.
@@ -25,7 +25,7 @@ npx eslint src/path/to/file.tsx  # Lint specific file
 ### Application Structure
 
 ```
-src/
+offchain/src/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx           # Dashboard (home)
 │   ├── builder/           # Workflow builder interface
@@ -58,18 +58,18 @@ src/
 
 **Web3 Integration**:
 - Root layout wraps app in `Web3Provider` (Wagmi + TanStack Query)
-- Wallet config in `src/lib/wagmi.ts` supports mainnet and Sepolia
+- Wallet config in `offchain/src/lib/wagmi.ts` supports mainnet and Sepolia
 - Use `useAccount()`, `useConnect()`, `useDisconnect()` from wagmi for wallet operations
 
 **Workflow Builder**:
 - Uses React Flow for visual workflow composition
 - Node types: `trigger`, `logic`, `provider`, `settlement`
 - State managed in `useWorkflowStore` (Zustand)
-- Custom nodes defined in `src/components/workflow/custom-nodes.tsx`
-- Drag-and-drop palette in `src/components/workflow/node-palette.tsx`
+- Custom nodes defined in `offchain/src/components/workflow/custom-nodes.tsx`
+- Drag-and-drop palette in `offchain/src/components/workflow/node-palette.tsx`
 
 **Provider Integration**:
-- Fetchers in `src/lib/providers/` (e.g., `akash-fetcher.ts`)
+- Fetchers in `offchain/src/lib/providers/` (e.g., `akash-fetcher.ts`)
 - Each fetcher returns normalized `SynapseProvider` format
 - Akash integration includes GPU filtering, price estimation, region parsing
 
@@ -129,7 +129,7 @@ import { useWorkflowStore } from "@/lib/workflow-store"
 ```bash
 npx shadcn add <component-name>
 ```
-Components install to `src/components/ui/`. Use cva (class-variance-authority) for variants.
+Components install to `offchain/src/components/ui/`. Use cva (class-variance-authority) for variants.
 
 ## Web3 Development
 
@@ -140,20 +140,20 @@ Components install to `src/components/ui/`. Use cva (class-variance-authority) f
 - `useDisconnect()` to disconnect
 
 ### Adding Chains
-Edit `src/lib/wagmi.ts` and import from `wagmi/chains`:
+Edit `offchain/src/lib/wagmi.ts` and import from `wagmi/chains`:
 ```typescript
 import { mainnet, sepolia, yourChain } from 'wagmi/chains'
 ```
 
 ### Smart Contract Interactions
 - Use `viem` for contract calls (wagmi uses viem under the hood)
-- Contract addresses and ABIs should be in `src/lib/contracts/`
+- Contract addresses and ABIs should be in `offchain/src/lib/contracts/`
 
 ## Provider Integration
 
 When adding new compute providers:
 
-1. Create fetcher in `src/lib/providers/<provider>-fetcher.ts`
+1. Create fetcher in `offchain/src/lib/providers/<provider>-fetcher.ts`
 2. Implement `fetch<Provider>Providers()` returning `SynapseProvider[]`
 3. Normalize pricing to USD/compute-hour
 4. Include region/location data when available
@@ -179,7 +179,7 @@ interface SynapseProvider {
 ## Workflow Builder
 
 ### Adding Node Types
-1. Define in `NodeCategory` type in `src/lib/workflow-store.ts`
+1. Define in `NodeCategory` type in `offchain/src/lib/workflow-store.ts`
 2. Add visual styling in `getNodeStyle()` in `custom-nodes.tsx`
 3. Register in `nodeTypes` export
 4. Add to palette in `node-palette.tsx` with appropriate icon
@@ -187,7 +187,7 @@ interface SynapseProvider {
 ### Node Configuration
 - Each node has `config` object for custom settings
 - Use `updateNodeConfig(nodeId, newConfig)` to update
-- Display config UI in `src/components/workflow/config-panel.tsx`
+- Display config UI in `offchain/src/components/workflow/config-panel.tsx`
 
 ## MCP Integration
 

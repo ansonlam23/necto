@@ -95,39 +95,39 @@ Explicitly excluded to maintain MVP focus.
 
 ## Traceability
 
-Which features map to implementation phases.
+Which features map to implementation phases (reorganized for parallel development).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AGT-01 | Phase 1 | Pending |
-| AGT-02 | Phase 1 | Pending |
-| AGT-03 | Phase 1 | Pending |
-| BUY-01 | Phase 1 | Pending |
-| BUY-02 | Phase 1 | Pending |
-| SYS-01 | Phase 1 | Pending |
-| SYS-02 | Phase 1 | Pending |
-| SYS-03 | Phase 1 | Pending |
-| AGT-04 | Phase 2 | Pending |
-| AGT-05 | Phase 2 | Pending |
-| BUY-03 | Phase 2 | Pending |
-| SYS-05 | Phase 2 | Pending |
-| PROV-01 | Phase 3 | Pending |
-| PROV-02 | Phase 3 | Pending |
-| PROV-03 | Phase 3 | Pending |
-| SET-01 | Phase 3 | Pending |
-| SET-02 | Phase 3 | Pending |
-| SET-03 | Phase 3 | Pending |
-| VER-01 | Phase 4 | Pending |
-| VER-02 | Phase 4 | Pending |
-| VER-03 | Phase 4 | Pending |
-| VER-04 | Phase 4 | Pending |
-| AGT-06 | Phase 4 | Pending |
-| BUY-04 | Phase 4 | Pending |
-| BUY-05 | Phase 4 | Pending |
-| PROV-04 | Phase 4 | Pending |
-| PROV-05 | Phase 4 | Pending |
-| SET-04 | Phase 4 | Pending |
-| SYS-04 | Phase 1 | Pending |
+| AGT-01 | Phase 1: Buyer Discovery | Pending |
+| AGT-02 | Phase 1: Buyer Discovery | Pending |
+| AGT-03 | Phase 1: Buyer Discovery | Pending |
+| BUY-01 | Phase 1: Buyer Discovery | Pending |
+| BUY-02 | Phase 1: Buyer Discovery | Pending |
+| SYS-01 | Phase 1: Buyer Discovery | Pending |
+| SYS-02 | Phase 1: Buyer Discovery | Pending |
+| SYS-03 | Phase 1: Buyer Discovery | Pending |
+| SYS-04 | Phase 1: Buyer Discovery | Pending |
+| SET-01 | Phase 1: Buyer Discovery | Pending |
+| AGT-04 | Phase 2: Dynamic Routing | Pending |
+| AGT-05 | Phase 2: Dynamic Routing | Pending |
+| BUY-03 | Phase 2: Dynamic Routing | Pending |
+| SYS-05 | Phase 2: Dynamic Routing | Pending |
+| PROV-01 | Phase 3: Provider Platform | Pending |
+| PROV-02 | Phase 3: Provider Platform | Pending |
+| PROV-03 | Phase 3: Provider Platform | Pending |
+| SET-03 | Phase 3: Provider Platform | Pending |
+| VER-01 | Phase 4: Settlement & Verification | Pending |
+| VER-02 | Phase 4: Settlement & Verification | Pending |
+| VER-03 | Phase 4: Settlement & Verification | Pending |
+| VER-04 | Phase 4: Settlement & Verification | Pending |
+| AGT-06 | Phase 4: Settlement & Verification | Pending |
+| BUY-04 | Phase 4: Settlement & Verification | Pending |
+| BUY-05 | Phase 4: Settlement & Verification | Pending |
+| PROV-04 | Phase 4: Settlement & Verification | Pending |
+| PROV-05 | Phase 4: Settlement & Verification | Pending |
+| SET-02 | Phase 4: Settlement & Verification | Pending |
+| SET-04 | Phase 4: Settlement & Verification | Pending |
 
 **Coverage:**
 - v1 requirements: 26 total
@@ -136,4 +136,4 @@ Which features map to implementation phases.
 
 ---
 *Requirements defined: February 13, 2026*
-*Last updated: February 13, 2026 after marketplace pivot*
+*Last updated: February 14, 2026 after roadmap reorganization for parallel development*
