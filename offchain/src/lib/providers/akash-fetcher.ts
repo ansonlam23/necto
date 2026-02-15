@@ -299,6 +299,3 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
     return [];
   }
 }
-
-// Export the type for use in other modules
-export type { SynapseProvider };

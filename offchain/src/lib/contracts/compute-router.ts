@@ -199,5 +199,5 @@ export const COMPUTE_ROUTER_ADDRESS = '' as `0x${string}`
  * Helper to check if contract address is configured
  */
 export function isContractConfigured(): boolean {
-  return COMPUTE_ROUTER_ADDRESS !== '' && COMPUTE_ROUTER_ADDRESS !== '0x0000000000000000000000000000000000000000'
+  return COMPUTE_ROUTER_ADDRESS !== '0x0000000000000000000000000000000000000000'
 }
