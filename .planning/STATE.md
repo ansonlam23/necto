@@ -20,12 +20,13 @@
 - **Team:** 2 developers (offchain + onchain)
 
 ### Current Plan
-**Phase 01-foundation-core-agent, Plan 01: COMPLETE**
-- ComputeRouter.sol implemented with full test coverage
+**Phase 01-foundation-core-agent, Plan 01: COMPLETE** ✓
+- ComputeRouter.sol implemented with full test coverage (26 tests passing)
 - Ignition deployment module ready
 - TypeScript integration complete
+- ADI Testnet chain configured in wagmi
 
-**Next Action:** Execute plan 01-02 or proceed to contract deployment on ADI Testnet
+**Next Action:** Execute plan 01-02 (Job Submission + Agent Routing) or proceed to contract deployment on ADI Testnet
 
 ### Roadmap Status
 - **Total Phases:** 4

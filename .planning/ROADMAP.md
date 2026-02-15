@@ -33,7 +33,7 @@ Build a two-sided compute marketplace with parallel development: offchain specia
 **Requirements:** AGT-01, AGT-02, AGT-03, BUY-01, BUY-02, SYS-01, SYS-02, SYS-03, SYS-04, SET-01
 
 **Plans:** 2 plans
-- [ ] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet)
+- [x] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet) — COMPLETE
 - [ ] 01-02-PLAN.md — Offchain: Job Submission + Agent Routing + Price Comparison
 
 **Offchain Work:**
