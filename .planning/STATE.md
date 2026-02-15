@@ -1,7 +1,7 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026
-**Last Updated:** February 14, 2026
+**Last Updated:** February 15, 2026
 
 ## Project Reference
 
@@ -20,9 +20,12 @@
 - **Team:** 2 developers (offchain + onchain)
 
 ### Current Plan
-Roadmap reorganized for parallel development. Ready to execute Phase 1.
+**Phase 01-foundation-core-agent, Plan 01: COMPLETE**
+- ComputeRouter.sol implemented with full test coverage
+- Ignition deployment module ready
+- TypeScript integration complete
 
-**Next Action:** Execute `/gsd-plan-phase 1` to begin Buyer Discovery feature.
+**Next Action:** Execute plan 01-02 or proceed to contract deployment on ADI Testnet
 
 ### Roadmap Status
 - **Total Phases:** 4
@@ -39,10 +42,10 @@ Roadmap reorganized for parallel development. Ready to execute Phase 1.
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 0
+- **Plans Executed:** 1
 - **Phases Completed:** 0
-- **Avg Phase Duration:** TBD
-- **On-Track Percentage:** N/A (project start)
+- **Avg Plan Duration:** 6 min
+- **On-Track Percentage:** 100%
 
 ### Quality Indicators
 - **Requirements Coverage:** 100% ✓
@@ -64,6 +67,10 @@ Roadmap reorganized for parallel development. Ready to execute Phase 1.
 3. **Integration Points:** Defined at each phase for parallel development
 4. **Feature-First:** No scaffolding phases — every phase delivers complete functionality
 5. **Hybrid Architecture:** Off-chain for metadata (cheap), on-chain for commitments + settlement (trustless)
+6. **Immutable Contracts:** No proxy pattern for hackathon timeline; redeployment is cheap on testnet
+7. **Single Agent:** Multi-agent support deferred to Phase 3; updateAgent allows rotation
+8. **Minimal On-Chain Data:** Job ID + hashes only; full metadata stored on 0G Storage
+9. **Privacy by Design:** Tracked/untracked mode built in from day 1
 
 ### Development Approach
 - **Offchain Developer:** Frontend (Next.js/React), agent logic, API routes, real-time UX
@@ -72,10 +79,11 @@ Roadmap reorganized for parallel development. Ready to execute Phase 1.
 - **Goal:** Each phase is demo-ready without gaps
 
 ### Active Todos
+- [x] Plan 01-01: Implement ComputeRouter.sol with tests and deployment module
+- [ ] Plan 01-02: Deploy ComputeRouter to ADI Testnet and configure environment
 - [ ] Execute Phase 1 planning and implementation (Buyer Discovery)
-- [ ] Define integration interface between agent and JobRegistry
+- [ ] Define integration interface between agent and ComputeRouter
 - [ ] Implement price normalization for 3 pricing models
-- [ ] Deploy JobRegistry.sol to ADI Testnet
 - [ ] Create mock provider data covering 6-8 providers
 
 ### Resolved Blockers
@@ -87,21 +95,19 @@ None identified — ready to proceed with Phase 1.
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Reorganize roadmap for 2-person parallel development
-- **Outcome:** Roadmap updated with 4 complete vertical features (Buyer Discovery, Dynamic Routing, Provider Platform, Settlement & Verification)
-- **Key Insight:** Feature-complete phases allow both developers to work in parallel with clear integration points
-- **Files Updated:** ROADMAP.md, PROJECT.md, STATE.md
+- **Action:** Execute plan 01-01 - Implement ComputeRouter smart contract
+- **Outcome:** ComputeRouter.sol with 26 passing tests, Ignition deployment module, TypeScript integration complete
+- **Key Insight:** Address case sensitivity in tests requires normalization using viem's getAddress helper
+- **Files Updated:** ComputeRouter.sol, ComputeRouter.ts (tests), ComputeRouter.ts (Ignition), interact-router.ts, compute-router.ts (ABI), adi-chain.ts, wagmi.ts
 
 ### Context for Next Session
-The roadmap now provides complete vertical features:
-- **Phase 1 (Buyer Discovery):** Job submission form → agent routing → JobRegistry contract
-- **Phase 2 (Dynamic Routing):** Constraints → real-time activity → enhanced contracts
-- **Phase 3 (Provider Platform):** Provider dashboard → registry → capacity management
-- **Phase 4 (Settlement & Verification):** USDC escrow → 0G reasoning logs → dashboards
+ComputeRouter contract foundation complete:
+- **Contract:** submitJob, recordRoutingDecision, getJob, updateAgent with full access control
+- **Tests:** 26 tests covering deployment, job submission, routing, access control, integration
+- **Deployment:** Ignition module ready with parameterized agent address
+- **Integration:** TypeScript ABI/types exported, ADI Testnet (chain 99999) configured in wagmi
 
-Each phase has clear offchain/onchain split with integration points.
-
-**Ready for:** Phase 1 planning and execution via `/gsd-plan-phase 1`
+**Ready for:** Deploy to ADI Testnet and proceed with Phase 1 Buyer Discovery implementation
 
 ### Continuity Artifacts
 - **ROADMAP.md:** Feature-complete phases with team split and integration points
