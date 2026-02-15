@@ -1,12 +1,16 @@
-interface SynapseProvider {
+export interface SynapseProvider {
   id: string;
   name: string;
-  source: 'Akash';
+  source: 'Akash' | 'Lambda' | 'RunPod';
   hardware: {
     gpuModel: string;
     gpuCount: number;
-    cpuUnits: number;
-    memory: number;
+    cpuUnits: number;    // milli-units for Akash, actual vCPUs for Lambda
+    memory: number;       // bytes
+    cpuCount?: number;    // vCPUs (optional for backward compat)
+    memoryGB?: number;    // RAM in GB (optional for backward compat)
+    storageGB?: number;   // Disk in GB (optional for backward compat)
+    cpuModel?: string;    // e.g., "AMD EPYC" (optional)
   };
   priceEstimate: number;
   region?: string;

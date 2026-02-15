@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
 import { fetchAkashProviders, type SynapseProvider } from '@/lib/providers/akash-fetcher'
+import { fetchLambdaProviders } from '@/lib/providers/lambda-fetcher'
+import { fetchRunPodProviders } from '@/lib/providers/runpod-fetcher'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -150,23 +152,46 @@ function ProviderGridSkeleton() {
 }
 
 async function ProviderGrid() {
-  const providers = await fetchAkashProviders()
+  // Fetch from all sources in parallel
+  const [akashProviders, lambdaProviders, runpodProviders] = await Promise.all([
+    fetchAkashProviders(),
+    fetchLambdaProviders(),
+    fetchRunPodProviders()
+  ])
 
-  if (providers.length === 0) {
+  // Combine all providers
+  const allProviders = [...akashProviders, ...lambdaProviders, ...runpodProviders]
+
+  if (allProviders.length === 0) {
     return (
       <div className="text-center py-12">
         <Server className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-medium mb-2">No GPU providers found</h3>
         <p className="text-muted-foreground">
-          Unable to fetch active GPU providers from Akash Network at this time.
+          Unable to fetch GPU providers at this time.
         </p>
       </div>
     )
   }
 
+  // Sort providers by source (Lambda first, then RunPod, then Akash) then by price
+  const sortedProviders = allProviders.sort((a, b) => {
+    // Define source priority: Lambda > RunPod > Akash
+    const sourcePriority = { 'Lambda': 0, 'RunPod': 1, 'Akash': 2 }
+    const aPriority = sourcePriority[a.source] ?? 3
+    const bPriority = sourcePriority[b.source] ?? 3
+
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority
+    }
+
+    // If same source, sort by price
+    return a.priceEstimate - b.priceEstimate
+  })
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {providers.map((provider) => (
+      {sortedProviders.map((provider) => (
         <ProviderCard key={provider.id} provider={provider} />
       ))}
     </div>
@@ -180,7 +205,7 @@ export default function ProvidersPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">GPU Providers</h1>
         <p className="text-muted-foreground">
-          Discover available GPU providers across decentralized networks
+          Discover available GPU providers from Lambda Labs, RunPod, and Akash Network
         </p>
       </div>
 
@@ -242,7 +267,7 @@ export default function ProvidersPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Available Providers</h2>
           <Badge variant="outline" className="text-xs">
-            Real-time data from Akash Console API
+            Real-time data from Lambda, RunPod & Akash
           </Badge>
         </div>
 
