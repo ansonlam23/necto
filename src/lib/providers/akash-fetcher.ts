@@ -10,6 +10,7 @@ interface SynapseProvider {
   };
   priceEstimate: number;
   region?: string;
+  uptimePercentage: number; // e.g., 99.5
 }
 
 interface AkashAttribute {
@@ -70,6 +71,9 @@ interface AkashProvider {
   ipCountry?: string;
   ipRegion?: string;
   city?: string;
+  uptime1d?: number;  // 1-day uptime (0-1)
+  uptime7d?: number;  // 7-day uptime (0-1)
+  uptime30d?: number; // 30-day uptime (0-1)
 }
 
 /**
@@ -243,6 +247,22 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
         region = parseRegion(provider.attributes);
       }
 
+      // Calculate uptime percentage (prioritize 7-day, then 30-day, then 1-day)
+      let uptimePercentage = 0;
+      if (provider.uptime7d !== undefined && provider.uptime7d !== null) {
+        // Use 7-day uptime as the primary metric
+        uptimePercentage = Math.round(provider.uptime7d * 100 * 10) / 10; // Convert to percentage with 1 decimal
+      } else if (provider.uptime30d !== undefined && provider.uptime30d !== null) {
+        // Fallback to 30-day uptime
+        uptimePercentage = Math.round(provider.uptime30d * 100 * 10) / 10;
+      } else if (provider.uptime1d !== undefined && provider.uptime1d !== null) {
+        // Last resort: use 1-day uptime
+        uptimePercentage = Math.round(provider.uptime1d * 100 * 10) / 10;
+      } else if (provider.isOnline) {
+        // If no uptime data but provider is online, assume 100%
+        uptimePercentage = 100;
+      }
+
       // Generate price estimate based on GPU model
       let priceEstimate = 0.5; // Default
       if (gpuModel.includes('A100')) priceEstimate = 2.5;
@@ -262,7 +282,8 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
           memory
         },
         priceEstimate,
-        region
+        region,
+        uptimePercentage
       });
     }
 
