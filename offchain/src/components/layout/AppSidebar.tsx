@@ -12,7 +12,8 @@ import {
   ChevronUp,
   User2,
   FlaskConical,
-  Server
+  Server,
+  Shield
 } from "lucide-react"
 
 import {
@@ -56,6 +57,11 @@ const navigationItems = [
     title: "Test Builder",
     url: "/test-builder",
     icon: FlaskConical,
+  },
+  {
+    title: "Verify Agent",
+    url: "/verify-agent",
+    icon: Shield,
   },
   {
     title: "Audit Log",
