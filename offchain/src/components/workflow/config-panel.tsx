@@ -158,7 +158,7 @@ export function ConfigPanel() {
               <Label htmlFor="node-name">Node Name</Label>
               <Input
                 id="node-name"
-                defaultValue={label}
+                defaultValue={label as string}
                 onChange={(e) => handleConfigChange('name', e.target.value)}
               />
             </div>
@@ -193,7 +193,7 @@ export function ConfigPanel() {
         <Card className="border-sidebar-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">
-              {selectedNode.data.label}
+              {selectedNode.data.label as React.ReactNode}
             </CardTitle>
             <p className="text-xs text-muted-foreground capitalize">
               {selectedNode.category} Node

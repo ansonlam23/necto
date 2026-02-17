@@ -12,7 +12,8 @@ import {
   ChevronUp,
   User2,
   FlaskConical,
-  Server
+  Server,
+  Bot
 } from "lucide-react"
 
 import {
@@ -41,6 +42,11 @@ const navigationItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Agent",
+    url: "/agent",
+    icon: Bot,
   },
   {
     title: "Providers",
