@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     const context = getContext(sessionId);
 
     // Initialize Gemini model
-    const model = google('gemini-2.5-flash');
+    const model = google('gemini-2.5-flash-lite');
 
     // Convert UI messages to model messages
     const modelMessages = await convertToModelMessages(messages);
