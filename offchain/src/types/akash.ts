@@ -1,0 +1,96 @@
+/**
+ * Akash Network Type Definitions
+ * Types for Console API integration and deployments
+ */
+
+export interface AkashDeployment {
+  id: string;
+  owner: string;
+  dseq: string;
+  status: DeploymentStatus;
+  createdAt: string;
+  expiresAt?: string;
+  sdl: SdlSpec;
+  leases: Lease[];
+}
+
+export type DeploymentStatus = 
+  | 'pending'
+  | 'active'
+  | 'closed'
+  | 'error';
+
+export interface SdlSpec {
+  version: string;
+  services: Record<string, Service>;
+  profiles: {
+    compute: Record<string, ComputeProfile>;
+    placement: Record<string, PlacementProfile>;
+  };
+  deployment: Record<string, DeploymentConfig>;
+}
+
+export interface Service {
+  image: string;
+  expose: Expose[];
+  env?: string[];
+  command?: string[];
+  args?: string[];
+}
+
+export interface Expose {
+  port: number;
+  as: number;
+  to?: { global: boolean }[];
+  accept?: string[];
+}
+
+export interface ComputeProfile {
+  resources: Resources;
+}
+
+export interface Resources {
+  cpu: { units: string };
+  memory: { size: string };
+  storage: { size: string }[];
+  gpu?: { units: string; attributes?: { key: string; value: string }[] };
+}
+
+export interface PlacementProfile {
+  attributes?: { key: string; value: string }[];
+  signedBy?: { allOf?: string[]; anyOf?: string[] };
+  pricing: Record<string, { denom: string; amount: string }>;
+}
+
+export interface DeploymentConfig {
+  profile: string;
+  count: number;
+}
+
+export interface ProviderBid {
+  id: string;
+  provider: string;
+  price: { denom: string; amount: string };
+  resources: Resources;
+  createdAt: string;
+}
+
+export interface Lease {
+  id: string;
+  provider: string;
+  status: LeaseStatus;
+  price: { denom: string; amount: string };
+  createdAt: string;
+}
+
+export type LeaseStatus = 'active' | 'closed';
+
+export interface CreateDeploymentRequest {
+  sdl: SdlSpec;
+  deposit?: { denom: string; amount: string };
+}
+
+export interface ConsoleApiConfig {
+  apiKey: string;
+  baseUrl: string;
+}
