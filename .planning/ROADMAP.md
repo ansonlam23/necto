@@ -1,165 +1,129 @@
-# Roadmap: Necto - Feature-Complete Marketplace
+# Roadmap: Necto - Two-Sided Compute Marketplace
 
-**Project:** Necto
-**Created:** February 13, 2026 (Original)
-**Reorganized:** February 14, 2026
+**Project:** Necto  
+**Created:** February 13, 2026 (Original)  
+**Updated:** February 17, 2026  
 **Coverage:** 26/26 requirements mapped ✓
 
 ## Overview
 
-Build a two-sided compute marketplace with parallel development: offchain specialist owns frontend + agent logic, onchain specialist owns smart contracts. Each phase delivers a complete, functional feature that both developers integrate at the end.
+Build a two-sided compute marketplace with the first integration being Akash Network. The marketplace will eventually support multiple providers (io.net, Lambda Labs, AWS Spot, Render, etc.) but v2.0 focuses specifically on routing compute jobs to Akash providers.
 
-## Team Structure
+## Phase Structure
 
-**Offchain Developer:**
-- Frontend UI components (React/Next.js)
-- Agent logic and price normalization
-- API routes and data flow
-- Real-time updates and UX
-
-**Onchain Developer:**
-- Smart contract development
-- Blockchain integrations (ADI Chain, 0G Storage)
-- Wallet connections and transaction handling
-- On-chain data structures and events
-
-## Phases
-
-### Phase 1: Buyer Discovery (Complete Feature)
-**Goal:** Buyers can submit jobs and see complete routing recommendations with working contracts
+### Phase 1: Buyer Discovery (Complete Feature) - IN PROGRESS
+**Goal:** Buyers can submit jobs and see complete routing recommendations with Akash providers, agent thinking UI, and optional auto-sign
 
 **Dependencies:** None (foundation)
 
-**Requirements:** AGT-01, AGT-02, AGT-03, BUY-01, BUY-02, SYS-01, SYS-02, SYS-03, SYS-04, SET-01
+**Requirements:** AGT-01, AGT-02, AGT-03, AGT-07, AGT-08, BUY-01, BUY-02, BUY-03, SYS-01, SYS-02, SYS-03, SYS-04, SYS-06, SYS-07, SET-01
 
-**Plans:** 2 plans
-- [x] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet) — COMPLETE
-- [ ] 01-02-PLAN.md — Offchain: Job Submission + Agent Routing + Price Comparison
+**Plans:**
+- [x] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet) — COMPLETE (Archived)
+- [ ] 01-02-PLAN.md — Offchain: Job Submission + Agent Routing + Thinking UI
+- [ ] 02-01-PLAN.md — Akash Integration: Deployment routing to Akash providers
 
 **Offchain Work:**
-- Job submission form with GPU requirements
-- Price comparison table with normalized rates
-- Agent logic: provider aggregation + normalization (off-chain provider data)
-- TypeScript types and API structure
-- UI for viewing routing results
+- Job submission form with GPU requirements, Akash deployment toggle
+- Price comparison table with normalized rates from Akash providers
+- Google ADK agent implementation for routing decisions
+- Agent thinking process UI: animated steps showing routing logic
+- Auto-sign flow for seamless demo experience
+- Akash deployment integration (SDL generation, provider selection)
 
 **Onchain Work:**
-- ComputeRouter.sol: store job ID, hashes, provider, amount (minimal on-chain data)
-- Basic contract structure and events
-- Deployment to ADI Testnet
-- ABI generation and integration points
+- ComputeRouter.sol: store job ID, hashes, provider, amount
+- Integration with offchain agent routing
 
 **Integration Point:**
-- Agent writes job record to ComputeRouter on submission
-- Frontend reads job status from contract
-- Provider data stays off-chain (cheap reads via API)
+- Agent routes suitable jobs to Akash providers
+- Job records stored on-chain with Akash deployment details
+- Provider data from Akash API
 
 **Success Criteria:**
-1. Buyer submits job → sees routing recommendation immediately
+1. Buyer submits job → sees agent thinking → routing recommendation → deploy to Akash
 2. Job record exists on-chain with correct data
-3. Price comparison shows normalized rates for all 3 pricing models
-4. Both developers' code works together end-to-end
+3. Price comparison shows normalized Akash rates
+4. Auto-sign toggle works for seamless flow
+5. Full end-to-end deployment to Akash works
 
 ---
 
-### Phase 2: Dynamic Routing (Complete Feature)
-**Goal:** Buyers can apply constraints and see real-time agent activity with enhanced contracts
-
-**Dependencies:** Phase 1 (requires job submission flow)
-
-**Requirements:** AGT-04, AGT-05, BUY-03, SYS-05
-
-**Offchain Work:**
-- Constraint filters (max price, region, GPU type, pricing model)
-- Dynamic ranking engine with secondary criteria
-- Agent activity feed with progress updates
-- Server-sent events for real-time UX
-- CoinGecko API integration for token prices
-
-**Onchain Work:**
-- Enhanced JobRegistry with constraint storage
-- Events for constraint changes
-- Gas optimization for frequent reads
-- Integration testing with offchain filters
-
-**Integration Point:**
-- Constraints stored on-chain, agent reads from contract
-- Activity feed reflects on-chain job state
-
-**Success Criteria:**
-1. Buyer sets constraints → agent respects them in recommendations
-2. Activity feed shows real-time progress with on-chain status updates
-3. Token price volatility handled correctly in rankings
-4. Complete feature works without scaffolding gaps
-
----
-
-### Phase 3: Provider Platform (Complete Feature)
+### Phase 2: Provider Platform (Complete Feature)
 **Goal:** Providers can fully onboard and list hardware with off-chain registry + on-chain commitments
 
-**Dependencies:** Phase 2 (requires working demand side)
+**Dependencies:** Phase 1
 
 **Requirements:** PROV-01, PROV-02, PROV-03, SET-03
 
 **Offchain Work:**
 - Provider dashboard UI with full metadata management
-- Hardware listing forms (specs, location, detailed availability windows)
-- Pricing configuration interface (3 models with current rates)
-- Capacity management controls (online/offline/reserved)
-- Provider profiles stored in database/API
+- Hardware listing forms (specs, location, availability)
+- Pricing configuration interface
+- Capacity management controls
 
 **Onchain Work:**
-- ProviderRegistry.sol: provider address, base rate, pricing model type, reputation score
-- Lightweight commitment (not full metadata)
+- ProviderRegistry.sol: provider address, base rate, pricing model
 - Events for provider registration and updates
-- Agent reads provider list from chain, details from API
 
 **Integration Point:**
-- Provider registers on-chain (commitment) + off-chain (full profile)
+- Provider registers on-chain + off-chain profile
 - Agent discovers providers from chain, reads details from API
-- Capacity changes update off-chain immediately (free), on-chain for commitments (gas-efficient)
 
 **Success Criteria:**
 1. Provider can register hardware with full details
 2. Pricing configuration stored on-chain
 3. Capacity changes reflect immediately in agent discovery
-4. Complete provider experience from onboarding to live listing
+
+---
+
+### Phase 3: Dynamic Routing (Complete Feature)
+**Goal:** Enhanced routing with constraints and real-time activity across all providers
+
+**Dependencies:** Phase 2
+
+**Requirements:** AGT-04, AGT-05, SYS-05
+
+**Offchain Work:**
+- Constraint filters (max price, region, GPU type)
+- Dynamic ranking engine
+- Real-time activity feed
+- Multi-provider support (io.net, Lambda, AWS, etc.)
+
+**Onchain Work:**
+- Enhanced JobRegistry with constraint storage
+- Gas optimization for frequent reads
+
+**Success Criteria:**
+1. Buyer sets constraints → agent respects them
+2. Activity feed shows real-time progress
+3. Multi-provider routing works
 
 ---
 
 ### Phase 4: Settlement & Verification (Complete Feature)
 **Goal:** Full payment flow with escrow, earnings tracking, and verifiable routing
 
-**Dependencies:** Phase 3 (requires provider listings)
+**Dependencies:** Phase 3
 
 **Requirements:** VER-01, VER-02, VER-03, VER-04, AGT-06, BUY-04, BUY-05, PROV-04, PROV-05, SET-02, SET-04
 
 **Offchain Work:**
-- USDC payment integration (viem/wagmi)
-- Team spending dashboard (tracked mode)
+- USDC payment integration
+- Team spending dashboard
 - Provider earnings dashboard
 - "Verify Decision" UI with 0G lookup
-- Audit log with on-chain links
-- Tracked/Untracked mode toggle
 
 **Onchain Work:**
 - Escrow contract: lock USDC, release on completion
 - 0G Storage integration for reasoning logs
-- Access control contract (Admin/Viewer/User roles)
-- Job completion verification
-- On-chain analytics events
-
-**Integration Point:**
-- Payment flows through escrow with on-chain settlement
-- 0G reasoning hash stored in job record
-- Verification UI reads from 0G via on-chain hash
+- Access control contract
 
 **Success Criteria:**
-1. Buyer pays → funds locked in escrow → provider receives on completion
+1. Buyer pays → funds locked → provider receives on completion
 2. Every routing decision has verifiable 0G reasoning log
-3. Team spending dashboard shows accurate on-chain data
-4. Provider earnings calculated from settlement events
-5. Tracked/untracked modes work end-to-end
+3. Spending dashboards show accurate data
+4. Tracked/untracked modes work end-to-end
 
 ---
 
@@ -167,19 +131,19 @@ Build a two-sided compute marketplace with parallel development: offchain specia
 
 | Phase | Feature | Status | Offchain | Onchain |
 |-------|---------|--------|----------|---------|
-| 1 | Buyer Discovery | Pending | Form + Agent + UI | JobRegistry contract |
-| 2 | Dynamic Routing | Pending | Constraints + Activity | Enhanced registry |
-| 3 | Provider Platform | Pending | Dashboard + Listing | ProviderRegistry |
-| 4 | Settlement & Verification | Pending | Payments + Dashboards | Escrow + 0G + Access |
+| 1 | Buyer Discovery + Akash Routing | 🚧 In Progress | Form + Agent + Akash Deploy | ComputeRouter ✓ |
+| 2 | Provider Platform | 📋 Planned | Dashboard + Listing | ProviderRegistry |
+| 3 | Dynamic Routing | 📋 Planned | Constraints + Activity | Enhanced registry |
+| 4 | Settlement & Verification | 📋 Planned | Payments + Dashboards | Escrow + 0G |
 
 **Total Timeline:** Flexible based on team velocity
 
 ## Development Workflow
 
 **Each Phase:**
-1. Both developers plan integration points
-2. Work in parallel on their components
-3. Regular sync on interface/contracts
+1. Plan the integration points
+2. Work on components in parallel
+3. Regular sync on interfaces
 4. Integration testing at phase end
 5. Feature demo before moving to next
 
@@ -190,16 +154,19 @@ Build a two-sided compute marketplace with parallel development: offchain specia
 - [ ] No scaffolding or placeholder code
 - [ ] Feature is demo-ready
 
-## Bounty Integration Points
+## Akash Integration Points
 
-**0G Storage Bounty:**
-- Phase 4: Full 0G integration with reasoning logs
-- Phase 4: Verify Decision UI with 0G lookup
+**Phase 1 Specific:**
+- Akash Console API for provider discovery
+- SDL generation for deployments
+- Keplr wallet for AKT transactions
+- Real-time deployment monitoring
+- Job routing to Akash providers
 
-**ADI Chain Bounty:**
-- Phase 1: JobRegistry deployment
-- Phase 3: ProviderRegistry deployment  
-- Phase 4: Escrow settlement with USDC
+**Future Phases:**
+- Other providers (io.net, Lambda Labs, etc.)
+- Cross-provider price comparison
+- Unified settlement layer
 
 ---
-*Reorganized: February 14, 2026 for parallel team development*
+*Updated: February 17, 2026 - Akash integration as Phase 1 extension*

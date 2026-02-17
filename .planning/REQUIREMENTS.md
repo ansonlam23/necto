@@ -9,12 +9,14 @@ Requirements for marketplace MVP. Organized by feature area.
 
 ### Agent Core (Demand Side)
 
-- [ ] **AGT-01**: Multi-provider price aggregation from Akash, io.net, Lambda Labs, AWS Spot, Render, and Necto-listed providers
-- [ ] **AGT-02**: Pricing model normalization converting fixed-rate, spot/auction, and token-based into effective USD/GPU-hr
-- [ ] **AGT-03**: Token price feed integration via CoinGecko API for real-time crypto token conversion
-- [ ] **AGT-04**: Constraint-aware filtering supporting max price, region, GPU type, and pricing model exclusions
-- [ ] **AGT-05**: Dynamic ranking engine sorting by effective cost with secondary criteria (latency, uptime, rating)
+- [ ] **AGT-01**: Price aggregation from Akash Network providers only (other providers require paid API keys - deferred to post-hackathon)
+- [ ] **AGT-02**: Pricing model normalization converting Akash's token-based (AKT) pricing into effective USD/GPU-hr
+- [ ] **AGT-03**: AKT/USD price feed integration via CoinGecko API for real-time token conversion
+- [ ] **AGT-04**: Constraint-aware filtering supporting max price, region, GPU type
+- [ ] **AGT-05**: Dynamic ranking engine sorting by effective cost with secondary criteria (availability, uptime)
 - [ ] **AGT-06**: Tracked/Untracked mode toggle affecting user identity storage in job records
+- [ ] **AGT-07**: Agent thinking process visibility via UI toast/record showing steps: "Fetching providers", "Normalizing data", "Decision making", "Transaction ready"
+- [ ] **AGT-08**: Auto-sign toggle allowing users to enable automatic transaction signing for hackathon demo flair
 
 ### Provider Platform (Supply Side)
 
@@ -40,9 +42,9 @@ Requirements for marketplace MVP. Organized by feature area.
 
 ### Buyer Dashboard
 
-- [ ] **BUY-01**: Job submission form with compute requirements and Tracked/Untracked mode toggle
-- [ ] **BUY-02**: Live price comparison table showing all providers with normalized USD/GPU-hr rates
-- [ ] **BUY-03**: Agent activity feed with real-time scanning and ranking progress updates
+- [ ] **BUY-01**: Job submission form with compute requirements, Tracked/Untracked mode toggle, and auto-sign checkbox
+- [ ] **BUY-02**: Live price comparison table showing Akash providers with normalized USD/GPU-hr rates
+- [ ] **BUY-03**: Agent thinking process display with animated steps: "Fetching providers", "Normalizing pricing", "Ranking options", "Decision ready"
 - [ ] **BUY-04**: Team spending dashboard (Tracked mode) with per-user breakdown and provider analytics
 - [ ] **BUY-05**: Audit log with links to ADI Chain records and 0G Storage reasoning files
 
@@ -50,9 +52,11 @@ Requirements for marketplace MVP. Organized by feature area.
 
 - [ ] **SYS-01**: TypeScript monorepo with shared types across frontend, agent, and contracts
 - [ ] **SYS-02**: Next.js 14 app with API routes for agent endpoints
-- [ ] **SYS-03**: Pricing normalization module supporting all three pricing models
-- [ ] **SYS-04**: Mock provider data covering 6-8 providers including 2-3 Necto-listed organizations
-- [ ] **SYS-05**: Real-time UI updates using server-sent events or WebSocket for agent progress
+- [ ] **SYS-03**: Pricing normalization module for Akash AKT token pricing
+- [ ] **SYS-04**: Mock provider data covering Akash providers (4-6 providers)
+- [ ] **SYS-05**: Real-time UI updates using server-sent events or WebSocket for agent thinking process
+- [ ] **SYS-06**: Agent implementation using Google ADK (Agent Development Kit) with Google AI Studio API keys
+- [ ] **SYS-07**: Agent thinking process UI component (toast/record) for hackathon demo flair
 
 ## v2 Requirements
 
@@ -102,16 +106,20 @@ Which features map to implementation phases (reorganized for parallel developmen
 | AGT-01 | Phase 1: Buyer Discovery | Pending |
 | AGT-02 | Phase 1: Buyer Discovery | Pending |
 | AGT-03 | Phase 1: Buyer Discovery | Pending |
+| AGT-07 | Phase 1: Buyer Discovery | Pending |
+| AGT-08 | Phase 1: Buyer Discovery | Pending |
 | BUY-01 | Phase 1: Buyer Discovery | Pending |
 | BUY-02 | Phase 1: Buyer Discovery | Pending |
+| BUY-03 | Phase 1: Buyer Discovery | Pending |
 | SYS-01 | Phase 1: Buyer Discovery | Pending |
 | SYS-02 | Phase 1: Buyer Discovery | Pending |
 | SYS-03 | Phase 1: Buyer Discovery | Pending |
 | SYS-04 | Phase 1: Buyer Discovery | Pending |
+| SYS-06 | Phase 1: Buyer Discovery | Pending |
+| SYS-07 | Phase 1: Buyer Discovery | Pending |
 | SET-01 | Phase 1: Buyer Discovery | Pending |
 | AGT-04 | Phase 2: Dynamic Routing | Pending |
 | AGT-05 | Phase 2: Dynamic Routing | Pending |
-| BUY-03 | Phase 2: Dynamic Routing | Pending |
 | SYS-05 | Phase 2: Dynamic Routing | Pending |
 | PROV-01 | Phase 3: Provider Platform | Pending |
 | PROV-02 | Phase 3: Provider Platform | Pending |
@@ -130,10 +138,10 @@ Which features map to implementation phases (reorganized for parallel developmen
 | SET-04 | Phase 4: Settlement & Verification | Pending |
 
 **Coverage:**
-- v1 requirements: 26 total
-- Mapped to phases: 26
+- v1 requirements: 32 total
+- Mapped to phases: 32
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: February 13, 2026*
-*Last updated: February 14, 2026 after roadmap reorganization for parallel development*
+*Last updated: February 16, 2026 - Updated for hackathon scope: Akash-only providers, Google ADK agent, thinking process UI, auto-sign toggle*

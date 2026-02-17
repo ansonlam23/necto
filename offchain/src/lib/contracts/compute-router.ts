@@ -193,7 +193,7 @@ export interface AgentUpdatedEvent {
  * ComputeRouter contract address on ADI Testnet
  * UPDATE THIS AFTER DEPLOYMENT
  */
-export const COMPUTE_ROUTER_ADDRESS = '' as `0x${string}`
+export const COMPUTE_ROUTER_ADDRESS = '0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd' as `0x${string}`
 
 /**
  * Helper to check if contract address is configured

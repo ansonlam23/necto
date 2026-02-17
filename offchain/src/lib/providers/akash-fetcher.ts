@@ -10,12 +10,88 @@ export interface SynapseProvider {
     cpuCount?: number;    // vCPUs (optional for backward compat)
     memoryGB?: number;    // RAM in GB (optional for backward compat)
     storageGB?: number;   // Disk in GB (optional for backward compat)
-    cpuModel?: string;    // e.g., "AMD EPYC" (optional)
+    cpuModel?: string;    // e.g. "AMD EPYC" (optional)
   };
   priceEstimate: number;
   region?: string;
-  uptimePercentage: number; // e.g., 99.5
+  uptimePercentage: number; // e.g. 99.5
 }
+
+/**
+ * Mock providers for demo fallback when Akash API is unavailable
+ */
+const MOCK_PROVIDERS: SynapseProvider[] = [
+  {
+    id: 'mock-akash-a100-us',
+    name: 'Akash Node US-East-1',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA A100',
+      gpuCount: 4,
+      cpuUnits: 128000,
+      memory: 549755813888
+    },
+    priceEstimate: 2.50,
+    region: 'US',
+    uptimePercentage: 99.8
+  },
+  {
+    id: 'mock-akash-h100-eu',
+    name: 'Akash Node EU-West-2',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA H100',
+      gpuCount: 2,
+      cpuUnits: 64000,
+      memory: 274877906944
+    },
+    priceEstimate: 4.20,
+    region: 'EU',
+    uptimePercentage: 99.5
+  },
+  {
+    id: 'mock-akash-rtx4090-sg',
+    name: 'Akash Node SG-1',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA RTX4090',
+      gpuCount: 2,
+      cpuUnits: 32000,
+      memory: 137438953472
+    },
+    priceEstimate: 0.80,
+    region: 'Singapore',
+    uptimePercentage: 98.2
+  },
+  {
+    id: 'mock-akash-rtx3090-us',
+    name: 'Akash Node US-West-1',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA RTX3090',
+      gpuCount: 1,
+      cpuUnits: 16000,
+      memory: 68719476736
+    },
+    priceEstimate: 0.55,
+    region: 'US',
+    uptimePercentage: 97.1
+  },
+  {
+    id: 'mock-akash-v100-eu',
+    name: 'Akash Node EU-Central-1',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA V100',
+      gpuCount: 2,
+      cpuUnits: 32000,
+      memory: 137438953472
+    },
+    priceEstimate: 1.50,
+    region: 'EU',
+    uptimePercentage: 99.0
+  }
+];
 
 interface AkashAttribute {
   key: string;
@@ -188,8 +264,8 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
     }
 
     if (!response || !response.ok) {
-      console.error('Failed to fetch Akash providers:', lastError?.message);
-      return [];
+      console.warn('Akash API unavailable — using mock providers for demo');
+      return MOCK_PROVIDERS;
     }
 
     const data = await response.json();
@@ -198,8 +274,8 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
     const providers: AkashProvider[] = Array.isArray(data) ? data : (data.providers || []);
 
     if (!Array.isArray(providers) || providers.length === 0) {
-      console.warn('Akash API returned no providers or invalid format');
-      return [];
+      console.warn('Akash API returned no providers — using mock providers for demo');
+      return MOCK_PROVIDERS;
     }
 
     const synapseProviders: SynapseProvider[] = [];
@@ -296,6 +372,6 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
 
   } catch (error) {
     console.error('Error fetching Akash providers:', error);
-    return [];
+    return MOCK_PROVIDERS;
   }
 }

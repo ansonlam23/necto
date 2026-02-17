@@ -110,3 +110,9 @@ offchain/src/
 
 ### MCP
 - Every time you use documentation from a provider, call the context7 mcp. This is the source of truth for all provider information.
+
+### Miscellaenous
+- Do not commit for every change that happens inside when using gsd agents. Commits should be done with human intervention.
+
+### The edit tool is broken for opencode agents
+- Use the write tool instead

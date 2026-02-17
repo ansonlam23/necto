@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import {
   Card,
   CardContent,
@@ -31,8 +32,12 @@ import {
   XCircle,
   Zap,
   Activity,
+  Link,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react'
-import type { ThinkingStep, RoutingResult } from '@/lib/agent/types'
+import type { ThinkingStep, RoutingResult, TransactionResult } from '@/lib/agent/types'
 
 interface FormData {
   description: string
@@ -40,9 +45,12 @@ interface FormData {
   maxPrice: string
   minGpuCount: string
   region: string
+  isTracked: boolean
 }
 
 const GPU_MODELS = ['Any', 'A100', 'H100', 'RTX4090', 'RTX3090', 'V100']
+
+const BLOCK_EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai'
 
 function ThinkingStepItem({ step }: { step: ThinkingStep }) {
   return (
@@ -78,12 +86,15 @@ export default function VerifyAgentPage() {
     maxPrice: '',
     minGpuCount: '',
     region: '',
+    isTracked: false,
   })
   const [thinkingSteps, setThinkingSteps] = React.useState<ThinkingStep[]>([])
   const [visibleSteps, setVisibleSteps] = React.useState<ThinkingStep[]>([])
   const [result, setResult] = React.useState<RoutingResult | null>(null)
+  const [transaction, setTransaction] = React.useState<TransactionResult | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [copiedHash, setCopiedHash] = React.useState(false)
 
   const revealStepsSequentially = React.useCallback((steps: ThinkingStep[]) => {
     steps.forEach((step, index) => {
@@ -93,6 +104,12 @@ export default function VerifyAgentPage() {
     })
   }, [])
 
+  const handleCopyHash = React.useCallback((hash: string) => {
+    navigator.clipboard.writeText(hash)
+    setCopiedHash(true)
+    setTimeout(() => setCopiedHash(false), 2000)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.description.trim()) return
@@ -100,6 +117,7 @@ export default function VerifyAgentPage() {
     setIsLoading(true)
     setError(null)
     setResult(null)
+    setTransaction(null)
     setThinkingSteps([])
     setVisibleSteps([])
 
@@ -112,7 +130,7 @@ export default function VerifyAgentPage() {
           ...(formData.minGpuCount && { minGpuCount: parseInt(formData.minGpuCount, 10) }),
           ...(formData.region.trim() && { region: formData.region.trim() }),
         },
-        isTracked: false,
+        isTracked: formData.isTracked,
         userAddress: '0x0000000000000000000000000000000000000000',
       }
 
@@ -136,6 +154,7 @@ export default function VerifyAgentPage() {
       // Delay result reveal to let steps animate first
       setTimeout(() => {
         setResult(data.result)
+        setTransaction(data.transaction || null)
       }, steps.length * 500 + 300)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error — check console')
@@ -252,6 +271,26 @@ export default function VerifyAgentPage() {
                   disabled={isLoading}
                 />
               </div>
+            </div>
+
+            {/* Blockchain Tracking Toggle */}
+            <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="track-blockchain" className="text-sm font-medium">
+                  Track on Blockchain
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Publish routing result to ADI Testnet
+                </p>
+              </div>
+              <Switch
+                id="track-blockchain"
+                checked={formData.isTracked}
+                onCheckedChange={(checked: boolean) =>
+                  setFormData(prev => ({ ...prev, isTracked: checked }))
+                }
+                disabled={isLoading}
+              />
             </div>
 
             <Button
@@ -376,6 +415,88 @@ export default function VerifyAgentPage() {
               </h4>
               <p className="text-sm text-slate-300 leading-relaxed">{result.reasoning}</p>
             </div>
+
+            {/* Blockchain Transaction */}
+            {formData.isTracked && transaction && (
+              <>
+                <Separator />
+
+                <div className="border border-slate-800 rounded-lg p-4 bg-slate-900/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Link className="h-4 w-4" />
+                      Blockchain Transaction
+                    </h4>
+                    <Badge
+                      variant="outline"
+                      className={
+                        transaction.success
+                          ? 'border-emerald-500/50 text-emerald-400'
+                          : 'border-red-500/50 text-red-400'
+                      }
+                    >
+                      {transaction.success ? 'Success' : 'Failed'}
+                    </Badge>
+                  </div>
+
+                  {transaction.success ? (
+                    <div className="space-y-3">
+                      {/* Transaction Hash */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Transaction Hash</p>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs font-mono bg-slate-800 px-2 py-1 rounded break-all flex-1 terminal-data">
+                            {transaction.hash}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            onClick={() => handleCopyHash(transaction.hash || '')}
+                          >
+                            {copiedHash ? (
+                              <Check className="h-4 w-4 text-emerald-400" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0"
+                            asChild
+                          >
+                            <a
+                              href={`${BLOCK_EXPLORER_URL}/tx/${transaction.hash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Job ID */}
+                      {transaction.jobId !== undefined && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Job ID</p>
+                          <p className="text-sm font-medium terminal-data">
+                            Job #{transaction.jobId.toString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Transaction Failed */
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Error</p>
+                      <p className="text-sm text-red-400">{transaction.error}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Confidence */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-800">

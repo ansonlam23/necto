@@ -50,6 +50,10 @@ export async function routeComputeJob(
   
   const providers = await fetchAkashProviders()
   
+  if (providers.length === 0) {
+    throw new Error('Provider fetch failed — no providers available from Akash Network or fallback')
+  }
+  
   onThinking?.({
     id: '1',
     message: `Found ${providers.length} GPU providers`,
@@ -86,7 +90,10 @@ export async function routeComputeJob(
   const rankedProviders = rankProviders(filteredProviders, request.requirements)
   
   if (rankedProviders.length === 0) {
-    throw new Error('No providers match the job requirements')
+    throw new Error(
+      `No providers match requirements after filtering ${providers.length} available providers. ` +
+      `Try relaxing constraints: raise max price, remove GPU model filter, or clear region.`
+    )
   }
   
   const selectedProvider = rankedProviders[0]
@@ -111,6 +118,7 @@ export async function routeComputeJob(
     reasoning: `Selected ${selectedProvider.name} based on price (${selectedProvider.priceEstimate}/hr), ` +
                `hardware (${selectedProvider.hardware.gpuModel}), and uptime (${selectedProvider.uptimePercentage}%)`,
     estimatedCost: selectedProvider.priceEstimate,
+    // TODO: Add confidence score
     confidence: 0.9
   }
   

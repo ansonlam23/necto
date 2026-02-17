@@ -1,155 +1,216 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
-**Created:** February 11, 2026
-**Last Updated:** February 17, 2026
-**Last activity:** 2026-02-17 - Completed quick task 02 plan 03: Google ADK Agent Frontend Integration — /api/route-job + /verify-agent demo UI
+**Created:** February 11, 2026  
+**Last Updated:** February 17, 2026  
+**Current Focus:** Milestone v2.0 — Akash Integration for compute routing
 
 ## Project Reference
 
-**Core Value:** The cheapest GPU always finds its buyer, and idle hardware always finds a job - if the system can't normalize pricing across three fundamentally different models (fixed-rate, spot/auction, token-based), provide verifiable routing decisions, and handle both tracked and untracked modes, the entire marketplace value proposition fails.
+**Core Value:** The cheapest GPU always finds its buyer, and idle hardware always finds a job.
 
-**Current Focus:** Milestone v2.0 — Reorganize for 2-person parallel development with complete vertical features rather than horizontal scaffolding layers.
+**Current Focus:** Milestone v2.0 — Build functionality to route compute jobs to Akash Network providers
 
-**Success Depends On:** Clear integration points between offchain (frontend + agent) and onchain (smart contracts) developers, with each phase delivering a fully functional feature.
+**Success Depends On:** Seamless Akash API integration, SDL generation for deployments, and real-time deployment monitoring.
+
+---
+
+## Reorganization Summary
+
+**February 17, 2026:** Project cleanup and refocus on Akash integration
+
+**Important Clarification:** Necto remains a two-sided compute marketplace. The v2.0 milestone specifically adds the capability to route compute jobs to Akash Network providers. This is not a pivot away from the marketplace vision - it's the first provider integration.
+
+**Changes Made:**
+1. ✅ Archived v1.0 milestone (ComputeRouter contract foundation)
+2. ✅ Cleaned up quick task directories (2 completed tasks removed)
+3. ✅ Updated PROJECT.md with Akash integration requirements
+4. ✅ Reorganized ROADMAP.md - Akash as Phase 1 extension
+5. ✅ Created Phase 2.1 for Akash deployment work
+
+---
 
 ## Current Position
 
 ### Active Milestone
-**Milestone v2.0: Feature-Complete Marketplace**
-- **Goal:** Parallel development with complete features per phase
-- **Status:** Planning Complete
-- **Team:** 2 developers (offchain + onchain)
+**Milestone v2.0: Akash Integration**  
+- **Goal:** Build functionality that allows buyers to route their compute to Akash Network  
+- **Status:** Planning  
+- **Team:** Single developer
 
-### Current Plan
-**Phase 01-foundation-core-agent, Plan 01: COMPLETE** ✓
+### Completed Work (v1.0 Foundation)
+**Phase 01-01: COMPLETE** ✅  
 - ComputeRouter.sol implemented with full test coverage (26 tests passing)
 - Ignition deployment module ready
 - TypeScript integration complete
 - ADI Testnet chain configured in wagmi
 
-**Quick Task 02: COMPLETE** ✓
+**Quick Tasks: COMPLETE** ✅  
 - Google ADK agent with @google/adk@0.3.0
 - Agent types, wallet tool, and main agent implementation
-- Blockchain transaction signing via wallet-tool.ts
-- Provider routing with thinking step callbacks
-- Environment configuration template (.env.example)
+- /api/route-job API route + /verify-agent demo UI
 
-**Quick Task 02 Plan 03: COMPLETE** ✓
-- POST /api/route-job API route invoking routeComputeJob server-side
-- /verify-agent rebuilt as agent demo UI with job form, thinking steps, result card
-- End-to-end browser→agent→Akash flow working without API keys
+### Current Plan
+**Phase 1 Extension: Akash Integration**  
+- Akash API client for provider discovery
+- SDL generator for deployments
+- Template gallery for web apps
+- Keplr wallet integration
+- Deployment routing and monitoring
 
-**Next Action:** Deploy ComputeRouter to ADI Testnet and execute Phase 1 planning
+**Next Action:** Continue Phase 1 with Akash deployment integration
 
-### Roadmap Status
+---
+
+## Roadmap Status
+
 - **Total Phases:** 4
-- **Phases Complete:** 0/4
+- **Phases Complete:** 0/4 (active development)
+- **v1.0 Phases Archived:** 1 (01-01 ComputeRouter)
 - **Requirements Mapped:** 26/26 ✓
-- **Coverage:** 100%
 
 **Phase Structure:**
-1. Buyer Discovery — Complete job submission → routing → on-chain recording
-2. Dynamic Routing — Constraints + real-time activity + enhanced contracts
-3. Provider Platform — Full onboarding + registry + capacity management
-4. Settlement & Verification — Escrow + 0G integration + dashboards
+1. **Buyer Discovery + Akash Routing** — Job submission → agent routing → Akash deployment
+2. **Provider Platform** — Full provider onboarding and registry
+3. **Dynamic Routing** — Constraints + multi-provider support
+4. **Settlement & Verification** — Escrow + 0G + dashboards
+
+---
 
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 3
-- **Phases Completed:** 0
-- **Quick Tasks Completed:** 2
-- **Avg Plan Duration:** 5 min
-- **On-Track Percentage:** 100%
+- **Plans Executed:** 3 (v1.0)
+- **v1.0 Phases Completed:** 1 (archived)
+- **Quick Tasks Completed:** 2 (cleaned up)
+- **Reorganizations:** 1 (cleanup)
 
 ### Quality Indicators
-- **Requirements Coverage:** 100% ✓
-- **Success Criteria per Phase:** 4-5 (well-scoped)
-- **Phase Dependencies:** Clear vertical slices
-- **Team Structure:** Offchain + Onchain parallel development
+- **v1.0 Requirements Coverage:** 100% ✅
+- **Test Coverage:** 26 tests passing
+- **Code Quality:** TypeScript strict mode, linting enabled
+- **Documentation:** Updated for Akash integration
 
 ### Risk Assessment
-- **Technical Risk:** Medium (integration between offchain/onchain)
-- **Pricing Risk:** High (normalizing three different pricing models)
-- **Market Risk:** Medium (DePIN network reliability and token volatility)
-- **Execution Risk:** Low (clear phase structure with parallel ownership)
+- **Technical Risk:** Medium (Akash API complexity)
+- **Integration Risk:** Medium (wallet + API + SDL)
+- **Timeline Risk:** Low (focused scope)
+- **Execution Risk:** Low (clear phase structure)
 
-## Accumulated Context
+---
 
-### Key Decisions Made
-1. **Phase Structure:** 4 complete vertical features instead of horizontal layers
-2. **Team Split:** Offchain owns frontend + agent, onchain owns contracts
-3. **Integration Points:** Defined at each phase for parallel development
-4. **Feature-First:** No scaffolding phases — every phase delivers complete functionality
-5. **Hybrid Architecture:** Off-chain for metadata (cheap), on-chain for commitments + settlement (trustless)
-6. **Immutable Contracts:** No proxy pattern for hackathon timeline; redeployment is cheap on testnet
-7. **Single Agent:** Multi-agent support deferred to Phase 3; updateAgent allows rotation
-8. **Minimal On-Chain Data:** Job ID + hashes only; full metadata stored on 0G Storage
-9. **Privacy by Design:** Tracked/untracked mode built in from day 1
-10. **Hackathon Scope:** Akash-only providers (others require paid APIs), Google ADK agent, thinking UI, auto-sign toggle
-11. **Agent Framework:** Google ADK (Agent Development Kit) with Google AI Studio API keys; use context7 for ADK documentation
-12. **Demo Flair:** Agent thinking process visible via UI toast/record for hackathon presentation impact
-13. **ThinkingStep upsert by id:** Agent emits active then complete for same id — API route merges by id so UI shows final state per step
-14. **Zero address fallback:** Demo works wallet-free with isTracked=false; no blockchain submission needed for agent routing demo
+## Directory Structure
 
-### Development Approach
-- **Offchain Developer:** Frontend (Next.js/React), agent logic, API routes, real-time UX
-- **Onchain Developer:** Smart contracts (Solidity), ADI Chain integration, 0G Storage, wallet connections
-- **Integration:** Both work in parallel, integrate at phase end
-- **Goal:** Each phase is demo-ready without gaps
+```
+.planning/
+├── MILESTONES.md              # Milestone tracking
+├── PROJECT.md                  # Akash integration requirements
+├── ROADMAP.md                  # 4-phase marketplace roadmap
+├── REQUIREMENTS.md             # Full requirements (v1.0)
+├── STATE.md                    # This file
+├── config.json                 # GSD config
+├── codebase/                   # Research docs
+├── milestones/                 # Archive directory
+│   └── v1.0-phases/           # Archived v1.0 work
+│       └── 01-01/             # ComputeRouter contract
+├── phases/                     # Active phases
+│   ├── 01-foundation-core-agent/  # Reduced (01-02 remaining)
+│   └── 02-akash-webapp-deploy/    # Phase 1 extension
+└── quick/                      # CLEANED
+```
 
-### Active Todos
-- [x] Plan 01-01: Implement ComputeRouter.sol with tests and deployment module
-- [x] Plan 01-02: Offchain implementation with Google ADK agent, thinking UI, auto-sign
-- [x] Quick Task 02: Google ADK agent with Google AI Studio API for Akash provider routing
-- [ ] Deploy ComputeRouter to ADI Testnet and configure environment
-- [ ] Execute Phase 1 planning and implementation (Buyer Discovery)
-- [ ] Create agent UI components (thinking steps toast, auto-sign toggle)
-- [ ] Implement price normalization for AKT token pricing
-- [ ] Create mock Akash provider data (4-6 providers)
+---
 
-### Resolved Blockers
-- Roadmap reorganization complete — now optimized for parallel team development
+## Key Decisions Made
+
+### From v1.0 (Retained)
+1. **TypeScript monorepo** — Single language throughout
+2. **Next.js 16 + Tailwind v4** — Modern stack
+3. **viem/wagmi** — Blockchain interactions
+4. **shadcn/ui** — Component library
+5. **Two-sided marketplace** — Buyer + provider platform
+
+### For v2.0 Akash Integration
+6. **Akash-first provider** — Deep integration before adding others
+7. **SDL generation** — Abstract Akash deployment complexity
+8. **Keplr wallet** — Standard for Akash ecosystem
+9. **Template gallery** — Lower barrier for common workloads
+10. **Route to Akash** — Agent can route suitable jobs to Akash providers
+
+---
+
+## Active Todos
+
+### Phase 1 Extension (Akash)
+- [ ] Set up Akash API client module
+- [ ] Research Akash SDL format and requirements
+- [ ] Design template gallery UI
+- [ ] Plan Keplr wallet integration
+- [ ] Create deployment service architecture
+- [ ] Integrate Akash routing into agent
+
+### Phase 1 Core (Ongoing)
+- [ ] Complete 01-02 plan implementation
+- [ ] Deploy ComputeRouter to ADI Testnet
+- [ ] Create agent UI components
+- [ ] Implement price normalization for AKT
+
+### Completed (v1.0)
+- [x] Plan 01-01: Implement ComputeRouter.sol
+- [x] Quick Task 02: Google ADK agent
+- [x] Quick Task 02 Plan 03: Frontend integration
+- [x] Archive v1.0 milestone
+- [x] Clean up quick folder
+
+---
+
+## Resolved Blockers
+- Project reorganized for Akash integration ✅
+- Directory structure cleaned up ✅
+- Clarified: Akash is first provider integration, not a pivot ✅
 
 ### Open Blockers
-None identified — ready to proceed with Phase 1.
+- None identified — ready to proceed with Akash integration
 
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 2 | Create Google ADK agent with Google AI Studio API that can sign blockchain transactions | 2026-02-16 | c5e7aa2 | [02-create-google-adk-agent](./quick/2-create-google-adk-agent-with-google-ai-s/) |
+---
 
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute quick task 02 plan 03 - Google ADK Agent Frontend Integration
-- **Outcome:** POST /api/route-job API route + /verify-agent rebuilt as agent demo UI; build passes cleanly
-- **Key Insight:** routeComputeJob emits active→complete pairs per ThinkingStep id; API must upsert by id to get final state
-- **Files Created:** offchain/src/app/api/route-job/route.ts (95 lines)
-- **Files Modified:** offchain/src/app/verify-agent/page.tsx (full rebuild, 285 lines)
+- **Action:** Reorganize .planning directory and clarify project direction
+- **Outcome:** 
+  - Created MILESTONES.md with v1.0 archive
+  - Archived 01-01 phase to milestones/v1.0-phases/
+  - Cleaned up quick/ folder
+  - Updated PROJECT.md with Akash integration focus
+  - Updated ROADMAP.md - Akash as Phase 1 extension
+  - Created Phase 2.1 for Akash deployment work
+- **Key Insight:** Akash integration is the first provider integration for the marketplace, not a pivot away from it
 
 ### Context for Next Session
-Agent frontend integration complete — full end-to-end demo ready:
-- **API Route:** POST /api/route-job → routeComputeJob → ThinkingStep[] + RoutingResult
-- **Demo Page:** /verify-agent with job form, sequential thinking steps, result card
-- **Agent Module:** types.ts, wallet-tool.ts, agent.ts in src/lib/agent/
-- **Live Data:** Fetches real Akash GPU providers (23 providers from console-api.akash.network)
+Ready to continue Phase 1 with Akash integration:
+- Clean directory structure
+- Clear requirements (PROJECT.md)
+- Defined roadmap (ROADMAP.md)
+- Foundation code available (archived but accessible)
+- Phase 2.1 plan created for Akash deployment
 
 **Ready for:**
-- Deploy ComputeRouter to ADI Testnet
-- Execute Phase 1 planning (Buyer Discovery full feature)
-- Integrate agent routing into main workflow builder
+- Continue 01-02 plan implementation
+- Begin Akash API integration
+- Build template gallery
 
 ### Continuity Artifacts
-- **ROADMAP.md:** Feature-complete phases with team split and integration points
-- **REQUIREMENTS.md:** 26 marketplace requirements (same content, mapped to new phases)
-- **PROJECT.md:** Updated with Current Milestone v2.0 section
-- **research/*.md:** Comprehensive domain research for implementation guidance
+- **MILESTONES.md:** Archive structure and milestone tracking
+- **PROJECT.md:** Marketplace with Akash integration requirements
+- **ROADMAP.md:** 4-phase marketplace roadmap
+- **milestones/v1.0-phases/:** Archived v1.0 ComputeRouter work
+- **phases/02-akash-webapp-deploy/:** Akash integration plan
 
 ---
-*State tracking for project: Necto*
-*Project initiated: February 11, 2026*
-*Major pivot completed: February 13, 2026*
-*Roadmap reorganization: February 14, 2026*
-*Hackathon scope update: February 16, 2026 - Akash-only, Google ADK, thinking UI, auto-sign*
+
+*State tracking for project: Necto*  
+*Project initiated: February 11, 2026*  
+*Major pivot completed: February 13, 2026*  
+*Roadmap reorganization: February 14, 2026*  
+*Hackathon scope update: February 16, 2026*  
+**Akash integration focus: February 17, 2026**
