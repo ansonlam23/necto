@@ -9,6 +9,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { COMPUTE_ROUTER_ABI, COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router'
 import { adiTestnet } from '@/lib/adi-chain'
 import type { TransactionResult } from './types'
+import { BaseTool, type RunAsyncToolRequest } from '@google/adk'
 
 /**
  * Create a wallet client for the agent
@@ -125,40 +126,41 @@ export function hashRoutingDecision(decision: object): `0x${string}` {
 }
 
 /**
- * Wallet tool definition for ADK agent
- * Follows ADK tool interface
+ * Wallet tool class for ADK agent
+ * Extends BaseTool for proper ADK integration
  */
-export const walletTool = {
-  name: 'submit_job_to_blockchain',
-  description: 'Submit a compute job to the blockchain via ComputeRouter contract. Returns transaction result with job ID.',
-  parameters: {
-    type: 'object',
-    properties: {
-      userAddress: {
-        type: 'string',
-        description: 'User wallet address (0x...)'
-      },
-      detailsHash: {
-        type: 'string',
-        description: 'Keccak256 hash of job details'
-      },
-      isTracked: {
-        type: 'boolean',
-        description: 'Whether to create an on-chain record'
-      }
-    },
-    required: ['userAddress', 'detailsHash', 'isTracked']
-  },
-  function: async ({ userAddress, detailsHash, isTracked }: {
-    userAddress: string
-    detailsHash: string
-    isTracked: boolean
-  }) => {
+export class WalletTool extends BaseTool {
+  constructor() {
+    super({
+      name: 'submit_job_to_blockchain',
+      description: 'Submit a compute job to the blockchain via ComputeRouter contract. Returns transaction result with job ID.',
+      isLongRunning: false
+    })
+  }
+
+  /**
+   * Run the tool with the given arguments
+   * Implements the abstract runAsync method from BaseTool
+   */
+  async runAsync(request: RunAsyncToolRequest): Promise<unknown> {
+    const { args } = request
+    
+    const userAddress = args.userAddress as string
+    const detailsHash = args.detailsHash as string
+    const isTracked = args.isTracked as boolean
+    
     const result = await submitJobTransaction(
       userAddress as `0x${string}`,
       detailsHash as `0x${string}`,
       isTracked
     )
+    
     return JSON.stringify(result)
   }
 }
+
+/**
+ * Wallet tool instance for ADK agent
+ * Singleton instance to be shared across the application
+ */
+export const walletTool = new WalletTool()
