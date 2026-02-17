@@ -34,7 +34,7 @@
 ### Active Milestone
 **Milestone v2.0: Akash Integration**  
 - **Goal:** Build functionality that allows buyers to route their compute to Akash Network  
-- **Status:** Planning  
+- **Status:** In Progress  
 - **Team:** Single developer
 
 ### Completed Work (v1.0 Foundation)
@@ -50,17 +50,20 @@
 - /api/route-job API route + /verify-agent demo UI
 
 ### Current Plan
-**Phase 1 Extension: Akash Integration**  
+**Phase 2: Akash Integration**  
 - Akash API client for provider discovery ✅
 - SDL generator for deployments ✅
 - Template gallery for web apps ✅
 - Agent routing logic for Akash ✅
 - Provider discovery UI components ✅
 - Deployment monitoring hooks ✅
-- Keplr wallet integration (pending)
+- Job submission page with multi-step wizard ✅
+- Console API funding integration (pending)
 - Full deployment workflow (pending)
+- Testnet USDC escrow for demo payment flow (pending)
+- Sponsored hosting model for hackathon (Necto pays Akash costs)
 
-**Next Action:** Execute Plan 03 - Connect to real Console API provider discovery
+**Next Action:** Execute Plan 04 - Full deployment workflow with Console API
 
 ---
 
@@ -82,7 +85,7 @@
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 3 (v1.0)
+- **Plans Executed:** 5 (v1.0 + Phase 2)
 - **v1.0 Phases Completed:** 1 (archived)
 - **Quick Tasks Completed:** 2 (cleaned up)
 - **Reorganizations:** 1 (cleanup)
@@ -95,7 +98,7 @@
 
 ### Risk Assessment
 - **Technical Risk:** Medium (Akash API complexity)
-- **Integration Risk:** Medium (wallet + API + SDL)
+- **Integration Risk:** Low (Console API funding, no wallet dependency)
 - **Timeline Risk:** Low (focused scope)
 - **Execution Risk:** Low (clear phase structure)
 
@@ -135,17 +138,20 @@
 ### For v2.0 Akash Integration
 6. **Akash-first provider** — Deep integration before adding others
 7. **SDL generation** — Abstract Akash deployment complexity
-8. **Keplr wallet** — Standard for Akash ecosystem
+8. **Akash Console API** — Use Console API for funding (USD via credit card), avoiding Keplr wallet dependency for hackathon/demo simplicity
 9. **Template gallery** — Lower barrier for common workloads
 10. **Route to Akash** — Agent can route suitable jobs to Akash providers
 11. **Weighted provider scoring** — Default weights: price 35%, reliability 25%, performance 25%, latency 15%
 12. **5-minute bid timeout** — Balance between responsiveness and provider response time
+13. **USDC test token escrow** — Use testnet USDC for escrow contracts, enabling demo without real funds
+14. **Sponsored hosting** — Necto covers Akash hosting fees for hackathon/demo; users interact with testnet USDC escrow to demonstrate marketplace payment flow
+15. **Multi-step wizard pattern** — 5 steps (Input → Configure → SDL → Review → Deploy) for job submission
 
 ---
 
 ## Active Todos
 
-### Phase 1 Extension (Akash)
+### Phase 2 (Akash) - Completed
 - [x] Set up Akash API client module
 - [x] Research Akash SDL format and requirements
 - [x] Implement SDL generator with templates
@@ -153,11 +159,14 @@
 - [x] Build agent routing logic for Akash
 - [x] Create provider discovery hooks
 - [x] Create provider and deployment UI components
+- [x] Design template gallery UI
+
+### Phase 2 (Akash) - Remaining
 - [ ] Connect to real Console API provider discovery
-- [ ] Design template gallery UI
-- [ ] Plan Keplr wallet integration
+- [ ] Integrate Console API funding (Necto-sponsored Akash costs)
 - [ ] Create deployment service architecture
 - [ ] Integrate Akash routing into agent UI
+- [ ] Set up testnet USDC escrow contracts (demo payment flow)
 
 ### Phase 1 Core (Ongoing)
 - [ ] Complete 01-02 plan implementation
@@ -187,33 +196,33 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 02-02 (Agent Routing & Provider Discovery)
+- **Action:** Execute plan 02-03 (Job Submission Interface)
 - **Outcome:** 
-  - Implemented multi-factor provider selection algorithm
-  - Created agent routing logic with suitability checking
-  - Built useProviderDiscovery and useAkashDeployment hooks
-  - Created provider-card, provider-list, deployment-status components
-  - Added shadcn progress, scroll-area, slider components
-- **Key Insight:** 11-state deployment machine provides granular progress tracking for UX
+  - Created template gallery with 6 templates across 4 categories
+  - Built natural language input component with parsing
+  - Implemented SDL editor with YAML preview and validation
+  - Developed complete job submission page with 5-step wizard
+  - Added shadcn tabs and textarea components
+- **Key Insight:** Multi-step wizard pattern provides clear progression for job submission
+- **Decision Update:** Auto-sign toggle for streamlined hackathon demo flow
 
 ### Context for Next Session
 Ready to continue Phase 2 with Akash integration:
-- Plan 02-02 complete (agent routing + provider discovery)
-- Plan 02-03 ready to execute (Console API provider discovery)
+- Plan 02-03 complete (job submission UI)
 - Plan 02-04 pending (full deployment workflow)
-- Foundation components in place for real provider data
+- UI components ready for Console API integration
 
 **Ready for:**
-- Execute Plan 03 - Connect to real Console API
-- Build template gallery UI
-- Integrate Keplr wallet
+- Execute Plan 04 - Full deployment workflow
+- Integrate Console API funding (Necto-sponsored)
+- Set up testnet USDC escrow (demo payment flow)
 
 ### Continuity Artifacts
 - **MILESTONES.md:** Archive structure and milestone tracking
 - **PROJECT.md:** Marketplace with Akash integration requirements
 - **ROADMAP.md:** 4-phase marketplace roadmap
 - **milestones/v1.0-phases/:** Archived v1.0 ComputeRouter work
-- **phases/02-akash-webapp-deploy/:** Akash integration plan
+- **phases/02-akash-webapp-deploy/:** Akash integration plans and summaries
 
 ---
 
