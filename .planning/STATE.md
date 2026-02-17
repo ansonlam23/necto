@@ -1,7 +1,7 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026
-**Last Updated:** February 15, 2026
+**Last Updated:** February 17, 2026
 
 ## Project Reference
 
@@ -26,7 +26,14 @@
 - TypeScript integration complete
 - ADI Testnet chain configured in wagmi
 
-**Next Action:** Execute plan 01-02 (Job Submission + Agent Routing) or proceed to contract deployment on ADI Testnet
+**Quick Task 02: COMPLETE** ✓
+- Google ADK agent with @google/adk@0.3.0
+- Agent types, wallet tool, and main agent implementation
+- Blockchain transaction signing via wallet-tool.ts
+- Provider routing with thinking step callbacks
+- Environment configuration template (.env.example)
+
+**Next Action:** Deploy ComputeRouter to ADI Testnet and integrate with agent UI
 
 ### Roadmap Status
 - **Total Phases:** 4
@@ -43,8 +50,9 @@
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 1
+- **Plans Executed:** 2
 - **Phases Completed:** 0
+- **Quick Tasks Completed:** 1
 - **Avg Plan Duration:** 6 min
 - **On-Track Percentage:** 100%
 
@@ -72,6 +80,9 @@
 7. **Single Agent:** Multi-agent support deferred to Phase 3; updateAgent allows rotation
 8. **Minimal On-Chain Data:** Job ID + hashes only; full metadata stored on 0G Storage
 9. **Privacy by Design:** Tracked/untracked mode built in from day 1
+10. **Hackathon Scope:** Akash-only providers (others require paid APIs), Google ADK agent, thinking UI, auto-sign toggle
+11. **Agent Framework:** Google ADK (Agent Development Kit) with Google AI Studio API keys; use context7 for ADK documentation
+12. **Demo Flair:** Agent thinking process visible via UI toast/record for hackathon presentation impact
 
 ### Development Approach
 - **Offchain Developer:** Frontend (Next.js/React), agent logic, API routes, real-time UX
@@ -81,11 +92,13 @@
 
 ### Active Todos
 - [x] Plan 01-01: Implement ComputeRouter.sol with tests and deployment module
-- [ ] Plan 01-02: Deploy ComputeRouter to ADI Testnet and configure environment
+- [x] Plan 01-02: Offchain implementation with Google ADK agent, thinking UI, auto-sign
+- [x] Quick Task 02: Google ADK agent with Google AI Studio API for Akash provider routing
+- [ ] Deploy ComputeRouter to ADI Testnet and configure environment
 - [ ] Execute Phase 1 planning and implementation (Buyer Discovery)
-- [ ] Define integration interface between agent and ComputeRouter
-- [ ] Implement price normalization for 3 pricing models
-- [ ] Create mock provider data covering 6-8 providers
+- [ ] Create agent UI components (thinking steps toast, auto-sign toggle)
+- [ ] Implement price normalization for AKT token pricing
+- [ ] Create mock Akash provider data (4-6 providers)
 
 ### Resolved Blockers
 - Roadmap reorganization complete — now optimized for parallel team development
@@ -96,19 +109,29 @@ None identified — ready to proceed with Phase 1.
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 01-01 - Implement ComputeRouter smart contract
-- **Outcome:** ComputeRouter.sol with 26 passing tests, Ignition deployment module, TypeScript integration complete
-- **Key Insight:** Address case sensitivity in tests requires normalization using viem's getAddress helper
-- **Files Updated:** ComputeRouter.sol, ComputeRouter.ts (tests), ComputeRouter.ts (Ignition), interact-router.ts, compute-router.ts (ABI), adi-chain.ts, wagmi.ts
+- **Action:** Execute quick task 02 - Create Google ADK agent with Google AI Studio
+- **Outcome:** Complete agent module with routing logic, wallet integration, and TypeScript types
+- **Key Insight:** Google ADK package is `@google/adk` (not `google-adk`), requires BaseTool subclass for tools
+- **Files Created:** types.ts (82 lines), wallet-tool.ts (164 lines), agent.ts (273 lines), .env.example
 
 ### Context for Next Session
-ComputeRouter contract foundation complete:
+Agent implementation complete alongside ComputeRouter:
+- **Agent:** Google ADK agent with routing, provider ranking, blockchain signing
+- **Files:** types.ts, wallet-tool.ts, agent.ts in src/lib/agent/
+- **Features:** Provider filtering/ranking, thinking step callbacks, transaction submission
 - **Contract:** submitJob, recordRoutingDecision, getJob, updateAgent with full access control
-- **Tests:** 26 tests covering deployment, job submission, routing, access control, integration
-- **Deployment:** Ignition module ready with parameterized agent address
-- **Integration:** TypeScript ABI/types exported, ADI Testnet (chain 99999) configured in wagmi
 
-**Ready for:** Deploy to ADI Testnet and proceed with Phase 1 Buyer Discovery implementation
+**Agent Module Exports:**
+- `createRoutingAgent(config)` - Create LlmAgent with wallet tool
+- `routeComputeJob(request, config, onThinking)` - Main routing with UI callbacks
+- `quickRoute(request, config)` - Auto-sign mode without UI
+- `walletTool` - ADK-compatible BaseTool for blockchain
+
+**Ready for:**
+- Deploy ComputeRouter to ADI Testnet
+- Create UI components for agent thinking steps
+- Implement auto-sign toggle component
+- Integrate agent with frontend job submission flow
 
 ### Continuity Artifacts
 - **ROADMAP.md:** Feature-complete phases with team split and integration points
@@ -121,3 +144,4 @@ ComputeRouter contract foundation complete:
 *Project initiated: February 11, 2026*
 *Major pivot completed: February 13, 2026*
 *Roadmap reorganization: February 14, 2026*
+*Hackathon scope update: February 16, 2026 - Akash-only, Google ADK, thinking UI, auto-sign*
