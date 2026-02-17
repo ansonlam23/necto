@@ -260,7 +260,8 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
 
       // If maxGpuCount > 1, also add multi-GPU configurations
       if (gpu.maxGpuCount && gpu.maxGpuCount > 1) {
-        const multiGpuConfigs = [2, 4, 8].filter(count => count <= gpu.maxGpuCount);
+        const maxGpuCount = gpu.maxGpuCount!
+        const multiGpuConfigs = [2, 4, 8].filter(count => count <= maxGpuCount);
 
         for (const gpuCount of multiGpuConfigs) {
           synapseProviders.push({

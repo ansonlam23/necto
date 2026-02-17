@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { useWallet } from '@/hooks/use-wallet'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -10,360 +9,387 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { 
-  Wallet, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
+import {
+  Brain,
+  Cpu,
+  DollarSign,
+  MapPin,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Zap,
   Activity,
-  FileSearch,
-  Send,
-  Loader2
 } from 'lucide-react'
-import { keccak256, toHex } from 'viem'
-import { COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router'
-import { adiTestnet } from '@/lib/adi-chain'
+import type { ThinkingStep, RoutingResult } from '@/lib/agent/types'
+
+interface FormData {
+  description: string
+  gpuModel: string
+  maxPrice: string
+  minGpuCount: string
+  region: string
+}
+
+const GPU_MODELS = ['Any', 'A100', 'H100', 'RTX4090', 'RTX3090', 'V100']
+
+function ThinkingStepItem({ step }: { step: ThinkingStep }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex-shrink-0 mt-0.5">
+        {step.status === 'active' && (
+          <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
+        )}
+        {step.status === 'complete' && (
+          <CheckCircle className="h-4 w-4 text-emerald-500" />
+        )}
+        {step.status === 'error' && (
+          <XCircle className="h-4 w-4 text-red-500" />
+        )}
+        {step.status === 'pending' && (
+          <div className="h-4 w-4 rounded-full border-2 border-slate-600" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-slate-300">{step.message}</p>
+        <p className="text-xs text-slate-500 terminal-data mt-0.5">
+          {new Date(step.timestamp).toLocaleTimeString()}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 export default function VerifyAgentPage() {
-  const { 
-    address, 
-    isConnected, 
-    chainId, 
-    connect, 
-    signTransaction, 
-    readContract 
-  } = useWallet()
-  
-  const [readResult, setReadResult] = React.useState<{
-    status: 'idle' | 'loading' | 'success' | 'error'
-    data?: unknown
-    error?: string
-  }>({ status: 'idle' })
-  
-  const [writeResult, setWriteResult] = React.useState<{
-    status: 'idle' | 'loading' | 'success' | 'error'
-    hash?: string
-    error?: string
-  }>({ status: 'idle' })
+  const [formData, setFormData] = React.useState<FormData>({
+    description: '',
+    gpuModel: 'Any',
+    maxPrice: '',
+    minGpuCount: '',
+    region: '',
+  })
+  const [thinkingSteps, setThinkingSteps] = React.useState<ThinkingStep[]>([])
+  const [visibleSteps, setVisibleSteps] = React.useState<ThinkingStep[]>([])
+  const [result, setResult] = React.useState<RoutingResult | null>(null)
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
-  const isOnAdiTestnet = chainId === adiTestnet.id
-  const isContractConfigured = COMPUTE_ROUTER_ADDRESS && COMPUTE_ROUTER_ADDRESS.length > 0
+  const revealStepsSequentially = React.useCallback((steps: ThinkingStep[]) => {
+    steps.forEach((step, index) => {
+      setTimeout(() => {
+        setVisibleSteps(prev => [...prev, step])
+      }, index * 500)
+    })
+  }, [])
 
-  const handleTestRead = async () => {
-    setReadResult({ status: 'loading' })
-    
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.description.trim()) return
+
+    setIsLoading(true)
+    setError(null)
+    setResult(null)
+    setThinkingSteps([])
+    setVisibleSteps([])
+
     try {
-      if (!isContractConfigured) {
-        throw new Error('Contract not deployed yet - COMPUTE_ROUTER_ADDRESS is empty')
+      const body = {
+        description: formData.description.trim(),
+        requirements: {
+          ...(formData.gpuModel !== 'Any' && { gpuModel: formData.gpuModel }),
+          ...(formData.maxPrice && { maxPricePerHour: parseFloat(formData.maxPrice) }),
+          ...(formData.minGpuCount && { minGpuCount: parseInt(formData.minGpuCount, 10) }),
+          ...(formData.region.trim() && { region: formData.region.trim() }),
+        },
+        isTracked: false,
+        userAddress: '0x0000000000000000000000000000000000000000',
       }
-      
-      const result = await readContract('getJob', [BigInt(0)])
-      setReadResult({ 
-        status: 'success', 
-        data: result,
-        error: undefined
-      })
-    } catch (error) {
-      console.error('Read test failed:', error)
-      setReadResult({ 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        data: undefined
-      })
-    }
-  }
 
-  const handleTestWrite = async () => {
-    setWriteResult({ status: 'loading' })
-    
-    try {
-      if (!isContractConfigured) {
-        throw new Error('Contract not deployed yet - COMPUTE_ROUTER_ADDRESS is empty')
-      }
-      
-      if (!address) {
-        throw new Error('Wallet not connected')
-      }
-      
-      // Create test job submission
-      const detailsHash = keccak256(toHex('test-job'))
-      
-      const hash = await signTransaction('submitJob', [
-        address,
-        detailsHash,
-        false, // isTracked
-      ])
-      
-      setWriteResult({ 
-        status: 'success', 
-        hash,
-        error: undefined
+      const response = await fetch('/api/route-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       })
-    } catch (error) {
-      console.error('Write test failed:', error)
-      setWriteResult({ 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        hash: undefined
-      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        setError(data.error || 'Unknown error from agent')
+        return
+      }
+
+      const steps: ThinkingStep[] = data.thinkingSteps || []
+      setThinkingSteps(steps)
+      revealStepsSequentially(steps)
+
+      // Delay result reveal to let steps animate first
+      setTimeout(() => {
+        setResult(data.result)
+      }, steps.length * 500 + 300)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error — check console')
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
+    <div className="container mx-auto py-8 px-4 max-w-3xl">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
-          <Activity className="h-8 w-8 text-primary" />
-          Agent Verification
+          <Brain className="h-8 w-8 text-primary" />
+          Agent Router Demo
         </h1>
         <p className="text-muted-foreground mt-2">
-          Verify wallet connection and transaction signing capabilities on ADI Testnet.
+          Submit compute job requirements. The agent fetches live Akash providers,
+          filters and ranks them, then selects the best match with reasoning.
         </p>
       </div>
 
-      {/* Connection Status */}
+      {/* Job Submission Form */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Connection Status
+            <Zap className="h-5 w-5 text-primary" />
+            Job Requirements
           </CardTitle>
           <CardDescription>
-            Current wallet connection state and network
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!isConnected ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Not Connected</AlertTitle>
-              <AlertDescription>
-                Please connect your wallet to proceed with verification.
-                <div className="mt-2">
-                  <Button onClick={connect} size="sm">
-                    Connect Wallet
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Address</p>
-                  <p className="font-mono text-sm break-all">{address}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Chain ID</p>
-                  <p className="font-mono">{chainId}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Network</p>
-                  <Badge variant={isOnAdiTestnet ? 'default' : 'destructive'}>
-                    {isOnAdiTestnet ? 'ADI Testnet ✓' : 'Wrong Network'}
-                  </Badge>
-                </div>
-              </div>
-              
-              {!isOnAdiTestnet && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Wrong Network</AlertTitle>
-                  <AlertDescription>
-                    Please switch to ADI Testnet (Chain ID: {adiTestnet.id}) to use the ComputeRouter.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Contract Status */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSearch className="h-5 w-5" />
-            Contract Status
-          </CardTitle>
-          <CardDescription>
-            ComputeRouter deployment status
+            Describe your compute workload and hardware constraints
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!isContractConfigured ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Contract Not Deployed</AlertTitle>
-              <AlertDescription>
-                COMPUTE_ROUTER_ADDRESS is empty. This is expected if the contract hasn&apos;t been deployed to ADI Testnet yet.
-                <br /><br />
-                <strong>Expected behavior:</strong> Read and write tests will fail until the contract is deployed and the address is configured in <code>offchain/src/lib/contracts/compute-router.ts</code>.
-              </AlertDescription>
-            </Alert>
-          ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Contract Address</p>
-              <p className="font-mono text-sm">{COMPUTE_ROUTER_ADDRESS}</p>
-              <Badge variant="default">Configured ✓</Badge>
+              <Label htmlFor="description">Job Description</Label>
+              <Input
+                id="description"
+                placeholder="e.g. Train a BERT model on custom dataset"
+                value={formData.description}
+                onChange={e =>
+                  setFormData(prev => ({ ...prev, description: e.target.value }))
+                }
+                disabled={isLoading}
+                required
+              />
             </div>
-          )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gpuModel">GPU Model</Label>
+                <Select
+                  value={formData.gpuModel}
+                  onValueChange={value =>
+                    setFormData(prev => ({ ...prev, gpuModel: value }))
+                  }
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="gpuModel">
+                    <SelectValue placeholder="Select GPU" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GPU_MODELS.map(model => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maxPrice">Max Price ($/hr)</Label>
+                <Input
+                  id="maxPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 3.00"
+                  value={formData.maxPrice}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, maxPrice: e.target.value }))
+                  }
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minGpuCount">Min GPU Count</Label>
+                <Input
+                  id="minGpuCount"
+                  type="number"
+                  step="1"
+                  min="1"
+                  placeholder="e.g. 1"
+                  value={formData.minGpuCount}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, minGpuCount: e.target.value }))
+                  }
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="region">Region (optional)</Label>
+                <Input
+                  id="region"
+                  placeholder="e.g. US"
+                  value={formData.region}
+                  onChange={e =>
+                    setFormData(prev => ({ ...prev, region: e.target.value }))
+                  }
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading || !formData.description.trim()}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Routing...
+                </>
+              ) : (
+                <>
+                  <Brain className="mr-2 h-4 w-4" />
+                  Route Job
+                </>
+              )}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
-      <Separator className="my-6" />
+      {/* Error Display */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Routing Failed</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-      {/* Read Test */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileSearch className="h-5 w-5" />
-            Read Test
-          </CardTitle>
-          <CardDescription>
-            Test reading from the ComputeRouter contract (getJob with jobId 0)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button 
-            onClick={handleTestRead}
-            disabled={!isConnected || readResult.status === 'loading'}
-            className="w-full md:w-auto"
-          >
-            {readResult.status === 'loading' ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Reading...
-              </>
-            ) : (
-              <>
-                <FileSearch className="mr-2 h-4 w-4" />
-                Test Read Contract
-              </>
-            )}
-          </Button>
+      {/* Thinking Steps */}
+      {visibleSteps.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-blue-400" />
+              Agent Thinking
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-l-2 border-slate-700 pl-4 space-y-4">
+              {visibleSteps.map(step => (
+                <ThinkingStepItem key={`${step.id}-${step.status}`} step={step} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {readResult.status === 'success' && (
-            <Alert className="border-green-500">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertTitle>Read Successful</AlertTitle>
-              <AlertDescription>
-                <pre className="mt-2 text-xs overflow-auto max-h-40 p-2 bg-muted rounded">
-                  {JSON.stringify(readResult.data, (_, v) => 
-                    typeof v === 'bigint' ? v.toString() : v, 2
+      {/* Result Card */}
+      {result && (
+        <Card className="border-emerald-500/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              Routing Decision
+            </CardTitle>
+            <CardDescription>
+              Agent selected the optimal provider for your workload
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Provider header */}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold">{result.provider.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant="default">{result.provider.source}</Badge>
+                  {result.provider.region && (
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      {result.provider.region}
+                    </span>
                   )}
-                </pre>
-              </AlertDescription>
-            </Alert>
-          )}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-1 text-emerald-400 font-bold text-xl terminal-data">
+                  <DollarSign className="h-5 w-5" />
+                  {result.provider.priceEstimate.toFixed(2)}
+                  <span className="text-sm font-normal text-muted-foreground">/hr</span>
+                </div>
+                <div className="text-sm text-muted-foreground mt-0.5 terminal-data">
+                  {result.provider.uptimePercentage}% uptime
+                </div>
+              </div>
+            </div>
 
-          {readResult.status === 'error' && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>Read Failed</AlertTitle>
-              <AlertDescription>
-                {readResult.error}
-                <p className="mt-2 text-sm text-muted-foreground">
-                  This is expected if the contract is not deployed. Deploy the contract and update COMPUTE_ROUTER_ADDRESS to enable reads.
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+            <Separator />
 
-      {/* Write Test */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Send className="h-5 w-5" />
-            Write Test
-          </CardTitle>
-          <CardDescription>
-            Test transaction signing by submitting a test job to the ComputeRouter
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button 
-            onClick={handleTestWrite}
-            disabled={!isConnected || !isOnAdiTestnet || writeResult.status === 'loading'}
-            className="w-full md:w-auto"
-          >
-            {writeResult.status === 'loading' ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Test Sign Transaction
-              </>
-            )}
-          </Button>
+            {/* Hardware */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Cpu className="h-4 w-4" />
+                Hardware
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">GPU Model</p>
+                  <p className="text-sm font-medium terminal-data">
+                    {result.provider.hardware.gpuModel}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">GPU Count</p>
+                  <p className="text-sm font-medium terminal-data">
+                    {result.provider.hardware.gpuCount}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          {!isConnected && (
-            <p className="text-sm text-muted-foreground">
-              Connect wallet to enable transaction signing test
-            </p>
-          )}
+            <Separator />
 
-          {isConnected && !isOnAdiTestnet && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Wrong Network</AlertTitle>
-              <AlertDescription>
-                Switch to ADI Testnet to test transaction signing.
-              </AlertDescription>
-            </Alert>
-          )}
+            {/* Reasoning */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Brain className="h-4 w-4" />
+                Agent Reasoning
+              </h4>
+              <p className="text-sm text-slate-300 leading-relaxed">{result.reasoning}</p>
+            </div>
 
-          {writeResult.status === 'success' && (
-            <Alert className="border-green-500">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertTitle>Transaction Submitted</AlertTitle>
-              <AlertDescription>
-                <p className="text-sm">Transaction Hash:</p>
-                <p className="font-mono text-xs break-all mt-1">{writeResult.hash}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  The transaction has been submitted to ADI Testnet.
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {writeResult.status === 'error' && (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" />
-              <AlertTitle>Transaction Failed</AlertTitle>
-              <AlertDescription>
-                {writeResult.error}
-                <ul className="mt-2 text-sm text-muted-foreground list-disc list-inside">
-                  <li>Check that you have ADI testnet tokens in your wallet</li>
-                  <li>Verify the ComputeRouter contract is deployed</li>
-                  <li>Ensure COMPUTE_ROUTER_ADDRESS is correctly configured</li>
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Footer Info */}
-      <div className="mt-8 p-4 bg-muted rounded-lg">
-        <h3 className="font-semibold mb-2">About This Verification</h3>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• Connection: Verifies wallet can connect and identify ADI Testnet</li>
-          <li>• Read Test: Calls getJob(0) - expected to fail if job 0 doesn&apos;t exist</li>
-          <li>• Write Test: Submits a test job - requires ADI tokens for gas</li>
-        </ul>
-        <p className="text-sm text-muted-foreground mt-3">
-          <strong>Expected behavior before deployment:</strong> Connection should work, but read/write tests will fail until the ComputeRouter is deployed and funded.
-        </p>
-      </div>
+            {/* Confidence */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <span className="text-sm text-muted-foreground">Confidence Score</span>
+              <Badge
+                variant="outline"
+                className="terminal-data border-emerald-500/50 text-emerald-400"
+              >
+                {Math.round(result.confidence * 100)}%
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

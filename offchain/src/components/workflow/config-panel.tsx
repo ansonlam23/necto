@@ -32,7 +32,7 @@ export function ConfigPanel() {
   }
 
   const renderConfigFields = () => {
-    const { label } = selectedNode.data
+    const label = selectedNode.data.label as string | undefined
 
     switch (label) {
       case 'AI Router':
@@ -158,7 +158,7 @@ export function ConfigPanel() {
               <Label htmlFor="node-name">Node Name</Label>
               <Input
                 id="node-name"
-                defaultValue={label}
+                defaultValue={label ?? ''}
                 onChange={(e) => handleConfigChange('name', e.target.value)}
               />
             </div>
@@ -193,7 +193,7 @@ export function ConfigPanel() {
         <Card className="border-sidebar-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">
-              {selectedNode.data.label}
+              {String(selectedNode.data.label ?? '')}
             </CardTitle>
             <p className="text-xs text-muted-foreground capitalize">
               {selectedNode.category} Node
