@@ -12,7 +12,7 @@ const initialNodes: Node[] = [
     id: '1',
     type: 'default',
     position: { x: 250, y: 100 },
-    data: { label: 'Start Node' },
+    data: { label: 'Start' },
     style: {
       backgroundColor: '#1e293b',
       color: '#fff',
@@ -21,26 +21,60 @@ const initialNodes: Node[] = [
       padding: '10px',
     }
   },
+  {
+    id: '2',
+    type: 'default',
+    position: { x: 250, y: 400 },
+    data: { label: 'End' },
+    style: {
+      backgroundColor: '#1e293b',
+      color: '#fff',
+      border: '2px solid #ef4444',
+      borderRadius: '8px',
+      padding: '10px',
+    }
+  },
 ]
 
 const initialEdges: Edge[] = []
 
-// Node templates for the palette
+// Node templates for the palette - organized by category
 const nodeTemplates = [
-  { id: 'webhook', label: '🔗 Webhook', color: '#3b82f6' },
-  { id: 'schedule', label: '⏰ Schedule', color: '#3b82f6' },
-  { id: 'ai-router', label: '🧠 AI Router', color: '#8b5cf6' },
-  { id: 'compliance', label: '🛡️ Compliance', color: '#8b5cf6' },
-  { id: 'akash', label: '💻 Akash', color: '#10b981' },
-  { id: 'render', label: '☁️ Render', color: '#10b981' },
-  { id: 'payment', label: '💳 Payment', color: '#f59e0b' },
-  { id: 'audit', label: '📋 Audit Log', color: '#f59e0b' },
+  // Triggers (Blue)
+  { id: 'webhook', label: 'Webhook', color: '#3b82f6', category: 'Triggers' },
+  { id: 'schedule', label: 'Schedule (Cron)', color: '#3b82f6', category: 'Triggers' },
+  { id: 'onchain-event', label: 'On-Chain Event', color: '#3b82f6', category: 'Triggers' },
+  { id: 'api-call', label: 'API Call', color: '#3b82f6', category: 'Triggers' },
+  { id: 'file-upload', label: 'File Upload', color: '#3b82f6', category: 'Triggers' },
+
+  // Logic & Processing (Purple)
+  { id: 'ai-router', label: 'AI Router', color: '#8b5cf6', category: 'Logic' },
+  { id: 'compliance', label: 'Compliance Gate', color: '#8b5cf6', category: 'Logic' },
+  { id: 'budget-guard', label: 'Budget Guard', color: '#8b5cf6', category: 'Logic' },
+  { id: 'filter', label: 'Data Filter', color: '#8b5cf6', category: 'Logic' },
+  { id: 'transformer', label: 'Transformer', color: '#8b5cf6', category: 'Logic' },
+  { id: 'aggregator', label: 'Aggregator', color: '#8b5cf6', category: 'Logic' },
+
+  // Compute Providers (Green)
+  { id: 'akash', label: 'Akash Network', color: '#10b981', category: 'Providers' },
+  { id: 'render', label: 'Render', color: '#10b981', category: 'Providers' },
+  { id: 'io-net', label: 'io.net', color: '#10b981', category: 'Providers' },
+  { id: 'lambda', label: 'Lambda Labs', color: '#10b981', category: 'Providers' },
+  { id: 'vast-ai', label: 'Vast.ai', color: '#10b981', category: 'Providers' },
+  { id: 'runpod', label: 'RunPod', color: '#10b981', category: 'Providers' },
+
+  // Settlement & Output (Orange)
+  { id: 'payment', label: 'USDC Payment', color: '#f59e0b', category: 'Settlement' },
+  { id: 'audit', label: '0G Audit Log', color: '#f59e0b', category: 'Settlement' },
+  { id: 'notification', label: 'Notification', color: '#f59e0b', category: 'Settlement' },
+  { id: 'database', label: 'Database Write', color: '#f59e0b', category: 'Settlement' },
+  { id: 'webhook-out', label: 'Webhook Out', color: '#f59e0b', category: 'Settlement' },
 ]
 
 function TestBuilderContent() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
-  const [nextId, setNextId] = useState(2)
+  const [nextId, setNextId] = useState(3)
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -143,20 +177,31 @@ function TestBuilderContent() {
             <p className="text-xs text-muted-foreground mb-4">
               Drag to canvas or click to add
             </p>
-            <div className="space-y-2">
-              {nodeTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="p-3 rounded-lg border border-border cursor-pointer hover:bg-accent transition-colors text-sm"
-                  draggable
-                  onDragStart={(e) => onDragStart(e, template.id)}
-                  onClick={() => addNodeOnClick(template.id)}
-                  style={{ borderLeftColor: template.color, borderLeftWidth: '3px' }}
-                >
-                  {template.label}
+
+            {/* Group nodes by category */}
+            {['Triggers', 'Logic', 'Providers', 'Settlement'].map((category) => (
+              <div key={category} className="mb-6">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  {category}
+                </h3>
+                <div className="space-y-1">
+                  {nodeTemplates
+                    .filter(template => template.category === category)
+                    .map((template) => (
+                      <div
+                        key={template.id}
+                        className="p-2 rounded-md border border-border cursor-pointer hover:bg-accent transition-colors text-sm"
+                        draggable
+                        onDragStart={(e) => onDragStart(e, template.id)}
+                        onClick={() => addNodeOnClick(template.id)}
+                        style={{ borderLeftColor: template.color, borderLeftWidth: '3px' }}
+                      >
+                        {template.label}
+                      </div>
+                    ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 

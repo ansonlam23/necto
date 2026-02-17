@@ -13,18 +13,42 @@ import { Send, Bot, User, Loader2, Sparkles, AlertCircle, Server, Cpu, HardDrive
 
 // Define deployment requirements
 interface DeploymentRequirements {
-  dockerImage?: string;
-  cpu?: number;
-  memory?: string;
-  storage?: string;
-  gpu?: string;
-  port?: number;
+  dockerImage?: string | null;
+  cpu?: string | null;
+  memory?: string | null;
+  storage?: string | null;
+  gpu?: string | null;
+  port?: number | string | null;
+  region?: string | null;
+}
+
+interface ProviderRecommendation {
+  name: string;
+  id: string;
+  price: number;
+  uptime: number;
+  hardware: {
+    gpuModel?: string;
+    gpuCount?: number;
+    cpuCount?: number;
+    memoryGB?: number;
+    storageGB?: number;
+  };
   region?: string;
+  reason?: string;
 }
 
 export default function AgentPage() {
-  const [requirements, setRequirements] = useState<DeploymentRequirements>({});
-  const [quickSpecs, setQuickSpecs] = useState('');
+  const [requirements, setRequirements] = useState<DeploymentRequirements>({
+    dockerImage: null,
+    cpu: null,
+    memory: null,
+    storage: null,
+    gpu: null,
+    port: null,
+  });
+  const [recommendation, setRecommendation] = useState<ProviderRecommendation | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [input, setInput] = useState('');
@@ -84,7 +108,7 @@ export default function AgentPage() {
   // Check for API key configuration error
   const hasApiKeyError = error?.message?.includes('Gemini API key');
 
-  // Extract requirements from messages
+  // Extract requirements and recommendations from messages
   useEffect(() => {
     messages.forEach(msg => {
       if (msg.role === 'assistant') {
@@ -93,16 +117,44 @@ export default function AgentPage() {
           .map(part => part.text)
           .join(' ') || '';
 
-        if (textContent) {
-          // Try to extract deployment specs mentioned in the conversation
-          const cpuMatch = textContent.match(/(\d+(?:\.\d+)?)\s*CPU/i);
-          const memMatch = textContent.match(/(\d+)\s*(Mi|Gi)\s*(?:RAM|memory)/i);
-          const storageMatch = textContent.match(/(\d+)\s*(Mi|Gi)\s*storage/i);
+        // Check for tool outputs with requirement updates
+        msg.parts?.forEach(part => {
+          if (part.type === 'tool-result' && part.result) {
+            const result = part.result as any;
 
-          if (cpuMatch) setRequirements(prev => ({ ...prev, cpu: parseFloat(cpuMatch[1]) }));
-          if (memMatch) setRequirements(prev => ({ ...prev, memory: `${memMatch[1]}${memMatch[2]}` }));
-          if (storageMatch) setRequirements(prev => ({ ...prev, storage: `${storageMatch[1]}${storageMatch[2]}` }));
-        }
+            // Check for requirement updates from gatherRequirements tool
+            if (result.requirementUpdate?.allRequirements) {
+              setRequirements(result.requirementUpdate.allRequirements);
+
+              // Check if all required fields are filled
+              const { dockerImage, cpu, memory, storage } = result.requirementUpdate.allRequirements;
+              if (dockerImage && cpu && memory && storage && result.readyToSearch) {
+                setIsSearching(true);
+              }
+            }
+
+            // Check for provider recommendations from searchProviders tool
+            if (result.recommendation && result.topProviders?.length > 0) {
+              const topProvider = result.topProviders[0];
+              setRecommendation({
+                name: topProvider.name,
+                id: topProvider.id,
+                price: topProvider.pricePerHour,
+                uptime: topProvider.uptime,
+                hardware: {
+                  gpuModel: topProvider.gpuModel,
+                  gpuCount: topProvider.gpuCount,
+                  cpuCount: topProvider.cpuCount,
+                  memoryGB: topProvider.memoryGB,
+                  storageGB: topProvider.storageGB,
+                },
+                region: topProvider.region,
+                reason: result.recommendation.reason,
+              });
+              setIsSearching(false);
+            }
+          }
+        });
       }
     });
   }, [messages]);
@@ -119,8 +171,8 @@ export default function AgentPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chat Interface */}
         <div className="lg:col-span-2">
-          <Card className="h-[calc(100vh-12rem)]">
-            <CardHeader className="pb-3">
+          <Card className="h-[600px] flex flex-col">
+            <CardHeader className="pb-3 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bot className="h-5 w-5 text-primary" />
@@ -132,9 +184,9 @@ export default function AgentPage() {
               </CardDescription>
             </CardHeader>
 
-            <Separator />
+            <Separator className="flex-shrink-0" />
 
-            <CardContent className="flex flex-col h-[calc(100%-8rem)] p-0">
+            <CardContent className="flex flex-col flex-1 min-h-0 p-0">
               {/* Messages Area */}
               <ScrollArea className="flex-1 p-4">
                 {hasApiKeyError ? (
@@ -242,7 +294,7 @@ export default function AgentPage() {
               </ScrollArea>
 
               {/* Input Area */}
-              <div className="p-4 border-t">
+              <div className="p-4 border-t flex-shrink-0">
                 <form onSubmit={handleSubmit} className="flex gap-2">
                   <Input
                     value={input}
@@ -278,43 +330,93 @@ export default function AgentPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Docker Image:</span>
-                  <span className="font-mono text-xs">
+                  <span className={`font-mono text-xs ${requirements.dockerImage ? 'text-green-500' : ''}`}>
                     {requirements.dockerImage || 'Not specified'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">CPU:</span>
-                  <span className="font-mono text-xs">
-                    {requirements.cpu ? `${requirements.cpu} units` : 'Not specified'}
+                  <span className={`font-mono text-xs ${requirements.cpu ? 'text-green-500' : ''}`}>
+                    {requirements.cpu || 'Not specified'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Memory:</span>
-                  <span className="font-mono text-xs">
+                  <span className={`font-mono text-xs ${requirements.memory ? 'text-green-500' : ''}`}>
                     {requirements.memory || 'Not specified'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Storage:</span>
-                  <span className="font-mono text-xs">
+                  <span className={`font-mono text-xs ${requirements.storage ? 'text-green-500' : ''}`}>
                     {requirements.storage || 'Not specified'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">GPU:</span>
-                  <span className="font-mono text-xs">
+                  <span className={`font-mono text-xs ${requirements.gpu ? 'text-green-500' : ''}`}>
                     {requirements.gpu || 'Not required'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Port:</span>
-                  <span className="font-mono text-xs">
+                  <span className={`font-mono text-xs ${requirements.port ? 'text-green-500' : ''}`}>
                     {requirements.port || 'Not specified'}
                   </span>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Provider Recommendation Card */}
+          {(isSearching || recommendation) && (
+            <Card className="border-primary">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  {isSearching ? 'Searching Providers...' : 'Recommended Provider'}
+                </CardTitle>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-4">
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : recommendation ? (
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Provider:</span>
+                        <span className="font-semibold text-xs">{recommendation.name}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Price:</span>
+                        <span className="font-mono text-xs text-green-500">
+                          ${recommendation.price.toFixed(4)}/hr
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Uptime:</span>
+                        <span className="font-mono text-xs">{recommendation.uptime.toFixed(1)}%</span>
+                      </div>
+                      {recommendation.region && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Region:</span>
+                          <span className="font-mono text-xs">{recommendation.region}</span>
+                        </div>
+                      )}
+                    </div>
+                    {recommendation.reason && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground">{recommendation.reason}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-3">
