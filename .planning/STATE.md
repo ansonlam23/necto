@@ -51,13 +51,16 @@
 
 ### Current Plan
 **Phase 1 Extension: Akash Integration**  
-- Akash API client for provider discovery
-- SDL generator for deployments
-- Template gallery for web apps
-- Keplr wallet integration
-- Deployment routing and monitoring
+- Akash API client for provider discovery ✅
+- SDL generator for deployments ✅
+- Template gallery for web apps ✅
+- Agent routing logic for Akash ✅
+- Provider discovery UI components ✅
+- Deployment monitoring hooks ✅
+- Keplr wallet integration (pending)
+- Full deployment workflow (pending)
 
-**Next Action:** Continue Phase 1 with Akash deployment integration
+**Next Action:** Execute Plan 03 - Connect to real Console API provider discovery
 
 ---
 
@@ -135,18 +138,26 @@
 8. **Keplr wallet** — Standard for Akash ecosystem
 9. **Template gallery** — Lower barrier for common workloads
 10. **Route to Akash** — Agent can route suitable jobs to Akash providers
+11. **Weighted provider scoring** — Default weights: price 35%, reliability 25%, performance 25%, latency 15%
+12. **5-minute bid timeout** — Balance between responsiveness and provider response time
 
 ---
 
 ## Active Todos
 
 ### Phase 1 Extension (Akash)
-- [ ] Set up Akash API client module
-- [ ] Research Akash SDL format and requirements
+- [x] Set up Akash API client module
+- [x] Research Akash SDL format and requirements
+- [x] Implement SDL generator with templates
+- [x] Create multi-factor provider selection algorithm
+- [x] Build agent routing logic for Akash
+- [x] Create provider discovery hooks
+- [x] Create provider and deployment UI components
+- [ ] Connect to real Console API provider discovery
 - [ ] Design template gallery UI
 - [ ] Plan Keplr wallet integration
 - [ ] Create deployment service architecture
-- [ ] Integrate Akash routing into agent
+- [ ] Integrate Akash routing into agent UI
 
 ### Phase 1 Core (Ongoing)
 - [ ] Complete 01-02 plan implementation
@@ -176,28 +187,26 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Reorganize .planning directory and clarify project direction
+- **Action:** Execute plan 02-02 (Agent Routing & Provider Discovery)
 - **Outcome:** 
-  - Created MILESTONES.md with v1.0 archive
-  - Archived 01-01 phase to milestones/v1.0-phases/
-  - Cleaned up quick/ folder
-  - Updated PROJECT.md with Akash integration focus
-  - Updated ROADMAP.md - Akash as Phase 1 extension
-  - Created Phase 2.1 for Akash deployment work
-- **Key Insight:** Akash integration is the first provider integration for the marketplace, not a pivot away from it
+  - Implemented multi-factor provider selection algorithm
+  - Created agent routing logic with suitability checking
+  - Built useProviderDiscovery and useAkashDeployment hooks
+  - Created provider-card, provider-list, deployment-status components
+  - Added shadcn progress, scroll-area, slider components
+- **Key Insight:** 11-state deployment machine provides granular progress tracking for UX
 
 ### Context for Next Session
-Ready to continue Phase 1 with Akash integration:
-- Clean directory structure
-- Clear requirements (PROJECT.md)
-- Defined roadmap (ROADMAP.md)
-- Foundation code available (archived but accessible)
-- Phase 2.1 plan created for Akash deployment
+Ready to continue Phase 2 with Akash integration:
+- Plan 02-02 complete (agent routing + provider discovery)
+- Plan 02-03 ready to execute (Console API provider discovery)
+- Plan 02-04 pending (full deployment workflow)
+- Foundation components in place for real provider data
 
 **Ready for:**
-- Continue 01-02 plan implementation
-- Begin Akash API integration
-- Build template gallery
+- Execute Plan 03 - Connect to real Console API
+- Build template gallery UI
+- Integrate Keplr wallet
 
 ### Continuity Artifacts
 - **MILESTONES.md:** Archive structure and milestone tracking
