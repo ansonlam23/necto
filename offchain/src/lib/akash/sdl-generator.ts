@@ -465,7 +465,7 @@ export function parseYAMLToSDL(yamlString: string): { sdl: SdlSpec | null; error
     }
     
     // Cast to SdlSpec (runtime validation is lenient)
-    return { sdl: parsed as SdlSpec, errors: [] };
+    return { sdl: parsed as unknown as SdlSpec, errors: [] };
   } catch (err) {
     errors.push(`YAML parse error: ${err instanceof Error ? err.message : String(err)}`);
     return { sdl: null, errors };

@@ -7,6 +7,7 @@ import {
   generateSDL,
   validateSDL,
   sdlToYAML,
+  parseYAMLToSDL,
   JobRequirements
 } from '@/lib/akash/sdl-generator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,7 @@ export function SdlEditor({
   className,
   sdl: initialSdl,
   requirements,
+  onChange,
   readOnly = false
 }: SdlEditorProps) {
   const [yaml, setYaml] = React.useState('');
@@ -62,10 +64,19 @@ export function SdlEditor({
   }, [initialSdl, requirements]);
 
   const handleYamlChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setYaml(e.target.value);
+    const newYaml = e.target.value;
+    setYaml(newYaml);
     setIsModified(true);
-    // Note: Full YAML parsing would require js-yaml library
-    // For now, we just track modifications
+    
+    // Parse and validate YAML
+    const { sdl, errors } = parseYAMLToSDL(newYaml);
+    setIsValid(errors.length === 0);
+    setValidationErrors(errors);
+    
+    // Call onChange if valid
+    if (sdl && onChange) {
+      onChange(sdl, newYaml);
+    }
   };
 
   const handleCopy = async () => {
