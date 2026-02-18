@@ -304,14 +304,14 @@ export function RequirementsForm({
             <div className="space-y-2">
               <Label htmlFor="region" className="text-xs">Region</Label>
               <Select
-                value={value.region || ''}
-                onValueChange={(v) => updateField('region', v || undefined)}
+                value={value.region || 'any'}
+                onValueChange={(v) => updateField('region', v === 'any' ? undefined : v)}
               >
                 <SelectTrigger id="region">
-                  <SelectValue placeholder="Any" />
+                  <SelectValue placeholder="Any Region" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any Region</SelectItem>
+                  <SelectItem value="any">Any Region</SelectItem>
                   {REGIONS.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       {r.label}
