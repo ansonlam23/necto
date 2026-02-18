@@ -5,64 +5,19 @@
  */
 
 import { BaseTool, type RunAsyncToolRequest } from '@google/adk';
-import { isAkashSuitable, type SuitabilityCheck } from '../akash-router';
+import { isAkashSuitable } from '../akash-router';
 import { 
   filterProviders, 
   rankProviders, 
-  type Provider, 
-  type SelectionWeights 
+  type Provider
 } from '../provider-selection';
-import { JobRequirements } from '@/lib/akash/sdl-generator';
+import {
+  CompareProvidersParams,
+  ProviderComparison,
+  CompareProvidersResult
+} from '../types/compare-providers';
 
-/**
- * Parameters for comparing providers
- */
-export interface CompareProvidersParams {
-  /** Hardware and software requirements */
-  requirements: JobRequirements;
-  /** Provider IDs to compare (e.g., ['akash', 'ionet']) */
-  providersToCompare: string[];
-  /** Optional custom weights for scoring */
-  weights?: SelectionWeights;
-}
-
-/**
- * Provider comparison result
- */
-export interface ProviderComparison {
-  /** Provider identifier */
-  provider: string;
-  /** Provider name */
-  name: string;
-  /** Whether this provider can handle the workload */
-  suitable: boolean;
-  /** Suitability score (0-100) */
-  score: number;
-  /** Estimated cost in USD per hour */
-  estimatedCost: number;
-  /** Estimated time to deploy */
-  timeToDeploy: string;
-  /** Advantages of this provider */
-  pros: string[];
-  /** Disadvantages of this provider */
-  cons: string[];
-  /** Detailed assessment */
-  assessment: string;
-}
-
-/**
- * Result from compare providers tool
- */
-export interface CompareProvidersResult {
-  /** Whether comparison was successful */
-  success: boolean;
-  /** Comparison results for each provider */
-  comparisons: ProviderComparison[];
-  /** Recommended provider (highest score) */
-  recommended?: string;
-  /** Error message if failed */
-  error?: string;
-}
+export type { CompareProvidersParams, ProviderComparison, CompareProvidersResult };
 
 // Mock providers for development - same as akash-router.ts
 // In production, these would come from provider registries
@@ -132,7 +87,7 @@ const MOCK_PROVIDERS: Provider[] = [
 /**
  * Helper to get time to deploy estimate
  */
-function getTimeToDeploy(provider: Provider, requirements: JobRequirements): string {
+function getTimeToDeploy(provider: Provider, requirements: CompareProvidersParams['requirements']): string {
   // Base time: 2-3 minutes for container pull
   let baseMinutes = 3;
   
@@ -160,7 +115,7 @@ function getTimeToDeploy(provider: Provider, requirements: JobRequirements): str
 function generatePros(
   provider: Provider, 
   score: ProviderComparison['score'],
-  requirements: JobRequirements
+  requirements: CompareProvidersParams['requirements']
 ): string[] {
   const pros: string[] = [];
   
@@ -197,7 +152,7 @@ function generatePros(
 function generateCons(
   provider: Provider,
   score: ProviderComparison['score'],
-  requirements: JobRequirements
+  requirements: CompareProvidersParams['requirements']
 ): string[] {
   const cons: string[] = [];
   
@@ -401,9 +356,9 @@ Returns: Comparison table with scores, costs, pros/cons, and recommendation.`,
     }
 
     const params: CompareProvidersParams = {
-      requirements: args.requirements as JobRequirements,
+      requirements: args.requirements as CompareProvidersParams['requirements'],
       providersToCompare: args.providersToCompare as string[],
-      weights: args.weights as SelectionWeights | undefined
+      weights: args.weights as CompareProvidersParams['weights']
     };
 
     const result = await executeCompareProviders(params);
