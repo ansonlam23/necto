@@ -175,8 +175,12 @@ export function filterProviders(
   }
 ): Provider[] {
   return providers.filter(p => {
-    if (filters.gpuType && !p.gpuTypes.includes(filters.gpuType)) {
-      return false;
+    if (filters.gpuType) {
+      const filterLower = filters.gpuType.toLowerCase();
+      const hasMatchingGpu = p.gpuTypes.some(gpu =>
+        gpu.toLowerCase().includes(filterLower)
+      );
+      if (!hasMatchingGpu) return false;
     }
     if (filters.region && p.region !== filters.region) {
       return false;
