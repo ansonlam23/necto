@@ -1,13 +1,15 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026  
-**Last Updated:** February 18, 2026  
-**Current Focus:** Milestone v2.0 — Provider UI Complete, Ready for Real Console API
+**Last Updated:** February 18, 2026 (Plan 02-09 Complete)  
+**Current Focus:** Milestone v2.0 — Critical deployment fixes applied
 
 ### Gap Closure Complete ✅
 **Plan 02-05:** Google ADK tool architecture implemented. SYS-06 gap (ADK integration) RESOLVED.
 
 **Plan 02-07:** Provider score breakdown and detail dialog. SYS-04 gap (provider selection display) RESOLVED.
+
+**Plan 02-09:** Critical deployment fixes (GPU filtering, YAML parsing, SDL validation). SYS-03 gap RESOLVED.
 
 ## Project Reference
 
@@ -35,6 +37,7 @@
 5. ✅ Created Phase 2.1 for Akash deployment work
 6. ✅ **RESOLVED SYS-06:** Google ADK tool architecture implemented
 7. ✅ **RESOLVED SYS-04:** Provider score breakdown and detail dialog
+8. ✅ **RESOLVED SYS-03:** Critical deployment fixes (case-insensitive GPU filtering, YAML parsing)
 
 ---
 
@@ -70,8 +73,9 @@
 - Deployment API routes (CRUD + log streaming) ✅
 - Provider and escrow API routes ✅
 - Buyer dashboard with real-time updates ✅
-- **Google ADK tool architecture** ✅ **(SYS-06 resolved)**
-- **Provider score breakdown and detail dialog** ✅ **(SYS-04 resolved)**
+- **Google ADK tool architecture** ✅
+- **Provider score breakdown** ✅
+- **Critical deployment fixes** ✅ **(NEW - SYS-03 resolved)**
 - Console API funding integration (pending)
 - Testnet USDC escrow contracts (pending)
 - Sponsored hosting model for hackathon (Necto pays Akash costs)
@@ -103,7 +107,7 @@
 - **v1.0 Phases Completed:** 1 (archived)
 - **Quick Tasks Completed:** 2 (cleaned up)
 - **Reorganizations:** 1 (cleanup)
-- **Gap Closures:** 2 (SYS-06 ADK integration, SYS-04 provider UI)
+- **Gap Closures:** 2 (SYS-06 ADK integration, SYS-04 provider UI, SYS-03 deployment fixes)
 
 ### Quality Indicators
 - **v1.0 Requirements Coverage:** 100% ✅
@@ -194,6 +198,7 @@
 - [x] Build buyer dashboard with deployment monitoring
 - [x] **Google ADK tool architecture (Gap Closure)** ✅
 - [x] **Provider score breakdown and detail dialog** ✅
+- [x] **Critical deployment fixes (SYS-03)** ✅
 
 ### Phase 2 (Akash) - Remaining
 - [ ] Connect to real Console API provider discovery
@@ -223,6 +228,7 @@
 - Clarified: Akash is first provider integration, not a pivot ✅
 - **SYS-06 (Google ADK):** Gap closure complete ✅
 - **SYS-04 (Provider UI):** Gap closure complete ✅
+- **SYS-03 (Deployment fixes):** Gap closure complete ✅
 
 ### Open Blockers
 - None identified — ready to proceed with real integrations
@@ -232,21 +238,21 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 02-07 (Provider Score Breakdown and Detail Dialog)
+- **Action:** Execute plan 02-09 (Critical Deployment Fixes)
 - **Outcome:** 
-  - Fixed provider-list.tsx to destructure all score fields (not just totalScore)
-  - Created ProviderDetailDialog component (168 lines)
-  - Updated provider-card.tsx with onViewDetails prop
-  - Separated click areas: header for details, bottom for selection
-  - Added latency score to score breakdown display
-  - SYS-04 gap RESOLVED
-- **Key Insight:** Clear UX separation between viewing details (header) and selecting (bottom section)
-- **Decision Update:** Dual-purpose card pattern established for future provider listings
+  - Fixed case-sensitive GPU filtering (provider-selection.ts)
+  - Added parseYAMLToSDL() function for YAML validation (sdl-generator.ts)
+  - Updated SDL editor with real-time YAML validation (sdl-editor.tsx)
+  - Fixed GPU count regex to handle plural forms
+  - Installed js-yaml and @types/js-yaml dependencies
+  - SYS-03 gap RESOLVED
+- **Key Insight:** Real-time validation provides immediate feedback to users editing SDL
+- **Decision Update:** Case-insensitive matching used for GPU type filtering
 
 ### Context for Next Session
 Ready to continue Phase 2 with real integrations:
-- Plan 02-07 complete (Provider UI gap closure)
-- SYS-04 gap resolved
+- Plan 02-09 complete (Critical deployment fixes)
+- SYS-03 gap resolved
 - All UI components ready for Console API integration
 - API routes prepared for smart contract integration
 - Tool architecture ready for io.net, Lambda Labs additions
@@ -274,4 +280,4 @@ Ready to continue Phase 2 with real integrations:
 *Roadmap reorganization: February 14, 2026*  
 *Hackathon scope update: February 16, 2026*  
 *Gap closure (SYS-06): February 18, 2026*  
-*Gap closure (SYS-04): February 18, 2026*
+*Gap closure (SYS-04, SYS-03): February 18, 2026*
