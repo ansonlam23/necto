@@ -23,6 +23,7 @@ interface ProviderCardProps {
   score?: ProviderScore;
   isSelected?: boolean;
   onSelect?: () => void;
+  onViewDetails?: () => void;
   showDetails?: boolean;
   className?: string;
 }
@@ -32,19 +33,22 @@ export function ProviderCard({
   score,
   isSelected,
   onSelect,
+  onViewDetails,
   showDetails = true,
   className
 }: ProviderCardProps) {
   return (
     <Card 
       className={cn(
-        "transition-all duration-200 cursor-pointer",
+        "transition-all duration-200",
         isSelected && "border-primary ring-2 ring-primary/20",
         className
       )}
-      onClick={onSelect}
     >
-      <CardHeader className="pb-2">
+      <CardHeader 
+        className="pb-2 cursor-pointer hover:bg-muted/50"
+        onClick={onViewDetails}
+      >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -123,16 +127,33 @@ export function ProviderCard({
               <span>Performance</span>
               <Progress value={score.performanceScore * 100} className="w-24 h-1" />
             </div>
+            <div className="flex items-center justify-between text-xs">
+              <span>Latency</span>
+              <Progress value={score.latencyScore * 100} className="w-24 h-1" />
+            </div>
           </div>
         )}
 
-        {/* Selection indicator */}
-        {isSelected && (
-          <div className="flex items-center justify-center gap-2 pt-2 text-sm text-primary border-t">
-            <CheckCircle2 className="h-4 w-4" />
-            Selected
-          </div>
-        )}
+        {/* Selection indicator - separate click area */}
+        <div 
+          className="flex items-center justify-center gap-2 pt-2 text-sm border-t cursor-pointer hover:bg-muted/50 py-2 -mx-6 px-6"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect?.();
+          }}
+        >
+          {isSelected ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+              <span className="text-primary font-medium">Selected</span>
+            </>
+          ) : (
+            <>
+              <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />
+              <span className="text-muted-foreground">Click to select</span>
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
