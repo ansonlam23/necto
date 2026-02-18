@@ -1,7 +1,7 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026  
-**Last Updated:** February 17, 2026  
+**Last Updated:** February 18, 2026  
 **Current Focus:** Milestone v2.0 — Akash Integration for compute routing
 
 ## Project Reference
@@ -58,12 +58,14 @@
 - Provider discovery UI components ✅
 - Deployment monitoring hooks ✅
 - Job submission page with multi-step wizard ✅
+- Deployment API routes (CRUD + log streaming) ✅
+- Provider and escrow API routes ✅
+- Buyer dashboard with real-time updates ✅
 - Console API funding integration (pending)
-- Full deployment workflow (pending)
-- Testnet USDC escrow for demo payment flow (pending)
+- Testnet USDC escrow contracts (pending)
 - Sponsored hosting model for hackathon (Necto pays Akash costs)
 
-**Next Action:** Execute Plan 04 - Full deployment workflow with Console API
+**Next Action:** Integrate with real Console API and deploy testnet escrow contracts
 
 ---
 
@@ -146,6 +148,8 @@
 13. **USDC test token escrow** — Use testnet USDC for escrow contracts, enabling demo without real funds
 14. **Sponsored hosting** — Necto covers Akash hosting fees for hackathon/demo; users interact with testnet USDC escrow to demonstrate marketplace payment flow
 15. **Multi-step wizard pattern** — 5 steps (Input → Configure → SDL → Review → Deploy) for job submission
+16. **Server-Sent Events for logs** — One-way streaming simpler than WebSocket for log viewing
+17. **Client-side escrow signing** — API returns tx data, client signs with wallet (security)
 
 ---
 
@@ -160,6 +164,9 @@
 - [x] Create provider discovery hooks
 - [x] Create provider and deployment UI components
 - [x] Design template gallery UI
+- [x] Create deployment API routes (CRUD + SSE logs)
+- [x] Create providers and escrow API routes
+- [x] Build buyer dashboard with deployment monitoring
 
 ### Phase 2 (Akash) - Remaining
 - [ ] Connect to real Console API provider discovery
@@ -196,26 +203,27 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 02-03 (Job Submission Interface)
+- **Action:** Execute plan 02-04 (API Routes and Buyer Dashboard)
 - **Outcome:** 
-  - Created template gallery with 6 templates across 4 categories
-  - Built natural language input component with parsing
-  - Implemented SDL editor with YAML preview and validation
-  - Developed complete job submission page with 5-step wizard
-  - Added shadcn tabs and textarea components
-- **Key Insight:** Multi-step wizard pattern provides clear progression for job submission
-- **Decision Update:** Auto-sign toggle for streamlined hackathon demo flow
+  - Created deployment API routes with CRUD operations
+  - Implemented SSE-based log streaming endpoint
+  - Built providers API with filtering support
+  - Created escrow API returning transaction data for client signing
+  - Developed DeploymentList component with status badges and actions
+  - Built complete buyer dashboard with stats and real-time updates
+- **Key Insight:** Server-Sent Events provide simple one-way streaming for logs without WebSocket complexity
+- **Decision Update:** Escrow API returns transaction data for client-side signing (no server keys)
 
 ### Context for Next Session
-Ready to continue Phase 2 with Akash integration:
-- Plan 02-03 complete (job submission UI)
-- Plan 02-04 pending (full deployment workflow)
-- UI components ready for Console API integration
+Ready to continue Phase 2 with real integrations:
+- Plan 02-04 complete (API layer and buyer dashboard)
+- All UI components ready for Console API integration
+- API routes prepared for smart contract integration
 
 **Ready for:**
-- Execute Plan 04 - Full deployment workflow
-- Integrate Console API funding (Necto-sponsored)
-- Set up testnet USDC escrow (demo payment flow)
+- Integrate real Console API (requires API key)
+- Deploy testnet USDC escrow contracts
+- Connect frontend to live Akash deployments
 
 ### Continuity Artifacts
 - **MILESTONES.md:** Archive structure and milestone tracking
