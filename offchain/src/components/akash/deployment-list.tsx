@@ -337,4 +337,3 @@ function DeploymentItemCard({
 }
 
 export { DeploymentItemCard };
-export type { DeploymentItem };

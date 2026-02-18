@@ -76,7 +76,7 @@ interface DashboardStats {
   escrowBalance: number;
 }
 
-export default function BuyerDashboardPage(): JSX.Element {
+export default function BuyerDashboardPage(): React.JSX.Element {
   const { address, isConnected } = useAccount();
   const router = useRouter();
   
@@ -98,136 +98,101 @@ export default function BuyerDashboardPage(): JSX.Element {
     setIsLoading(true);
     try {
       // TODO: Replace with real API call
-      // const response = await fetch('/api/deployments', {
-      //   headers: { 'x-user-address': address || '' }
-      // });
+      // const response = await fetch('/api/deployments');
       // const data = await response.json();
       
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Use mock data for now
       setDeployments(MOCK_DEPLOYMENTS);
       
       // Calculate stats
-      const active = MOCK_DEPLOYMENTS.filter(d => d.status === 'active');
+      const activeCount = MOCK_DEPLOYMENTS.filter(d => d.status === 'active').length;
       const totalSpent = MOCK_DEPLOYMENTS.reduce((sum, d) => {
-        if (d.costPerHour) {
-          const duration = d.expiresAt 
-            ? new Date(d.expiresAt).getTime() - new Date(d.createdAt).getTime()
-            : Date.now() - new Date(d.createdAt).getTime();
-          const hours = duration / (1000 * 60 * 60);
+        if (d.costPerHour && d.createdAt) {
+          const hours = (Date.now() - new Date(d.createdAt).getTime()) / (1000 * 60 * 60);
           return sum + (d.costPerHour * hours);
         }
         return sum;
       }, 0);
       
       setStats({
-        activeDeployments: active.length,
+        activeDeployments: activeCount,
         totalSpent: Math.round(totalSpent * 100) / 100,
         totalDeployments: MOCK_DEPLOYMENTS.length,
-        escrowBalance: 125.50 // Mock balance
+        escrowBalance: 0 // TODO: Fetch from escrow contract
       });
     } catch (error) {
       console.error('Failed to fetch deployments:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [address]);
+  }, []);
 
-  // Initial load
+  // Load deployments on mount
   useEffect(() => {
-    if (isConnected && address) {
-      fetchDeployments();
-    }
-  }, [isConnected, address, fetchDeployments]);
+    fetchDeployments();
+  }, [fetchDeployments]);
 
   // Poll for updates every 30 seconds
   useEffect(() => {
-    if (!isConnected) return;
-    
-    const interval = setInterval(() => {
-      fetchDeployments();
-    }, 30000);
-
+    const interval = setInterval(fetchDeployments, 30000);
     return () => clearInterval(interval);
-  }, [isConnected, fetchDeployments]);
+  }, [fetchDeployments]);
 
-  const handleViewLogs = useCallback(async (deploymentId: string) => {
+  const handleViewLogs = async (deploymentId: string) => {
     setSelectedDeployment(deploymentId);
     setShowLogDialog(true);
     setIsLoadingLogs(true);
     
     try {
       // TODO: Connect to real SSE endpoint
-      // const eventSource = new EventSource(`/api/deployments/${deploymentId}/logs?follow=true`);
+      // const eventSource = new EventSource(`/api/deployments/${deploymentId}/logs`);
       
       // Mock logs for now
       await new Promise(resolve => setTimeout(resolve, 500));
       setLogs([
-        `[${new Date().toISOString()}] Starting deployment...`,
-        `[${new Date().toISOString()}] Pulling image pytorch/pytorch:latest`,
-        `[${new Date().toISOString()}] Image pulled successfully`,
-        `[${new Date().toISOString()}] Creating container...`,
-        `[${new Date().toISOString()}] Container started`,
-        `[${new Date().toISOString()}] Service available at http://192.168.1.100:8888`,
-        `[${new Date().toISOString()}] Ready for connections`
+        `[2026-02-17T10:00:00Z] Deployment initiated`,
+        `[2026-02-17T10:00:05Z] Provider matched: GPU Cloud East`,
+        `[2026-02-17T10:00:10Z] Creating lease...`,
+        `[2026-02-17T10:00:15Z] Lease created successfully`,
+        `[2026-02-17T10:00:20Z] Pulling container image...`,
+        `[2026-02-17T10:01:30Z] Container started`,
+        `[2026-02-17T10:01:35Z] Service ready at http://gpu-cloud-east.com:8080`
       ]);
     } catch (error) {
-      console.error('Failed to fetch logs:', error);
-      setLogs(['Error: Failed to fetch logs']);
+      console.error('Failed to load logs:', error);
+      setLogs(['Error loading logs']);
     } finally {
       setIsLoadingLogs(false);
     }
-  }, []);
+  };
 
-  const handleCloseDeployment = useCallback(async (deploymentId: string) => {
-    if (!confirm('Are you sure you want to close this deployment?')) {
-      return;
-    }
-
+  const handleCloseDeployment = async (deploymentId: string) => {
     try {
-      // TODO: Replace with real API call
-      // await fetch(`/api/deployments/${deploymentId}`, {
-      //   method: 'DELETE',
-      //   headers: { 'x-user-address': address || '' }
-      // });
-
+      // TODO: Call close deployment API
+      // await fetch(`/api/deployments/${deploymentId}`, { method: 'DELETE' });
+      
       // Update local state
       setDeployments(prev => 
-        prev.map(d => 
-          d.id === deploymentId 
-            ? { ...d, status: 'closed' as const, expiresAt: new Date().toISOString() }
-            : d
-        )
+        prev.map(d => d.id === deploymentId ? { ...d, status: 'closed' as const } : d)
       );
-      
-      // Update stats
-      setStats(prev => ({
-        ...prev,
-        activeDeployments: Math.max(0, prev.activeDeployments - 1)
-      }));
     } catch (error) {
       console.error('Failed to close deployment:', error);
-      alert('Failed to close deployment. Please try again.');
     }
-  }, [address]);
+  };
 
-  // Redirect if not connected
   if (!isConnected) {
     return (
-      <div className="container mx-auto py-12 px-4">
-        <Card className="max-w-md mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle>Connect Wallet</CardTitle>
-            <CardDescription>
-              Please connect your wallet to access the buyer dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-6">
-            <Button onClick={() => router.push('/')}>
-              <Wallet className="mr-2 h-4 w-4" />
-              Go Home
-            </Button>
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Connect Your Wallet</h2>
+            <p className="text-muted-foreground mb-4">
+              Please connect your wallet to view your deployments
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -235,161 +200,120 @@ export default function BuyerDashboardPage(): JSX.Element {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-8">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Buyer Dashboard</h1>
+          <h1 className="text-3xl font-bold">Buyer Dashboard</h1>
           <p className="text-muted-foreground">
             Manage your compute deployments and escrow
           </p>
         </div>
-        <Button onClick={() => router.push('/submit-job')}>
+        <Button onClick={() => router.push('/buyer/submit')}>
           <Plus className="mr-2 h-4 w-4" />
           New Deployment
         </Button>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Active Deployments"
-          value={stats.activeDeployments.toString()}
-          description="Currently running"
-          icon={<Server className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="Total Spent"
-          value={`$${stats.totalSpent.toFixed(2)}`}
-          description="Lifetime spending"
-          icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="Escrow Balance"
-          value={`$${stats.escrowBalance.toFixed(2)}`}
-          description="Available for deployments"
-          icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-          action={
-            <Button variant="ghost" size="sm" className="h-6 px-2">
-              Add Funds
-            </Button>
-          }
-        />
-        <StatsCard
-          title="Total Deployments"
-          value={stats.totalDeployments.toString()}
-          description="All time"
-          icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-        />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Deployments</CardTitle>
+            <Server className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeDeployments}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.totalDeployments} total deployments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.totalSpent.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Lifetime compute costs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Escrow Balance</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.escrowBalance.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Available for deployments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Uptime</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">99.9%</div>
+            <p className="text-xs text-muted-foreground">
+              Last 30 days
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Main Content */}
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Deployments List */}
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="active" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="closed">Closed</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="active" className="space-y-4">
-              <DeploymentList
-                deployments={deployments.filter(d => d.status === 'active')}
-                isLoading={isLoading}
-                onRefresh={fetchDeployments}
-                onViewLogs={handleViewLogs}
-                onCloseDeployment={handleCloseDeployment}
-              />
-            </TabsContent>
-            
-            <TabsContent value="all" className="space-y-4">
-              <DeploymentList
-                deployments={deployments}
-                isLoading={isLoading}
-                onRefresh={fetchDeployments}
-                onViewLogs={handleViewLogs}
-                onCloseDeployment={handleCloseDeployment}
-              />
-            </TabsContent>
-            
-            <TabsContent value="closed" className="space-y-4">
-              <DeploymentList
-                deployments={deployments.filter(d => d.status === 'closed')}
-                isLoading={isLoading}
-                onRefresh={fetchDeployments}
-                onViewLogs={handleViewLogs}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+      {/* Deployments Tabs */}
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">
+            Active
+            {stats.activeDeployments > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {stats.activeDeployments}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="all">All Deployments</TabsTrigger>
+          <TabsTrigger value="closed">Closed</TabsTrigger>
+        </TabsList>
 
-        {/* Quick Actions Sidebar */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => router.push('/submit-job')}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Submit New Job
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => router.push('/providers')}
-              >
-                <Server className="mr-2 h-4 w-4" />
-                Browse Providers
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                disabled
-              >
-                <DollarSign className="mr-2 h-4 w-4" />
-                Add Escrow Funds
-              </Button>
-            </CardContent>
-          </Card>
+        <TabsContent value="active" className="mt-4">
+          <DeploymentList
+            deployments={deployments.filter(d => d.status === 'active')}
+            isLoading={isLoading}
+            onViewLogs={handleViewLogs}
+            onCloseDeployment={handleCloseDeployment}
+          />
+        </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <ActivityItem
-                  title="Deployment Created"
-                  description="pytorch-gpu is now active"
-                  time="2 hours ago"
-                  icon={<Server className="h-4 w-4" />}
-                />
-                <ActivityItem
-                  title="Deployment Closed"
-                  description="nginx-web has been closed"
-                  time="1 day ago"
-                  icon={<AlertCircle className="h-4 w-4" />}
-                />
-                <ActivityItem
-                  title="Escrow Deposit"
-                  description="Added $100.00 to escrow"
-                  time="2 days ago"
-                  icon={<DollarSign className="h-4 w-4" />}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        <TabsContent value="all" className="mt-4">
+          <DeploymentList
+            deployments={deployments}
+            isLoading={isLoading}
+            onViewLogs={handleViewLogs}
+            onCloseDeployment={handleCloseDeployment}
+          />
+        </TabsContent>
 
-      {/* Log Viewer Dialog */}
+        <TabsContent value="closed" className="mt-4">
+          <DeploymentList
+            deployments={deployments.filter(d => d.status === 'closed')}
+            isLoading={isLoading}
+            onViewLogs={handleViewLogs}
+            onCloseDeployment={handleCloseDeployment}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Log Dialog */}
       <Dialog open={showLogDialog} onOpenChange={setShowLogDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
@@ -398,77 +322,27 @@ export default function BuyerDashboardPage(): JSX.Element {
               Deployment Logs
             </DialogTitle>
             <DialogDescription>
-              {selectedDeployment}
+              {selectedDeployment && `Deployment ID: ${selectedDeployment}`}
             </DialogDescription>
           </DialogHeader>
+          
           <div className="mt-4">
-            <div className="bg-black rounded-lg p-4 font-mono text-sm text-green-400 overflow-auto max-h-[50vh]">
-              {isLoadingLogs ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Loading logs...
-                </div>
-              ) : logs.length > 0 ? (
-                logs.map((log, i) => (
-                  <div key={i} className="py-0.5">
+            {isLoadingLogs ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin" />
+              </div>
+            ) : (
+              <div className="bg-muted rounded-lg p-4 font-mono text-sm h-[400px] overflow-y-auto">
+                {logs.map((log, i) => (
+                  <div key={i} className="py-1">
                     {log}
                   </div>
-                ))
-              ) : (
-                <span className="text-muted-foreground">No logs available</span>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-interface StatsCardProps {
-  title: string;
-  value: string;
-  description: string;
-  icon: React.ReactNode;
-  action?: React.ReactNode;
-}
-
-function StatsCard({ title, value, description, icon, action }: StatsCardProps): JSX.Element {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{description}</p>
-          {action}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-interface ActivityItemProps {
-  title: string;
-  description: string;
-  time: string;
-  icon: React.ReactNode;
-}
-
-function ActivityItem({ title, description, time, icon }: ActivityItemProps): JSX.Element {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="mt-0.5 text-muted-foreground">
-        {icon}
-      </div>
-      <div className="flex-1 space-y-1">
-        <p className="text-sm font-medium leading-none">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-xs text-muted-foreground">{time}</p>
-      </div>
     </div>
   );
 }
