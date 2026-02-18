@@ -2,7 +2,7 @@
 
 **Project:** Necto  
 **Created:** February 13, 2026 (Original)  
-**Updated:** February 17, 2026  
+**Updated:** February 18, 2026  
 **Coverage:** 26/26 requirements mapped ✓
 
 ## Overview
@@ -21,7 +21,17 @@ Build a two-sided compute marketplace with the first integration being Akash Net
 **Plans:**
 - [x] 01-01-PLAN.md — Onchain: ComputeRouter Contract (ADI Testnet) — COMPLETE (Archived)
 - [ ] 01-02-PLAN.md — Offchain: Job Submission + Agent Routing + Thinking UI
-- [ ] 02-01-PLAN.md — Akash Integration: Deployment routing to Akash providers
+
+**Phase 2: Akash Integration (9 plans):**
+- [x] 02-01-PLAN.md — Infrastructure: Console API client + SDL generator
+- [x] 02-02-PLAN.md — Agent Integration: Routing logic + Provider UI
+- [x] 02-03-PLAN.md — UI Components: Job form + Template gallery
+- [x] 02-04-PLAN.md — API Routes: Deployment lifecycle + E2E testing
+- [x] 02-05-PLAN.md — Gap Closure: Google ADK tool architecture
+- [x] 02-06-PLAN.md — Gap Closure: Template gallery Select fix
+- [ ] 02-07-PLAN.md — Gap Closure: Provider score breakdown + detail dialog
+- [ ] 02-08-PLAN.md — Gap Closure: Dashboard stats + provider comparison UI
+- [ ] 02-09-PLAN.md — Gap Closure: Critical fixes (GPU filtering, SDL validation)
 
 **Offchain Work:**
 - Job submission form with GPU requirements, Akash deployment toggle

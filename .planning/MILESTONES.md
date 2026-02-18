@@ -38,12 +38,12 @@
 **Goal:** Buyers can submit jobs and have them routed to Akash providers for deployment and execution
 
 **Key Features:**
-- Akash API integration for provider discovery
+- Akash Console API integration for provider discovery
 - SDL (Stack Definition Language) generator for deployments
 - Template gallery for common workloads
-- Keplr wallet integration for AKT transactions
+- USD funding via Console API (credit card) - no wallet needed
 - Agent routing to Akash providers
-- Real-time deployment monitoring
+- Real-time deployment monitoring via Console API
 
 ---
 
@@ -77,11 +77,14 @@
 
 ## Phase Directory Status
 
-| Phase | Milestone | Status | Location |
-|-------|-----------|--------|----------|
-| 01-01 | v1.0 | ✅ Archived | `.planning/milestones/v1.0-phases/01-01/` |
-| 01-02 | v2.0 | 🚧 Active | `.planning/phases/01-foundation-core-agent/` |
-| 02-01 | v2.0 | 🚧 Active | `.planning/phases/02-akash-webapp-deploy/` |
+| Phase | Plan | Milestone | Status | Location |
+|-------|------|-----------|--------|----------|
+| 01-01 | 01-01 | v1.0 | ✅ Archived | `.planning/milestones/v1.0-phases/01-01/` |
+| 01-02 | 01-02 | v2.0 | 🚧 Active | `.planning/phases/01-foundation-core-agent/` |
+| 02 | 02-01 | v2.0 | 📋 Planned | `.planning/phases/02-akash-webapp-deploy/` |
+| 02 | 02-02 | v2.0 | 📋 Planned | `.planning/phases/02-akash-webapp-deploy/` |
+| 02 | 02-03 | v2.0 | 📋 Planned | `.planning/phases/02-akash-webapp-deploy/` |
+| 02 | 02-04 | v2.0 | 📋 Planned | `.planning/phases/02-akash-webapp-deploy/` |
 
 ---
 

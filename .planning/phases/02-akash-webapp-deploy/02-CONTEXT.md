@@ -4,103 +4,180 @@ title: Akash Integration - Marketplace Provider
 status: active
 milestone: v2.0
 created: 2026-02-17
+updated: 2026-02-17
+gathered: 2026-02-17
 ---
 
 # Phase 2 Context: Akash Integration
 
-## Overview
+**Gathered:** 2026-02-17  
+**Status:** Ready for planning (updated)
 
-This phase adds Akash Network as the first provider integration to the Necto marketplace. Buyers can now submit compute jobs that get routed to Akash providers for deployment and execution.
+<domain>
+## Phase Boundary
 
-## Background
+Add Akash Network as the first provider integration to the Necto marketplace. Buyers submit compute jobs and the agent routes suitable workloads to Akash providers for deployment and execution. Uses Console API for deployment management with **testnet USDC payments** (fake/test tokens, not real money).
 
-### Marketplace Vision
-Necto is a two-sided compute marketplace where:
-- **Buyers** submit compute jobs with requirements
-- **Agent** routes jobs to optimal providers
-- **Providers** (starting with Akash) execute the jobs
+Key integration: Users pay Necto in testnet USDC (on-chain escrow), Necto backend manages Akash Console API funding. Despite testnet tokens, deployments on Akash are real using the actual provider network.
 
-### v1.0 Foundation (Archived)
-- ComputeRouter smart contract for job tracking
-- Google ADK agent foundation
-- Basic routing logic
+</domain>
 
-### v2.0 Direction
-Add Akash as the first supported provider:
-- Akash API integration
-- SDL generation for deployments
-- Provider discovery and filtering
-- Wallet integration (Keplr)
+<decisions>
+## Implementation Decisions
 
-## Current State
+### Job Routing Logic
+- **Agent auto-routes** suitable workloads to Akash based on job requirements
+- **Multi-factor provider selection**: Agent chooses based on latency, uptime, bid price, and performance specs (informed by user's natural language query/form inputs)
+- **Configurable suitability**: Job characteristics (GPU needs, duration, region) determine if Akash is appropriate
+- **Auto-sign enabled**: For streamlined hackathon/demo flow, agent can deploy automatically when good match found
 
-**Completed:**
-- ✅ Project foundation (v1.0 archived)
-- ✅ Documentation updated for Akash integration
-- ✅ Phase 2.1 plan created
+### Funding & Payment Flow
+- **Testnet USDC on ADI Chain** (fake/test coin): Users pay Necto in testnet USDC via smart contract escrow on ADI Testnet (chain 99999) - NOT real money
+- **Escrow mechanism**: Funds held on ADI Testnet, released to Necto when deployment created
+- **ADI Chain**: Contracts deployed on ADI Testnet (same chain as ComputeRouter), NOT Ethereum testnet
+- **Real Akash deployments**: Despite fake USDC on ADI, deployments on Akash are real (Console API uses real provider network)
+- **Deposit timing**: Charge when deployment is confirmed (not at job submission)
+- **Additional funds**: Prompt user at threshold when balance low, they decide to add funds or close deployment
+- **Failed payments**: Deployment hold - pause until payment resolved
+- **Cost transparency**: Detailed breakdown showing estimated hourly cost, total for duration, and deposit required
 
-**In Progress:**
-- 🚧 Phase 1 Extension: Akash Integration
+### Deployment Lifecycle
+- **No bids scenario**: Cancel deployment, refund escrow, notify user to try different specs/region
+- **Bid polling**: Periodic polling (every X seconds) via Console API
+- **Bid timeout**: 5 minutes - if no bids in 5 min, cancel and notify
+- **Lease closure**: Auto-close when:
+  - Funds exhausted (escrow runs out)
+  - User explicitly stops deployment
+  - Job completes (for batch workloads)
 
-**Next Up:**
-- Set up Akash API client
-- Integrate Akash into agent routing
-- Build provider discovery UI
-- Implement SDL generation
+### Monitoring & Status UI
+- **Full status dashboard**: Show complete state timeline (Pending → Bidding → Active → Complete) with timestamps and provider details
+- **Log access**: Real-time log stream in UI (like `kubectl logs -f`)
+- **Deployment list**: Minimal list view showing name + status, click for full details
+- **Notifications**: In-app toast notifications for state changes, bid received, errors, funds low
 
-## Key Decisions
+### Templates vs Custom SDL
+- **Agent-driven approach**: Agent crafts custom SDL based on user's natural language description of workload needs
+- **Template suggestions**: Agent suggests relevant templates as alternatives (ML Training, Web Service, Static Site)
+- **Natural language UI**: User describes requirements in text, agent interprets and generates SDL
+- **Full customization**: After SDL generation (template-based or custom), user can edit any field (resources, env vars, ports)
+- **Usage mix**: 20% templates, 80% custom SDL - most users get agent-crafted configurations
 
-1. **Akash-first provider** — Deep integration before adding others
-2. **Agent routes to Akash** — Part of normal routing workflow
-3. **SDL generation** — Abstract Akash deployment complexity
-4. **Keplr wallet** — Standard for Akash ecosystem
-5. **Marketplace context** — Not a standalone deployment tool
+### Claude's Discretion
+- Exact polling interval for bid checks
+- Notification timing and frequency
+- Dashboard layout and visual design
+- Error message wording
+- Template card design
+- Log stream UI implementation details
 
-## Akash Integration Points
+</decisions>
 
-### For Buyers
-- Submit jobs with Akash as target provider
-- See Akash providers in recommendations
-- Deploy via templates or custom SDL
-- Monitor deployment status
+<specifics>
+## Specific Ideas
 
-### For the Agent
-- Discover Akash providers via API
-- Normalize Akash pricing (AKT/USD)
-- Generate SDL for job requirements
-- Route suitable jobs to Akash
+- **Cost display**: Show estimated hourly cost prominently before deployment confirmation
+- **Bid comparison**: If multiple bids received, show comparison table with provider specs and pricing
+- **Auto-sign safety**: Cap auto-sign at reasonable cost threshold (e.g., $20 max without explicit confirmation)
+- **Template suggestions**: Agent proactively suggests: "Based on your ML training job, I can deploy a GPU-enabled template or create a custom configuration"
+- **Escrow transparency**: Show escrow balance in real-time, warn when < 1 hour of runtime remaining
 
-### For the Marketplace
-- Job records include Akash deployment details
-- Pricing comparison includes Akash rates
-- Settlement can eventually include AKT
+</specifics>
 
-## Files in This Phase
+<deferred>
+## Deferred Ideas
 
-- `02-01-PLAN.md` — Detailed plan for Akash integration
-- (More files to be added as work progresses)
+- **Scheduled deployments** — deploy at specific time (future phase)
+- **Multi-region failover** — auto-retry in different regions if no bids (could enhance current "cancel and notify")
+- **Email notifications** — currently in-app only (future enhancement)
+- **Template marketplace** — community-contributed templates (future)
+- **WebSocket real-time** — currently using polling, WebSocket could be upgrade
 
-## Related Files
-
-- `../../PROJECT.md` — Marketplace with Akash integration
-- `../../ROADMAP.md` — 4-phase marketplace roadmap
-- `../../STATE.md` — Current project state
-- `../01-foundation-core-agent/` — Previous phase
-
-## Resources
-
-### Akash Documentation
-- [Akash Docs](https://docs.akash.network/)
-- [SDL Reference](https://docs.akash.network/sdl/overview)
-- [Console API](https://console.akash.network/api)
-
-### Templates
-- ML Training workloads
-- Web services
-- Static sites
-- Custom Docker images
+</deferred>
 
 ---
 
-*Context for Phase 2: Akash Integration*
-*Part of Necto two-sided compute marketplace*
+## Architecture Notes
+
+### Payment Flow (ADI Chain)
+```
+User → Testnet USDC → ADI Testnet Escrow (Chain 99999)
+                          ↓
+Necto Backend ← Monitors Escrow → Creates Deployment via Console API
+                          ↓
+                  Akash Provider executes workload (real deployment)
+                          ↓
+               Funds released to Necto on ADI Testnet
+```
+
+### SDL Template Strategy (Hybrid Approach)
+**Tier 1 - Hardcoded Core Templates (6 templates):**
+- ML Training (GPU, CUDA)
+- Web Service (Node.js)
+- Web Service (Python)
+- Static Site (nginx)
+- Database (PostgreSQL)
+- Cache (Redis)
+
+**Tier 2 - Remote Template Fetch:**
+- Fetch from `https://github.com/akash-network/awesome-akash` (290+ templates)
+- SDL supports `include: ["https://..."]` for remote includes
+- Cache templates locally for performance
+
+**Tier 3 - Template Browser:**
+- Search/filter through fetched templates
+- Preview before selection
+
+### ADI Chain Configuration
+**Network:** ADI Testnet (Chain ID 99999)
+**RPC URL:** https://rpc.ab.testnet.adifoundation.ai/
+**Faucet:** https://faucet.ab.testnet.adifoundation.ai/
+**Currency:** ADI (for gas)
+
+**Contracts to Deploy:**
+1. **TestnetUSDC.sol** - ERC20 with 6 decimals, mintable for testing
+2. **AkashEscrow.sol** - Escrow contract holding USDC, releases on deployment
+
+**Deployment Tool:** Hardhat + Ignition (same as ComputeRouter)
+
+### Key Integration Points
+1. **Escrow Contract (ADI Testnet)**: Handles testnet USDC deposits, releases funds on deployment events
+2. **Console API Client**: Authenticated with Necto's API key, manages deployment lifecycle
+3. **Agent Router**: Evaluates jobs, generates SDL (with remote template support), selects providers
+4. **Monitoring Service**: Polls Console API for status updates, updates UI in real-time
+
+### Files in This Phase
+
+- `02-01-PLAN.md` — Infrastructure: Console API client + SDL generator + Escrow integration
+- `02-02-PLAN.md` — Agent Integration: Routing logic + Provider discovery UI
+- `02-03-PLAN.md` — UI Components: Natural language form + Template suggestions
+- `02-04-PLAN.md` — API Routes: Deployment lifecycle + Monitoring + E2E testing
+
+---
+
+## Technical Requirements
+
+### Smart Contract (New for this phase)
+- Escrow contract for USDC deposits
+- Release funds on deployment creation
+- Refund on deployment cancellation
+- Balance tracking per user/deployment
+
+### Console API Integration
+- Provider discovery endpoint
+- Deployment creation with SDL
+- Bid polling mechanism
+- Lease management
+- Log retrieval
+
+### Agent Enhancements
+- Natural language to SDL conversion
+- Multi-factor provider ranking
+- Escrow integration for payments
+- Auto-sign with cost thresholds
+
+---
+
+*Phase: 02-akash-webapp-deploy*  
+*Context gathered: 2026-02-17*  
+*Payment model: USDC on-chain escrow + Console API deployment*
