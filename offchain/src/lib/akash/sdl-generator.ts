@@ -4,6 +4,7 @@
  * Supports templates and custom configurations
  */
 
+import YAML from 'js-yaml';
 import { SdlSpec, Service, Resources, ComputeProfile, PlacementProfile } from '@/types/akash';
 
 export interface JobRequirements {
@@ -297,9 +298,12 @@ export function parseNaturalLanguage(input: string): Partial<JobRequirements> {
   const requirements: Partial<JobRequirements> = {};
   const lower = input.toLowerCase();
 
-  // Detect GPU needs
+  // Detect GPU needs and extract count
   if (lower.includes('gpu') || lower.includes('nvidia') || lower.includes('cuda')) {
-    requirements.gpu = { units: 1 };
+    // Try to extract GPU count from patterns like "2 GPUs", "2x GPU", "2 GPU"
+    const gpuCountMatch = lower.match(/(\d+)\s*(?:x\s*)?gpus?/);
+    const gpuUnits = gpuCountMatch ? parseInt(gpuCountMatch[1], 10) : 1;
+    requirements.gpu = { units: gpuUnits };
   }
 
   // Detect ML/AI frameworks
@@ -315,11 +319,11 @@ export function parseNaturalLanguage(input: string): Partial<JobRequirements> {
   } else if (lower.includes('stable diffusion') || lower.includes('sd')) {
     requirements.image = 'neonstable/stable-diffusion-webui:latest';
     requirements.name = 'sd-webui';
-    requirements.gpu = { units: 1, model: 'nvidia' };
+    requirements.gpu = { units: requirements.gpu?.units || 1, model: 'nvidia' };
   } else if (lower.includes('ollama') || lower.includes('llm')) {
     requirements.image = 'ollama/ollama:latest';
     requirements.name = 'ollama';
-    requirements.gpu = { units: 1, model: 'nvidia' };
+    requirements.gpu = { units: requirements.gpu?.units || 1, model: 'nvidia' };
   }
 
   // Detect resource requirements
@@ -434,4 +438,36 @@ export function sdlToYAML(sdl: SdlSpec): string {
   }
   
   return yaml;
+}
+
+/**
+ * Parse YAML string to SDL specification
+ */
+export function parseYAMLToSDL(yamlString: string): { sdl: SdlSpec | null; errors: string[] } {
+  const errors: string[] = [];
+  
+  try {
+    const parsed = YAML.load(yamlString) as Record<string, unknown>;
+    
+    if (!parsed || typeof parsed !== 'object') {
+      errors.push('Invalid YAML: must be an object');
+      return { sdl: null, errors };
+    }
+    
+    // Validate required top-level keys
+    if (!parsed.version) errors.push('Missing required field: version');
+    if (!parsed.services) errors.push('Missing required field: services');
+    if (!parsed.deployment) errors.push('Missing required field: deployment');
+    if (!parsed.profiles) errors.push('Missing required field: profiles');
+    
+    if (errors.length > 0) {
+      return { sdl: null, errors };
+    }
+    
+    // Cast to SdlSpec (runtime validation is lenient)
+    return { sdl: parsed as SdlSpec, errors: [] };
+  } catch (err) {
+    errors.push(`YAML parse error: ${err instanceof Error ? err.message : String(err)}`);
+    return { sdl: null, errors };
+  }
 }
