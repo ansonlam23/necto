@@ -2,10 +2,12 @@
 
 **Created:** February 11, 2026  
 **Last Updated:** February 18, 2026  
-**Current Focus:** Milestone v2.0 — Akash Integration Complete, Ready for Real Console API
+**Current Focus:** Milestone v2.0 — Provider UI Complete, Ready for Real Console API
 
 ### Gap Closure Complete ✅
 **Plan 02-05:** Google ADK tool architecture implemented. SYS-06 gap (ADK integration) RESOLVED.
+
+**Plan 02-07:** Provider score breakdown and detail dialog. SYS-04 gap (provider selection display) RESOLVED.
 
 ## Project Reference
 
@@ -32,6 +34,7 @@
 4. ✅ Reorganized ROADMAP.md - Akash as Phase 1 extension
 5. ✅ Created Phase 2.1 for Akash deployment work
 6. ✅ **RESOLVED SYS-06:** Google ADK tool architecture implemented
+7. ✅ **RESOLVED SYS-04:** Provider score breakdown and detail dialog
 
 ---
 
@@ -40,7 +43,7 @@
 ### Active Milestone
 **Milestone v2.0: Akash Integration**  
 - **Goal:** Build functionality that allows buyers to route their compute to Akash Network  
-- **Status:** Core Complete (88% - 23/26 requirements)  
+- **Status:** Core Complete (92% - 24/26 requirements)  
 - **Team:** Single developer
 
 ### Completed Work (v1.0 Foundation)
@@ -67,7 +70,8 @@
 - Deployment API routes (CRUD + log streaming) ✅
 - Provider and escrow API routes ✅
 - Buyer dashboard with real-time updates ✅
-- **Google ADK tool architecture** ✅ **(NEW - SYS-06 resolved)**
+- **Google ADK tool architecture** ✅ **(SYS-06 resolved)**
+- **Provider score breakdown and detail dialog** ✅ **(SYS-04 resolved)**
 - Console API funding integration (pending)
 - Testnet USDC escrow contracts (pending)
 - Sponsored hosting model for hackathon (Necto pays Akash costs)
@@ -82,7 +86,7 @@
 - **Phases Complete:** 0/4 (active development)
 - **v1.0 Phases Archived:** 1 (01-01 ComputeRouter)
 - **Requirements Mapped:** 26/26 ✓
-- **Phase 2 Completion:** 88% (23/26 must-haves)
+- **Phase 2 Completion:** 92% (24/26 must-haves)
 
 **Phase Structure:**
 1. **Buyer Discovery + Akash Routing** — Job submission → agent routing → Akash deployment ✅
@@ -95,15 +99,15 @@
 ## Performance Metrics
 
 ### Development Velocity
-- **Plans Executed:** 6 (v1.0 + Phase 2)
+- **Plans Executed:** 7 (v1.0 + Phase 2)
 - **v1.0 Phases Completed:** 1 (archived)
 - **Quick Tasks Completed:** 2 (cleaned up)
 - **Reorganizations:** 1 (cleanup)
-- **Gap Closures:** 1 (SYS-06 ADK integration)
+- **Gap Closures:** 2 (SYS-06 ADK integration, SYS-04 provider UI)
 
 ### Quality Indicators
 - **v1.0 Requirements Coverage:** 100% ✅
-- **v2.0 Requirements Coverage:** 88% (23/26) ✅
+- **v2.0 Requirements Coverage:** 92% (24/26) ✅
 - **Test Coverage:** 26 tests passing
 - **Code Quality:** TypeScript strict mode, linting enabled
 - **Documentation:** Updated for Akash integration
@@ -167,6 +171,11 @@
 20. **Tool-based Delegation** — Agent delegates to tools rather than hardcoded logic
 21. **Multi-provider Architecture** — Adding io.net = create tool + add to array
 
+### Gap Closure Decisions (Plan 02-07)
+22. **Header Click for Details** — Card header opens detail dialog for full provider information
+23. **Bottom Section for Selection** — Separate click area for selecting a provider
+24. **Full Score Visibility** — Display all four score components: price, reliability, performance, latency
+
 ---
 
 ## Active Todos
@@ -184,6 +193,7 @@
 - [x] Create providers and escrow API routes
 - [x] Build buyer dashboard with deployment monitoring
 - [x] **Google ADK tool architecture (Gap Closure)** ✅
+- [x] **Provider score breakdown and detail dialog** ✅
 
 ### Phase 2 (Akash) - Remaining
 - [ ] Connect to real Console API provider discovery
@@ -212,6 +222,7 @@
 - Directory structure cleaned up ✅
 - Clarified: Akash is first provider integration, not a pivot ✅
 - **SYS-06 (Google ADK):** Gap closure complete ✅
+- **SYS-04 (Provider UI):** Gap closure complete ✅
 
 ### Open Blockers
 - None identified — ready to proceed with real integrations
@@ -221,22 +232,21 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 02-05 (Gap Closure - Google ADK Integration)
+- **Action:** Execute plan 02-07 (Provider Score Breakdown and Detail Dialog)
 - **Outcome:** 
-  - Created routeToAkashTool ADK tool (212 lines)
-  - Created compareProvidersTool ADK tool (418 lines)
-  - Built tools index with centralized exports
-  - Refactored agent.ts to use tool-based architecture
-  - Created agent index.ts with full tool exports
-  - Updated VERIFICATION.md - SYS-06 marked RESOLVED
-  - Fixed pre-existing build errors (Rule 1 auto-fixes)
-- **Key Insight:** Tool-based architecture makes adding providers trivial (3 steps: create, export, add to array)
-- **Decision Update:** ADK BaseTool pattern chosen for all provider integrations
+  - Fixed provider-list.tsx to destructure all score fields (not just totalScore)
+  - Created ProviderDetailDialog component (168 lines)
+  - Updated provider-card.tsx with onViewDetails prop
+  - Separated click areas: header for details, bottom for selection
+  - Added latency score to score breakdown display
+  - SYS-04 gap RESOLVED
+- **Key Insight:** Clear UX separation between viewing details (header) and selecting (bottom section)
+- **Decision Update:** Dual-purpose card pattern established for future provider listings
 
 ### Context for Next Session
 Ready to continue Phase 2 with real integrations:
-- Plan 02-05 complete (ADK tool architecture)
-- SYS-06 gap resolved
+- Plan 02-07 complete (Provider UI gap closure)
+- SYS-04 gap resolved
 - All UI components ready for Console API integration
 - API routes prepared for smart contract integration
 - Tool architecture ready for io.net, Lambda Labs additions
@@ -252,8 +262,9 @@ Ready to continue Phase 2 with real integrations:
 - **PROJECT.md:** Marketplace with Akash integration requirements
 - **ROADMAP.md:** 4-phase marketplace roadmap
 - **milestones/v1.0-phases/:** Archived v1.0 ComputeRouter work
-- **phases/02-akash-webapp-deploy/:** Akash integration plans and summaries (02-05 SUMMARY.md added)
+- **phases/02-akash-webapp-deploy/:** Akash integration plans and summaries
 - **ADK Tools:** `offchain/src/lib/agent/tools/` - Tool-based architecture complete
+- **Provider UI:** `offchain/src/components/akash/` - Provider selection UI complete
 
 ---
 
@@ -262,4 +273,5 @@ Ready to continue Phase 2 with real integrations:
 *Major pivot completed: February 13, 2026*  
 *Roadmap reorganization: February 14, 2026*  
 *Hackathon scope update: February 16, 2026*  
-*Gap closure (SYS-06): February 18, 2026*
+*Gap closure (SYS-06): February 18, 2026*  
+*Gap closure (SYS-04): February 18, 2026*
