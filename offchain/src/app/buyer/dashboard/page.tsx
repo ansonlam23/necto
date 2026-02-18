@@ -38,7 +38,8 @@ import {
   ChevronDown,
   Terminal,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -141,6 +142,25 @@ export default function BuyerDashboardPage(): React.JSX.Element {
     return () => clearInterval(interval);
   }, [fetchDeployments]);
 
+  // Recalculate stats when deployments change (e.g., after closing)
+  useEffect(() => {
+    const activeCount = deployments.filter(d => d.status === 'active').length;
+    const totalSpent = deployments.reduce((sum, d) => {
+      if (d.costPerHour && d.createdAt) {
+        const hours = (Date.now() - new Date(d.createdAt).getTime()) / (1000 * 60 * 60);
+        return sum + (d.costPerHour * hours);
+      }
+      return sum;
+    }, 0);
+
+    setStats(prev => ({
+      ...prev,
+      activeDeployments: activeCount,
+      totalSpent: Math.round(totalSpent * 100) / 100,
+      totalDeployments: deployments.length
+    }));
+  }, [deployments]);
+
   const handleViewLogs = async (deploymentId: string) => {
     setSelectedDeployment(deploymentId);
     setShowLogDialog(true);
@@ -209,10 +229,19 @@ export default function BuyerDashboardPage(): React.JSX.Element {
             Manage your compute deployments and escrow
           </p>
         </div>
-        <Button onClick={() => router.push('/buyer/submit')}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Deployment
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/buyer/providers/compare')}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Compare Providers
+          </Button>
+          <Button onClick={() => router.push('/buyer/submit')}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Deployment
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
