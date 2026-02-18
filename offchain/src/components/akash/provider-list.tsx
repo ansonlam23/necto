@@ -4,6 +4,8 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { useProviderDiscovery } from '@/hooks/use-provider-discovery';
 import { ProviderCard } from './provider-card';
+import { ProviderDetailDialog } from './provider-detail-dialog';
+import { Provider } from '@/lib/agent/provider-selection';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -37,12 +39,20 @@ export function ProviderList({ className, onSelect, selectedId }: ProviderListPr
     setSelectedProvider
   } = useProviderDiscovery();
 
+  const [detailProvider, setDetailProvider] = React.useState<Provider | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = React.useState(false);
+
   const handleSelect = (providerId: string) => {
     const provider = ranked.find(r => r.provider.id === providerId)?.provider;
     if (provider) {
       setSelectedProvider(provider);
       onSelect?.(providerId);
     }
+  };
+
+  const handleViewDetails = (provider: Provider) => {
+    setDetailProvider(provider);
+    setShowDetailDialog(true);
   };
 
   return (
@@ -164,17 +174,26 @@ export function ProviderList({ className, onSelect, selectedId }: ProviderListPr
             No providers match your filters
           </div>
         ) : (
-          ranked.map(({ provider, totalScore }) => (
+          ranked.map(({ provider, totalScore, priceScore, reliabilityScore, performanceScore, latencyScore }) => (
             <ProviderCard
               key={provider.id}
               provider={provider}
-              score={{ provider, totalScore, priceScore: 0, reliabilityScore: 0, performanceScore: 0, latencyScore: 0 }}
+              score={{ provider, totalScore, priceScore, reliabilityScore, performanceScore, latencyScore }}
               isSelected={provider.id === selectedId || provider.id === selectedProvider?.id}
               onSelect={() => handleSelect(provider.id)}
+              onViewDetails={() => handleViewDetails(provider)}
             />
           ))
         )}
       </div>
+
+      <ProviderDetailDialog
+        provider={detailProvider}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+        onSelect={handleSelect}
+        isSelected={detailProvider?.id === selectedId || detailProvider?.id === selectedProvider?.id}
+      />
     </div>
   );
 }
