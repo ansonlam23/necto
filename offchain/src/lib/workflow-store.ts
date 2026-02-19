@@ -1,11 +1,11 @@
 import { create } from 'zustand'
-import { Node, Edge, Connection, addEdge } from '@xyflow/react'
+import { Node, Edge, Connection, addEdge, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from '@xyflow/react'
 
 export type NodeCategory = 'trigger' | 'logic' | 'provider' | 'settlement'
 
 export interface WorkflowNode extends Node {
   category: NodeCategory
-  config?: Record<string, any>
+  config?: Record<string, unknown>
 }
 
 interface WorkflowStore {
@@ -14,12 +14,12 @@ interface WorkflowStore {
   selectedNode: WorkflowNode | null
   setNodes: (nodes: WorkflowNode[]) => void
   setEdges: (edges: Edge[]) => void
-  onNodesChange: (changes: any[]) => void
-  onEdgesChange: (changes: any[]) => void
+  onNodesChange: (changes: NodeChange<WorkflowNode>[]) => void
+  onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
   addNode: (node: Omit<WorkflowNode, 'id'> & { id?: string }) => void
   selectNode: (nodeId: string | null) => void
-  updateNodeConfig: (nodeId: string, config: Record<string, any>) => void
+  updateNodeConfig: (nodeId: string, config: Record<string, unknown>) => void
 }
 
 export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
@@ -31,12 +31,10 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   setEdges: (edges) => set({ edges }),
 
   onNodesChange: (changes) => {
-    const { applyNodeChanges } = require('@xyflow/react')
     set({ nodes: applyNodeChanges(changes, get().nodes) })
   },
 
   onEdgesChange: (changes) => {
-    const { applyEdgeChanges } = require('@xyflow/react')
     set({ edges: applyEdgeChanges(changes, get().edges) })
   },
 

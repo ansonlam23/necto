@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RequirementsChecklist } from '@/components/agent/RequirementsChecklist';
 import { ProviderCard } from '@/components/agent/ProviderCard';
-import { Send, Bot, Sparkles, Server, Cpu, HardDrive, Gamepad2, Image, Database } from 'lucide-react';
+import { Send, Bot, Sparkles, Server, Cpu, Gamepad2, Image, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DeploymentConfig, ProviderMatch, DeploymentScenario } from '@/types/deployment';
 
@@ -20,7 +20,7 @@ export default function AgentPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [input, setInput] = useState('');
-  const { messages, sendMessage, error } = useChat({
+  const { messages, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/agent-chat',
     }),
@@ -109,7 +109,7 @@ export default function AgentPage() {
       if (msg.role === 'assistant') {
         msg.parts?.forEach(part => {
           if (part.type === 'tool-result' && 'result' in part && part.result) {
-            const result = part.result as any;
+            const result = part.result as { config?: DeploymentConfig; readyToSearch?: boolean; bestProvider?: ProviderMatch };
 
             // Handle proposeDeployment tool results
             if (result.config && result.readyToSearch) {
@@ -190,7 +190,7 @@ export default function AgentPage() {
                       What would you like to deploy today?
                     </h2>
                     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Just describe your workload and I'll configure everything automatically
+                      Just describe your workload and I&apos;ll configure everything automatically
                     </p>
                   </div>
 

@@ -38,7 +38,7 @@ export function ProviderCard({ provider, isSearching, className, onDeploy }: Pro
               <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" />
             </div>
             <p className="text-xs text-muted-foreground">
-              Analyzing {Math.floor(Math.random() * 50) + 100}+ providers...
+              Analyzing 120+ providers...
             </p>
           </div>
         ) : provider && (

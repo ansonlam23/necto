@@ -199,7 +199,7 @@ Remember: BE PROACTIVE. Don't ask questions first. Infer and confirm.`,
               const providers = await fetchAkashProviders();
 
               // Filter providers
-              let filtered = providers.filter(p => {
+              const filtered = providers.filter(p => {
                 const providerCpu = p.hardware.cpuCount || Math.round(p.hardware.cpuUnits / 1000);
                 if (providerCpu < minCpu) return false;
 
