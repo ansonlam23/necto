@@ -3,6 +3,7 @@
 **Project:** Necto — Two-Sided Compute Marketplace with AI Routing Agent  
 **Current Phase:** 0 (Planning complete, ready to start Phase 1)  
 **Last Updated:** 2026-02-19
+**Last activity:** 2026-02-19 - Completed quick task 1: Fix blockchain integration: escrow API, calldata encoding, dashboard contract fetch, agent tx hash
 
 ---
 
@@ -44,15 +45,21 @@ Connect compute buyers with the cheapest available GPUs across all providers whi
 ### Blockers
 None. Roadmap approved and ready for planning.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Fix blockchain integration: escrow API, calldata encoding, dashboard contract fetch, agent tx hash | 2026-02-19 | 69f3a4e | [1-fix-blockchain-integration-escrow-api-ca](./quick/1-fix-blockchain-integration-escrow-api-ca/) |
+
 ---
 
 ## Performance Metrics
 
 ### Technical Debt
-- **Current:** Low — existing codebase well-structured with ADK agent, tool registry, Zustand stores
-- **Risk Areas:** 
+- **Current:** Medium — Blockchain integration fixed (escrow API now uses contract calls, proper calldata encoding, real balance fetching, no more fake tx hashes). Remaining:
   - Provider fetcher duplication (extract common adapter pattern)
   - Price normalization scattered (centralize in Phase 1)
+  - Unimplemented dashboard features (save, deploy, real API calls)
 
 ### Velocity Indicators
 - **Codebase Health:** Good — TypeScript strict, consistent patterns, shadcn/ui components
@@ -163,7 +170,7 @@ Creating project roadmap based on requirements and research. Just completed:
 ### Repository
 - **Path:** `/home/julius/Documents/necto`
 - **Branch:** main
-- **Last Commit:** (to be determined)
+- **Last Commit:** 69f3a4e
 
 ### Key Directories
 ```
@@ -172,6 +179,10 @@ Creating project roadmap based on requirements and research. Just completed:
   REQUIREMENTS.md      # 62 v1 requirements with REQ-IDs
   ROADMAP.md           # This roadmap
   STATE.md             # This file
+  quick/               # Quick task artifacts
+    1-fix-blockchain-integration-escrow-api-ca/
+      1-PLAN.md
+      1-SUMMARY.md
   research/
     SUMMARY.md         # Research synthesis
     ARCHITECTURE.md    # Architecture patterns
