@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/AppShell";
 import { Web3Provider } from "@/components/web3-provider";
+import { MarketplaceProvider } from "@/context/MarketplaceContext";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,9 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Web3Provider>
-          <AppShell>
-            {children}
-          </AppShell>
+          <MarketplaceProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+            <Toaster />
+          </MarketplaceProvider>
         </Web3Provider>
       </body>
     </html>

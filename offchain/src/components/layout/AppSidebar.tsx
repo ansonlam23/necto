@@ -15,7 +15,8 @@ import {
   Server,
   Bot,
   GitBranch,
-  Sparkles
+  Sparkles,
+  CloudUpload
 } from "lucide-react"
 
 import {
@@ -59,6 +60,11 @@ const navigationItems = [
     title: "Providers",
     url: "/providers",
     icon: Server,
+  },
+  {
+    title: "Host Compute",
+    url: "/host",
+    icon: CloudUpload,
   },
   {
     title: "Test Builder",

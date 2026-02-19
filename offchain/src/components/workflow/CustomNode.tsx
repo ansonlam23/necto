@@ -74,7 +74,7 @@ const categoryColors = {
 
 export const CustomNode = memo(({ data, selected }: NodeProps) => {
   const { label, type, category, config, status } = data
-  const Icon = iconMap[type] || Server
+  const Icon = iconMap[type as keyof typeof iconMap] || Server
   const colors = categoryColors[category as keyof typeof categoryColors] || categoryColors.trigger
 
   // Determine which handles to show based on category
@@ -107,21 +107,21 @@ export const CustomNode = memo(({ data, selected }: NodeProps) => {
             <Icon className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{label}</span>
-            {config && Object.keys(config).length > 0 && (
+            <span className="text-sm font-medium text-foreground">{label as React.ReactNode}</span>
+            {(config as any) && Object.keys(config as any).length > 0 && (
               <span className="text-xs text-muted-foreground">Configured</span>
             )}
           </div>
         </div>
 
         {/* Status indicator */}
-        {status && (
+        {(status as any) && (
           <div className="absolute -top-1 -right-1">
             <div className={cn(
               'w-2 h-2 rounded-full',
-              status === 'running' && 'bg-blue-500 animate-pulse',
-              status === 'success' && 'bg-green-500',
-              status === 'error' && 'bg-red-500'
+              (status as any) === 'running' && 'bg-blue-500 animate-pulse',
+              (status as any) === 'success' && 'bg-green-500',
+              (status as any) === 'error' && 'bg-red-500'
             )} />
           </div>
         )}

@@ -108,7 +108,7 @@ export default function AgentPage() {
     messages.forEach(msg => {
       if (msg.role === 'assistant') {
         msg.parts?.forEach(part => {
-          if (part.type === 'tool-result' && part.result) {
+          if (part.type === 'tool-result' && 'result' in part && part.result) {
             const result = part.result as any;
 
             // Handle proposeDeployment tool results
