@@ -14,27 +14,92 @@ import {
 } from './tools';
 import { walletTool } from './wallet-tool';
 import type { AgentConfig, RoutingRequest, RoutingResult, TransactionResult, ThinkingStep } from './types';
-import { JobRequirements as SdlJobRequirements } from '@/lib/akash/sdl-generator';
+import { 
+  JobRequirements as SdlJobRequirements,
+  getTemplates,
+  generateFromTemplate
+} from '@/lib/akash/sdl-generator';
+import { resolveDockerImage, getSuggestedImages, type ImageResolutionResult } from '@/lib/docker-image-resolver';
 import { SynapseProvider } from '@/lib/providers/akash-fetcher';
 
 /**
  * Convert agent JobRequirements to SDL JobRequirements
+ * Uses Docker image resolver to intelligently match descriptions to images
  */
 function toSdlRequirements(
   description: string,
   requirements: RoutingRequest['requirements']
 ): SdlJobRequirements {
-  return {
-    name: description.slice(0, 50),
-    image: 'ubuntu:latest', // Default image
-    cpu: 4, // Default CPU
-    memory: `${requirements.minGpuMemoryGB || 8}Gi`,
-    gpu: requirements.gpuModel ? {
-      units: requirements.minGpuCount || 1,
-      vendor: requirements.gpuModel
-    } : undefined,
-    region: requirements.region
+  // First, try to resolve a Docker image from the description
+  const imageMatch = resolveDockerImage(description);
+  
+  // Determine the best base template
+  let templateId = 'ubuntu';
+  if (imageMatch?.category === 'ai' || requirements.gpuModel) {
+    templateId = 'pytorch-gpu';
+  } else if (imageMatch?.category === 'database') {
+    templateId = 'postgres-db';
+  } else if (imageMatch?.category === 'web') {
+    templateId = 'nginx-web';
+  }
+  
+  // Get the base template
+  const templates = getTemplates();
+  const template = templates.find(t => t.id === templateId);
+  
+  if (!template) {
+    throw new Error(`Template not found: ${templateId}`);
+  }
+  
+  // Start with template requirements
+  const sdlReq: SdlJobRequirements = {
+    ...template.requirements,
+    name: description.slice(0, 50).replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase(),
   };
+  
+  // Override with resolved Docker image if found
+  if (imageMatch) {
+    sdlReq.image = imageMatch.image;
+    if (imageMatch.port) {
+      sdlReq.port = imageMatch.port;
+      sdlReq.expose = true;
+    }
+  }
+  
+  // Apply user-specific overrides
+  if (requirements.minGpuCount && sdlReq.gpu) {
+    sdlReq.gpu.units = requirements.minGpuCount;
+  }
+  
+  if (requirements.minGpuMemoryGB) {
+    sdlReq.memory = `${requirements.minGpuMemoryGB}Gi`;
+  }
+  
+  if (requirements.gpuModel && sdlReq.gpu) {
+    sdlReq.gpu.vendor = requirements.gpuModel;
+  }
+  
+  if (requirements.region) {
+    sdlReq.region = requirements.region;
+  }
+  
+  return sdlReq;
+}
+
+/**
+ * Get available Docker images for agent context
+ */
+function getDockerImageHelp(): string {
+  const suggestions = getSuggestedImages();
+  const grouped = suggestions.reduce((acc, s) => {
+    if (!acc[s.category]) acc[s.category] = [];
+    acc[s.category].push(`${s.image} - ${s.description}`);
+    return acc;
+  }, {} as Record<string, string[]>);
+  
+  return Object.entries(grouped)
+    .map(([category, images]) => `${category.toUpperCase()}:\n${images.map(i => `  - ${i}`).join('\n')}`)
+    .join('\n\n');
 }
 
 /**
@@ -48,6 +113,8 @@ function toSdlRequirements(
  * 4. LLM-driven decision making
  */
 export function createRoutingAgent(config: AgentConfig): LlmAgent {
+  const dockerImages = getDockerImageHelp();
+  
   const agent = new LlmAgent({
     name: config.name,
     model: config.model,
@@ -57,12 +124,18 @@ Your job is to intelligently route compute jobs to the best provider.
 Available providers:
 - Akash Network (decentralized, auction-based pricing)
 
+Available Docker Images:
+${dockerImages}
+
 For each job:
 1. Analyze requirements (GPU type, memory, budget, region)
 2. Use compare_providers tool to evaluate all suitable providers
 3. Select the best provider based on cost, reliability, and speed
 4. Use the appropriate route tool (route_to_akash) to execute
 5. If tracked mode, submit to blockchain
+
+The system will automatically detect Docker images from natural language descriptions.
+Users can also specify exact images like "Use pytorch/pytorch:2.0" or "Deploy nginx:alpine".
 
 Always explain your reasoning. Consider price, uptime, and hardware match.`,
     tools: [
@@ -103,6 +176,9 @@ export async function routeComputeJob(
   });
 
   const sdlRequirements = toSdlRequirements(request.description, request.requirements);
+  
+  // Log the resolved image for debugging
+  console.log('Resolved Docker image:', sdlRequirements.image, 'from description:', request.description);
 
   const comparisonResult = await executeCompareProviders({
     requirements: sdlRequirements,
