@@ -255,7 +255,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
         functionName: 'getEscrow',
         args: [BigInt(jobId)]
       });
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { error: 'Escrow not found on blockchain' },
         { status: 404 }
