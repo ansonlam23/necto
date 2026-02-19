@@ -18,7 +18,8 @@ import {
   Search,
   Upload,
   Activity,
-  AlertCircle
+  AlertCircle,
+  CreditCard
 } from 'lucide-react';
 
 interface DeploymentStatusProps {
@@ -31,6 +32,7 @@ const STATE_ICONS: Record<DeploymentState, React.ReactNode> = {
   checking_suitability: <Search className="h-5 w-5" />,
   generating_sdl: <FileCode className="h-5 w-5" />,
   selecting_provider: <Search className="h-5 w-5" />,
+  paying_escrow: <CreditCard className="h-5 w-5" />,
   creating_deployment: <Upload className="h-5 w-5" />,
   waiting_bids: <Clock className="h-5 w-5" />,
   accepting_bid: <CheckCircle2 className="h-5 w-5" />,
@@ -45,6 +47,7 @@ const STATE_LABELS: Record<DeploymentState, string> = {
   checking_suitability: 'Checking Suitability',
   generating_sdl: 'Generating SDL',
   selecting_provider: 'Selecting Provider',
+  paying_escrow: 'Processing Payment',
   creating_deployment: 'Creating Deployment',
   waiting_bids: 'Waiting for Bids',
   accepting_bid: 'Accepting Bid',
@@ -59,6 +62,7 @@ const STATE_COLORS: Record<DeploymentState, string> = {
   checking_suitability: 'text-blue-500',
   generating_sdl: 'text-purple-500',
   selecting_provider: 'text-indigo-500',
+  paying_escrow: 'text-amber-500',
   creating_deployment: 'text-orange-500',
   waiting_bids: 'text-yellow-500',
   accepting_bid: 'text-green-500',

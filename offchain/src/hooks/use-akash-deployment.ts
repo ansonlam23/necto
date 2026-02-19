@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { AkashDeployment, ProviderBid } from '@/types/akash';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
 import { RouteLog } from '@/lib/agent/akash-router';
+import { useEscrowPayment, PaymentParams } from '@/hooks/use-escrow-payment';
 
 export type DeploymentState =
   | 'idle'
   | 'checking_suitability'
   | 'generating_sdl'
   | 'selecting_provider'
+  | 'paying_escrow'
   | 'creating_deployment'
   | 'waiting_bids'
   | 'accepting_bid'
@@ -17,6 +19,13 @@ export type DeploymentState =
   | 'closing'
   | 'completed'
   | 'error';
+
+export interface StartDeploymentParams {
+  requirements: JobRequirements;
+  autoAccept?: boolean;
+  escrowAmount?: bigint; // USDC amount
+  isTracked?: boolean;
+}
 
 interface UseAkashDeploymentReturn {
   state: DeploymentState;
@@ -26,7 +35,11 @@ interface UseAkashDeploymentReturn {
   error: string | null;
   isLoading: boolean;
   progress: number;
-  startDeployment: (requirements: JobRequirements, autoAccept?: boolean) => Promise<void>;
+  escrowTxHash: string | null;
+  escrowJobId: bigint | null;
+  escrowError: string | null;
+  escrowState: import('@/hooks/use-escrow-payment').PaymentState;
+  startDeployment: (params: StartDeploymentParams) => Promise<void>;
   acceptBid: (bidId: string) => Promise<void>;
   close: () => Promise<void>;
   reset: () => void;
@@ -36,10 +49,11 @@ const STATE_PROGRESS: Record<DeploymentState, number> = {
   idle: 0,
   checking_suitability: 10,
   generating_sdl: 20,
-  selecting_provider: 35,
-  creating_deployment: 50,
-  waiting_bids: 65,
-  accepting_bid: 80,
+  selecting_provider: 30,
+  paying_escrow: 40,
+  creating_deployment: 60,
+  waiting_bids: 75,
+  accepting_bid: 85,
   active: 100,
   closing: 90,
   completed: 100,
@@ -53,22 +67,59 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
   const [logs, setLogs] = useState<RouteLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [escrowJobId, setEscrowJobId] = useState<bigint | null>(null);
+  const escrowJobIdRef = useRef<bigint | null>(null);
+
+  // Escrow payment hook
+  const escrowPayment = useEscrowPayment();
 
   const startDeployment = useCallback(async (
-    requirements: JobRequirements,
-    autoAccept: boolean = false
+    params: StartDeploymentParams
   ) => {
+    const { requirements, autoAccept = false, escrowAmount, isTracked = true } = params;
+
     setIsLoading(true);
     setError(null);
     setLogs([]);
-    setState('checking_suitability');
+    setEscrowJobId(null);
+    escrowJobIdRef.current = null;
 
     try {
+      // Step 1: Execute escrow payment if amount is provided
+      if (escrowAmount && escrowAmount > BigInt(0)) {
+        setState('paying_escrow');
+
+        const paymentParams: PaymentParams = {
+          requirements,
+          amount: escrowAmount,
+          isTracked
+        };
+
+        // Execute payment and wait for result
+        await escrowPayment.executePayment(paymentParams);
+
+        // Check if payment succeeded (executePayment will have updated escrowPayment state)
+        // Note: executePayment updates the hook state internally and throws on error
+        // If we're here without exception, payment succeeded
+        
+        if (escrowPayment.jobId) {
+          setEscrowJobId(escrowPayment.jobId);
+          escrowJobIdRef.current = escrowPayment.jobId;
+        }
+      }
+
+      // Step 2: Proceed with Akash deployment
+      setState('checking_suitability');
+
       // All server-side routing logic runs in the API route — AKASH_CONSOLE_API_KEY stays server-only
       const res = await fetch('/api/akash', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requirements, autoAcceptBid: autoAccept }),
+        body: JSON.stringify({ 
+          requirements, 
+          autoAcceptBid: autoAccept,
+          jobId: escrowJobIdRef.current ? escrowJobIdRef.current.toString() : undefined
+        }),
       });
 
       if (!res.ok) {
@@ -90,12 +141,14 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
         setState('error');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
       setState('error');
+      console.error('Deployment error:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [escrowPayment]);
 
   const acceptBid = useCallback(async (bidId: string) => {
     if (!deployment) return;
@@ -162,8 +215,11 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setBids([]);
     setLogs([]);
     setError(null);
+    setEscrowJobId(null);
+    escrowJobIdRef.current = null;
     setIsLoading(false);
-  }, []);
+    escrowPayment.reset();
+  }, [escrowPayment]);
 
   return {
     state,
@@ -173,6 +229,10 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     error,
     isLoading,
     progress: STATE_PROGRESS[state],
+    escrowTxHash: escrowPayment.txHash,
+    escrowJobId: escrowJobId || escrowPayment.jobId,
+    escrowError: escrowPayment.error,
+    escrowState: escrowPayment.state,
     startDeployment,
     acceptBid,
     close,
