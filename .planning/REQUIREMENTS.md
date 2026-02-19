@@ -42,7 +42,7 @@ Requirements for marketplace MVP. Organized by feature area.
 
 ### Buyer Dashboard
 
-- [ ] **BUY-01**: Job submission form with compute requirements, Tracked/Untracked mode toggle, and auto-sign checkbox
+- [x] **BUY-01**: Job submission form with compute requirements, Tracked/Untracked mode toggle, and auto-sign checkbox
 - [ ] **BUY-02**: Live price comparison table showing Akash providers with normalized USD/GPU-hr rates
 - [ ] **BUY-03**: Agent thinking process display with animated steps: "Fetching providers", "Normalizing pricing", "Ranking options", "Decision ready"
 - [ ] **BUY-04**: Team spending dashboard (Tracked mode) with per-user breakdown and provider analytics
@@ -55,7 +55,7 @@ Requirements for marketplace MVP. Organized by feature area.
 - [ ] **SYS-03**: Pricing normalization module for Akash AKT token pricing
 - [ ] **SYS-04**: Mock provider data covering Akash providers (4-6 providers)
 - [ ] **SYS-05**: Real-time UI updates using server-sent events or WebSocket for agent thinking process
-- [ ] **SYS-06**: Agent implementation using Google ADK (Agent Development Kit) with Google AI Studio API keys
+- [x] **SYS-06**: Agent implementation using Google ADK (Agent Development Kit) with Google AI Studio API keys
 - [ ] **SYS-07**: Agent thinking process UI component (toast/record) for hackathon demo flair
 
 ## v2 Requirements
@@ -108,14 +108,14 @@ Which features map to implementation phases (reorganized for parallel developmen
 | AGT-03 | Phase 1: Buyer Discovery | Pending |
 | AGT-07 | Phase 1: Buyer Discovery | Pending |
 | AGT-08 | Phase 1: Buyer Discovery | Pending |
-| BUY-01 | Phase 1: Buyer Discovery | Pending |
+| BUY-01 | Phase 1: Buyer Discovery | Complete |
 | BUY-02 | Phase 1: Buyer Discovery | Pending |
 | BUY-03 | Phase 1: Buyer Discovery | Pending |
 | SYS-01 | Phase 1: Buyer Discovery | Pending |
 | SYS-02 | Phase 1: Buyer Discovery | Pending |
 | SYS-03 | Phase 1: Buyer Discovery | Pending |
 | SYS-04 | Phase 1: Buyer Discovery | Pending |
-| SYS-06 | Phase 1: Buyer Discovery | Pending |
+| SYS-06 | Phase 1: Buyer Discovery | Complete |
 | SYS-07 | Phase 1: Buyer Discovery | Pending |
 | SET-01 | Phase 1: Buyer Discovery | Pending |
 | AGT-04 | Phase 2: Dynamic Routing | Pending |

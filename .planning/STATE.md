@@ -1,8 +1,8 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
-**Created:** February 11, 2026  
-**Last Updated:** February 19, 2026 (Plan 02-06 SUMMARY.md Created)
-**Current Focus:** Milestone v2.0 — Gap closure complete (Select bug fix documented)
+**Created:** February 11, 2026
+**Last Updated:** February 19, 2026 (Plan 02-08 SUMMARY.md Created)
+**Current Focus:** Milestone v2.0 — Dashboard reactive stats + provider comparison UI complete
 
 ### Gap Closure Complete ✅
 **Plan 02-05:** Google ADK tool architecture implemented. SYS-06 gap (ADK integration) RESOLVED.
@@ -12,6 +12,8 @@
 **Plan 02-09:** Critical deployment fixes (GPU filtering, YAML parsing, SDL validation). SYS-03 gap RESOLVED.
 
 **Plan 02-06:** Select component empty value bug fix (requirements-form.tsx). Job submission wizard unblocked. GAP-01 RESOLVED.
+
+**Plan 02-08:** Dashboard reactive stats + provider comparison page. SYS-06 gap (ADK compareProvidersTool UI) RESOLVED. BUY-01 RESOLVED.
 
 ## Project Reference
 
@@ -186,6 +188,11 @@
 ### Gap Closure Decisions (Plan 02-06)
 25. **Sentinel value for optional Select** — Use 'any' string instead of empty string for Radix UI Select optional fields; convert to undefined in onValueChange handler
 
+### Gap Closure Decisions (Plan 02-08)
+26. **API route REST bridge for ADK tools** — compare/page.tsx calls /api/compare-providers (REST) which invokes executeCompareProviders() server-side; avoids bundling server-only ADK/Node.js deps in browser bundle
+27. **Reactive stats via dual useEffect** — Second useEffect watches deployments array and recalculates derived stats (activeDeployments, totalSpent, totalDeployments) so handleCloseDeployment local-state mutations immediately reflect in stats cards without waiting for the 30-second poll cycle
+28. **Recommendation banner above grid** — Top-scored suitable provider shown in green banner above comparison grid for clear visual hierarchy
+
 ---
 
 ## Active Todos
@@ -244,21 +251,19 @@
 ## Session Continuity
 
 ### Last Session Summary
-- **Action:** Execute plan 02-09 (Critical Deployment Fixes)
-- **Outcome:** 
-  - Fixed case-sensitive GPU filtering (provider-selection.ts)
-  - Added parseYAMLToSDL() function for YAML validation (sdl-generator.ts)
-  - Updated SDL editor with real-time YAML validation (sdl-editor.tsx)
-  - Fixed GPU count regex to handle plural forms
-  - Installed js-yaml and @types/js-yaml dependencies
-  - SYS-03 gap RESOLVED
-- **Key Insight:** Real-time validation provides immediate feedback to users editing SDL
-- **Decision Update:** Case-insensitive matching used for GPU type filtering
+- **Action:** Execute plan 02-08 (Dashboard Reactive Stats + Provider Comparison UI)
+- **Outcome:**
+  - Dashboard stats (Active Deployments, Total Spent) now recalculate reactively via useEffect watching deployments array
+  - ProviderComparisonView component created with recommendation banner, score bars, pros/cons
+  - Provider comparison page at /buyer/providers/compare integrates ADK compareProvidersTool via REST bridge
+  - Navigation link from buyer dashboard to comparison page added
+  - SYS-06 (compareProvidersTool UI) and BUY-01 requirements RESOLVED
+- **Key Insight:** REST bridge pattern keeps server-only ADK deps out of browser bundle — /api/compare-providers route delegates to executeCompareProviders() server-side
+- **Decision Update:** Dual useEffect pattern established for reactive derived stats
 
 ### Context for Next Session
 Ready to continue Phase 2 with real integrations:
-- Plan 02-09 complete (Critical deployment fixes)
-- SYS-03 gap resolved
+- Plan 02-08 complete (Dashboard reactive stats + comparison UI)
 - All UI components ready for Console API integration
 - API routes prepared for smart contract integration
 - Tool architecture ready for io.net, Lambda Labs additions
