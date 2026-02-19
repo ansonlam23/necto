@@ -56,25 +56,15 @@ export {
 } from './provider-selection';
 
 // Tool exports (for ADK integration and direct use)
-// Tools are the primary way to add new providers - just create a tool and add it here
 export {
-  // Tool classes
-  RouteToAkashTool,
-  CompareProvidersTool,
-  // Tool singleton instances
   routeToAkashTool,
   compareProvidersTool,
-  // Tool helper functions
   executeRouteToAkash,
   executeCompareProviders,
-  // Tool types
+  allTools,
   type RouteToAkashParams,
   type RouteToAkashResult,
   type CompareProvidersParams,
   type CompareProvidersResult,
   type ProviderComparison,
-  // Tool utilities
-  allTools,
-  toolRegistry,
-  getTool
 } from './tools';

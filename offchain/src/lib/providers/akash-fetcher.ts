@@ -32,12 +32,12 @@ const MOCK_PROVIDERS: SynapseProvider[] = [
       memory: 549755813888
     },
     priceEstimate: 2.50,
-    region: 'US',
+    region: 'us-east',
     uptimePercentage: 99.8
   },
   {
-    id: 'mock-akash-h100-eu',
-    name: 'Akash Node EU-West-2',
+    id: 'mock-akash-h100-us',
+    name: 'Akash Node US-West-1',
     source: 'Akash',
     hardware: {
       gpuModel: 'NVIDIA H100',
@@ -46,12 +46,12 @@ const MOCK_PROVIDERS: SynapseProvider[] = [
       memory: 274877906944
     },
     priceEstimate: 4.20,
-    region: 'EU',
+    region: 'us-west',
     uptimePercentage: 99.5
   },
   {
-    id: 'mock-akash-rtx4090-sg',
-    name: 'Akash Node SG-1',
+    id: 'mock-akash-rtx4090-us',
+    name: 'Akash Node US-Central-1',
     source: 'Akash',
     hardware: {
       gpuModel: 'NVIDIA RTX4090',
@@ -60,12 +60,12 @@ const MOCK_PROVIDERS: SynapseProvider[] = [
       memory: 137438953472
     },
     priceEstimate: 0.80,
-    region: 'Singapore',
+    region: 'us-central',
     uptimePercentage: 98.2
   },
   {
-    id: 'mock-akash-rtx3090-us',
-    name: 'Akash Node US-West-1',
+    id: 'mock-akash-rtx3090-eu',
+    name: 'Akash Node EU-West-1',
     source: 'Akash',
     hardware: {
       gpuModel: 'NVIDIA RTX3090',
@@ -74,7 +74,7 @@ const MOCK_PROVIDERS: SynapseProvider[] = [
       memory: 68719476736
     },
     priceEstimate: 0.55,
-    region: 'US',
+    region: 'eu-west',
     uptimePercentage: 97.1
   },
   {
@@ -88,8 +88,22 @@ const MOCK_PROVIDERS: SynapseProvider[] = [
       memory: 137438953472
     },
     priceEstimate: 1.50,
-    region: 'EU',
+    region: 'eu-central',
     uptimePercentage: 99.0
+  },
+  {
+    id: 'mock-akash-a100-ap',
+    name: 'Akash Node AP-South-1',
+    source: 'Akash',
+    hardware: {
+      gpuModel: 'NVIDIA A100',
+      gpuCount: 2,
+      cpuUnits: 64000,
+      memory: 274877906944
+    },
+    priceEstimate: 2.80,
+    region: 'ap-south',
+    uptimePercentage: 98.5
   }
 ];
 
@@ -154,6 +168,53 @@ interface AkashProvider {
   uptime1d?: number;  // 1-day uptime (0-1)
   uptime7d?: number;  // 7-day uptime (0-1)
   uptime30d?: number; // 30-day uptime (0-1)
+}
+
+/**
+ * Maps common country/region codes to UI region format
+ */
+function mapRegionToUIFormat(ipCountry?: string, ipRegion?: string, city?: string): string | undefined {
+  if (!ipCountry) return undefined;
+  
+  const country = ipCountry.toUpperCase();
+  const region = ipRegion?.toUpperCase();
+  
+  // Map US regions
+  if (country === 'US') {
+    if (region?.includes('EAST') || city?.toUpperCase().includes('VIRGINIA') || city?.toUpperCase().includes('NEW YORK')) {
+      return 'us-east';
+    }
+    if (region?.includes('WEST') || city?.toUpperCase().includes('CALIFORNIA') || city?.toUpperCase().includes('OREGON')) {
+      return 'us-west';
+    }
+    if (region?.includes('CENTRAL') || city?.toUpperCase().includes('TEXAS') || city?.toUpperCase().includes('OHIO')) {
+      return 'us-central';
+    }
+    return 'us-east'; // Default US region
+  }
+  
+  // Map EU regions
+  if (['DE', 'FR', 'NL', 'BE', 'LU', 'AT', 'CH', 'IE', 'GB'].includes(country)) {
+    if (country === 'DE') return 'eu-central';
+    if (country === 'FR' || country === 'NL' || country === 'BE') return 'eu-west';
+    if (country === 'GB' || country === 'IE') return 'eu-west';
+    return 'eu-central';
+  }
+  
+  // Map Asia Pacific regions
+  if (['SG', 'IN', 'JP', 'KR', 'AU', 'ID', 'TH', 'VN', 'MY', 'PH', 'TW', 'HK'].includes(country)) {
+    if (country === 'SG' || country === 'ID' || country === 'MY') return 'ap-south';
+    if (country === 'IN') return 'ap-south';
+    if (country === 'JP' || country === 'KR' || country === 'TW' || country === 'HK') return 'ap-northeast';
+    if (country === 'AU') return 'ap-southeast';
+    return 'ap-south';
+  }
+  
+  // Default mapping for other countries
+  if (['CA', 'MX'].includes(country)) return 'us-central';
+  if (['BR', 'AR', 'CL', 'CO', 'PE'].includes(country)) return 'sa-east';
+  
+  return ipCountry.toLowerCase();
 }
 
 /**
@@ -247,7 +308,6 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
     for (const endpoint of endpoints) {
       try {
         response = await fetch(endpoint, {
-          next: { revalidate: 60 }, // Cache for 1 minute
           headers: {
             'Accept': 'application/json',
             'User-Agent': 'Necto-Marketplace/1.0'
@@ -315,15 +375,12 @@ export async function fetchAkashProviders(): Promise<SynapseProvider[]> {
       const cpuUnits = provider.stats?.cpu?.total || 0;
       const memory = provider.stats?.memory?.total || 0;
 
-      // Determine region
+      // Determine region using mapping to UI format
       let region: string | undefined;
-      if (provider.city && provider.ipCountry) {
-        region = `${provider.city}, ${provider.ipCountry}`;
-      } else if (provider.ipRegion && provider.ipCountry) {
-        region = `${provider.ipRegion}, ${provider.ipCountry}`;
-      } else if (provider.ipCountry) {
-        region = provider.ipCountry;
-      } else {
+      region = mapRegionToUIFormat(provider.ipCountry, provider.ipRegion, provider.city);
+      
+      // Fallback to attribute parsing if no IP-based region
+      if (!region) {
         region = parseRegion(provider.attributes);
       }
 

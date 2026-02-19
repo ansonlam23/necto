@@ -170,10 +170,12 @@ export async function uploadReasoningLog(
           }
           
           // Upload to 0G network
-          const [txHash, uploadErr] = await indexer.upload(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const [txResult, uploadErr] = await indexer.upload(
             file,
             config.rpcUrl,
-            signer
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            signer as any
           );
           
           if (uploadErr !== null) {
@@ -181,6 +183,17 @@ export async function uploadReasoningLog(
               ZgStorageErrorType.UPLOAD_FAILED,
               `Upload failed: ${uploadErr}`
             );
+          }
+          
+          // Extract txHash from result - handle different return types
+          let txHash: string;
+          if (typeof txResult === 'string') {
+            txHash = txResult;
+          } else if (txResult && typeof txResult === 'object') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            txHash = (txResult as any).txHash || (txResult as any).hash || String(txResult);
+          } else {
+            txHash = String(txResult);
           }
           
           console.log('[0G Client] Upload successful:', { rootHash, txHash });

@@ -1,46 +1,30 @@
 /**
  * @title Route to Akash Tool
- * @notice Google ADK tool for routing compute jobs to Akash Network
- * @dev Wraps the Akash router as an ADK FunctionDeclaration for LLM agent use
+ * @notice Google ADK FunctionTool for routing compute jobs to Akash Network
+ * @dev Uses zod schema so Gemini sees proper function declarations
  */
 
-import { BaseTool, type RunAsyncToolRequest } from '@google/adk';
+import { LongRunningFunctionTool } from '@google/adk';
+import { z } from 'zod';
 import { routeToAkash, isAkashSuitable, type RouteRequest, type RouteLog } from '../akash-router';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
 import type { AkashDeployment, ProviderBid } from '@/types/akash';
 import type { Provider } from '../provider-selection';
 
-/**
- * Parameters for the routeToAkashTool
- */
 export interface RouteToAkashParams {
-  /** Unique job identifier */
   jobId: string;
-  /** Hardware and software requirements for the job */
   requirements: JobRequirements;
-  /** Automatically accept the best bid (optional, default: false) */
   autoAcceptBid?: boolean;
-  /** Timeout for bid polling in seconds (optional, default: 300) */
   bidTimeoutSeconds?: number;
 }
 
-/**
- * Structured result from routing to Akash
- */
 export interface RouteToAkashResult {
-  /** Whether the routing was successful */
   success: boolean;
-  /** Deployment details if successful */
   deployment?: AkashDeployment;
-  /** Selected provider details */
   provider?: Provider;
-  /** Provider bids received */
   bids?: ProviderBid[];
-  /** Routing decision logs */
   logs: RouteLog[];
-  /** Error message if failed */
   error?: string;
-  /** Suitability assessment */
   suitability: {
     suitable: boolean;
     score: number;
@@ -49,18 +33,12 @@ export interface RouteToAkashResult {
 }
 
 /**
- * Helper function to route a job to Akash Network
- * Can be used directly or via the ADK tool
- * 
- * @param params - Routing parameters including jobId, requirements, and options
- * @param onProgress - Optional callback for progress updates
- * @returns Promise with structured routing result
+ * Execute routing to Akash (used by both the tool and fallback)
  */
 export async function executeRouteToAkash(
   params: RouteToAkashParams,
   onProgress?: (log: RouteLog) => void
 ): Promise<RouteToAkashResult> {
-  // Check suitability first
   const suitability = isAkashSuitable(params.requirements);
 
   try {
@@ -97,78 +75,57 @@ export async function executeRouteToAkash(
   }
 }
 
+// Zod schema for the tool parameters
+const routeToAkashSchema = z.object({
+  jobId: z.string().describe('Unique identifier for this compute job'),
+  image: z.string().optional().describe('Docker image to deploy, e.g. "pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime" or "nginx:alpine"'),
+  cpu: z.number().optional().describe('CPU units to request (in vCPUs), e.g. 4'),
+  memory: z.string().optional().describe('Memory to request, e.g. "8Gi", "16Gi"'),
+  storage: z.string().optional().describe('Storage to request, e.g. "100Gi"'),
+  gpuUnits: z.number().optional().describe('Number of GPUs to request, e.g. 1'),
+  gpuVendor: z.string().optional().describe('GPU vendor, e.g. "nvidia"'),
+  gpuModel: z.string().optional().describe('Specific GPU model, e.g. "a100", "h100"'),
+  autoAcceptBid: z.boolean().optional().describe('If true, automatically accept the best bid. Defaults to true.'),
+  bidTimeoutSeconds: z.number().optional().describe('How long to wait for bids in seconds. Defaults to 300.'),
+});
+
 /**
- * Route to Akash Tool - ADK FunctionDeclaration
- * 
- * This tool exposes Akash Network routing capabilities to the LLM agent.
- * The agent can use this tool to:
- * 1. Check if a workload is suitable for Akash
- * 2. Create a deployment on Akash Network
- * 3. Poll for provider bids
- * 4. Automatically accept the best bid (if enabled)
- * 
- * Adding a new provider? Create a similar tool in this directory
- * and add it to the agent's tools array.
+ * ADK FunctionTool for routing to Akash
+ * Uses LongRunningFunctionTool since deployment can take minutes
  */
-export class RouteToAkashTool extends BaseTool {
-  constructor() {
-    super({
-      name: 'route_to_akash',
-      description: `Route a compute job to Akash Network providers.
+export const routeToAkashTool = new LongRunningFunctionTool({
+  name: 'route_to_akash',
+  description: 'Route a compute job to Akash Network. Creates a deployment, waits for provider bids, and optionally auto-accepts the best bid. Returns deployment details and provider info.',
+  parameters: routeToAkashSchema,
+  execute: async ({ jobId, image, cpu, memory, storage, gpuUnits, gpuVendor, gpuModel, autoAcceptBid, bidTimeoutSeconds }) => {
+    console.log('[TOOL] route_to_akash called with:', { jobId, image, cpu, memory, gpuUnits, gpuModel, autoAcceptBid });
 
-Akash is a decentralized compute marketplace with auction-based pricing.
-Best for: GPU workloads, containerized applications, web services.
-
-Parameters:
-- jobId: Unique identifier for this job
-- requirements: Hardware/software requirements (image, cpu, memory, gpu, etc.)
-- autoAcceptBid: If true, automatically accepts the best bid
-- bidTimeoutSeconds: How long to wait for bids (default: 300s)
-
-Returns: Deployment details, provider info, bids received, and routing logs.`,
-      isLongRunning: true // Deployment creation can take several minutes
-    });
-  }
-
-  /**
-   * Execute the tool - called by the ADK agent
-   */
-  async runAsync(request: RunAsyncToolRequest): Promise<unknown> {
-    const { args } = request;
-
-    // Validate required parameters
-    if (!args.jobId || typeof args.jobId !== 'string') {
-      return JSON.stringify({
-        success: false,
-        error: 'Missing required parameter: jobId (string)',
-        logs: [],
-        suitability: { suitable: false, score: 0, reasons: ['Invalid parameters'] }
-      } as RouteToAkashResult);
-    }
-
-    if (!args.requirements || typeof args.requirements !== 'object') {
-      return JSON.stringify({
-        success: false,
-        error: 'Missing required parameter: requirements (object)',
-        logs: [],
-        suitability: { suitable: false, score: 0, reasons: ['Invalid parameters'] }
-      } as RouteToAkashResult);
-    }
-
-    const params: RouteToAkashParams = {
-      jobId: args.jobId as string,
-      requirements: args.requirements as JobRequirements,
-      autoAcceptBid: args.autoAcceptBid as boolean | undefined,
-      bidTimeoutSeconds: args.bidTimeoutSeconds as number | undefined
+    const requirements: JobRequirements = {
+      name: jobId,
+      image: image || 'ubuntu:22.04',
+      cpu: cpu || 4,
+      memory: memory || '8Gi',
+      storage: storage || '100Gi',
     };
 
-    const result = await executeRouteToAkash(params);
-    return JSON.stringify(result);
-  }
-}
+    if (gpuUnits && gpuUnits > 0) {
+      requirements.gpu = {
+        units: gpuUnits,
+        vendor: gpuVendor || 'nvidia',
+        ...(gpuModel ? { models: [gpuModel] } : {})
+      };
+    }
 
-/**
- * Singleton instance of the RouteToAkashTool
- * Use this when adding tools to the ADK agent
- */
-export const routeToAkashTool = new RouteToAkashTool();
+    const result = await executeRouteToAkash({
+      jobId,
+      requirements,
+      autoAcceptBid: autoAcceptBid ?? true,
+      bidTimeoutSeconds: bidTimeoutSeconds ?? 300
+    });
+
+    return result;
+  }
+});
+
+// Legacy class name kept as alias for backwards compatibility
+export const RouteToAkashTool = routeToAkashTool;

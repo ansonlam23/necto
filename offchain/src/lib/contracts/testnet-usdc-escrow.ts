@@ -136,7 +136,9 @@ export const ESCROW_ABI = [
   }
 ] as const;
 
-export const ESCROW_ADDRESS = process.env.ESCROW_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
+// Escrow contract address on ADI Testnet
+// From deployment: 0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA
+export const ESCROW_ADDRESS: `0x${string}` = '0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA';
 
 /** Default deposit: $5 USDC (5 * 10^6) */
 export const DEFAULT_DEPOSIT = BigInt(5_000_000);

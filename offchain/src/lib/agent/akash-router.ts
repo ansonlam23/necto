@@ -4,16 +4,15 @@
  * Handles bid polling and deployment lifecycle
  */
 
-import { SdlSpec, AkashDeployment, ProviderBid } from '@/types/akash';
+import { AkashDeployment, ProviderBid } from '@/types/akash';
 import { getConsoleClient } from '@/lib/akash/console-api';
 import { generateSDL, JobRequirements } from '@/lib/akash/sdl-generator';
 import {
-  selectProvider,
   rankProviders,
   filterProviders,
-  Provider,
-  ProviderScore
+  Provider
 } from './provider-selection';
+import { fetchAkashProviders, SynapseProvider } from '@/lib/providers/akash-fetcher';
 
 export interface RouteRequest {
   jobId: string;
@@ -53,69 +52,28 @@ function parseMemoryToGi(memory?: string): number | undefined {
   return unit === 'mi' ? value / 1024 : value;
 }
 
-// Mock providers for development (replace with Console API)
-const MOCK_PROVIDERS: Provider[] = [
-  {
-    id: 'prov-1',
-    name: 'GPU Cloud East',
-    address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-    region: 'us-east',
-    gpuTypes: ['NVIDIA A100', 'NVIDIA V100'],
-    pricePerHour: 2.50,
-    availability: 0.95,
-    uptime: 99.9,
-    latency: 45,
-    specs: { vcpus: 32, memory: 128, storage: 1000 }
-  },
-  {
-    id: 'prov-2',
-    name: 'Euro Compute',
-    address: '0x8ba1f109551bD432803012645Hac136c82C3e8C',
-    region: 'eu-west',
-    gpuTypes: ['NVIDIA A100', 'NVIDIA RTX 4090'],
-    pricePerHour: 2.20,
-    availability: 0.92,
-    uptime: 98.5,
-    latency: 85,
-    specs: { vcpus: 24, memory: 96, storage: 500 }
-  },
-  {
-    id: 'prov-3',
-    name: 'Asia GPU Hub',
-    address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    region: 'ap-south',
-    gpuTypes: ['NVIDIA V100', 'NVIDIA RTX 3090'],
-    pricePerHour: 1.80,
-    availability: 0.88,
-    uptime: 97.2,
-    latency: 120,
-    specs: { vcpus: 16, memory: 64, storage: 250 }
-  },
-  {
-    id: 'prov-4',
-    name: 'Premium West',
-    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    region: 'us-west',
-    gpuTypes: ['NVIDIA A100', 'NVIDIA H100'],
-    pricePerHour: 3.50,
-    availability: 0.98,
-    uptime: 99.8,
-    latency: 60,
-    specs: { vcpus: 64, memory: 256, storage: 2000 }
-  },
-  {
-    id: 'prov-5',
-    name: 'Budget Compute',
-    address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-    region: 'us-central',
-    gpuTypes: ['NVIDIA RTX 4090', 'NVIDIA RTX 3090'],
-    pricePerHour: 1.20,
-    availability: 0.85,
-    uptime: 96.8,
-    latency: 55,
-    specs: { vcpus: 12, memory: 48, storage: 500 }
-  }
-];
+/**
+ * Convert SynapseProvider to Provider format for provider-selection.ts
+ */
+function synapseToProvider(synapse: SynapseProvider): Provider {
+  return {
+    id: synapse.id,
+    name: synapse.name,
+    address: synapse.id, // Using id as address since SynapseProvider doesn't have separate address
+    region: synapse.region || 'unknown',
+    // Map the GPU model to the format expected by filterProviders
+    gpuTypes: [`NVIDIA ${synapse.hardware.gpuModel.replace(/^NVIDIA\s*/, '')}`],
+    pricePerHour: synapse.priceEstimate,
+    availability: synapse.uptimePercentage / 100,
+    uptime: synapse.uptimePercentage,
+    latency: undefined, // Not available from Akash API
+    specs: {
+      vcpus: synapse.hardware.cpuUnits / 1000, // Convert milli-units to vCPUs
+      memory: synapse.hardware.memoryGB || Math.round(synapse.hardware.memory / (1024 * 1024 * 1024)),
+      storage: synapse.hardware.storageGB || 500 // Default storage
+    }
+  };
+}
 
 /**
  * Check if a workload is suitable for Akash
@@ -191,20 +149,56 @@ export async function routeToAkash(
     log('info', 'Generating Akash SDL from requirements');
     const sdl = generateSDL(request.requirements);
 
-    // Step 3: Select provider
+    // Step 3: Select provider - fetch real providers from Akash Network
     log('info', 'Discovering and ranking providers');
-    const filters = {
-      gpuType: request.requirements.gpu?.vendor,
-      region: request.requirements.region,
-      minVcpus: request.requirements.cpu,
-      minMemory: parseMemoryToGi(request.requirements.memory)
-    };
+    
+    let providers: Provider[] = [];
+    try {
+      const synapseProviders = await fetchAkashProviders();
+      providers = synapseProviders.map(synapseToProvider);
+      log('info', `Fetched ${providers.length} Akash providers`);
+    } catch (error) {
+      log('error', 'Failed to fetch Akash providers', { error: error instanceof Error ? error.message : 'Unknown error' });
+      return { success: false, error: 'Failed to fetch providers from Akash Network', logs };
+    }
 
-    const filtered = filterProviders(MOCK_PROVIDERS, filters);
+    // Build filters from requirements
+    const filters: {
+      gpuType?: string;
+      region?: string;
+      maxPrice?: number;
+      minVcpus?: number;
+      minMemory?: number;
+    } = {};
+
+    // Map gpu vendor/models to filter
+    if (request.requirements.gpu?.models && request.requirements.gpu.models.length > 0) {
+      // Use the first model for filtering (e.g., "a100" -> "A100")
+      filters.gpuType = request.requirements.gpu.models[0].toUpperCase();
+    } else if (request.requirements.gpu?.vendor) {
+      filters.gpuType = request.requirements.gpu.vendor;
+    }
+
+    if (request.requirements.region) {
+      filters.region = request.requirements.region;
+    }
+
+    if (request.requirements.cpu) {
+      filters.minVcpus = request.requirements.cpu;
+    }
+
+    const memoryGi = parseMemoryToGi(request.requirements.memory);
+    if (memoryGi) {
+      filters.minMemory = memoryGi;
+    }
+
+    console.log('Routing with filters:', filters);
+    
+    const filtered = filterProviders(providers, filters);
     
     if (filtered.length === 0) {
-      log('error', 'No providers match requirements');
-      return { success: false, error: 'No matching providers', logs };
+      log('error', 'No providers match requirements', { filters });
+      return { success: false, error: 'No matching providers found for your requirements', logs };
     }
 
     const ranked = rankProviders(filtered);

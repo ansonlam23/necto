@@ -161,6 +161,30 @@ export function selectProvider(
 }
 
 /**
+ * Check if region matches (case-insensitive, supports partial matching)
+ */
+function regionMatches(providerRegion: string, filterRegion: string): boolean {
+  const providerLower = providerRegion.toLowerCase();
+  const filterLower = filterRegion.toLowerCase();
+  
+  // Direct match
+  if (providerLower === filterLower) return true;
+  
+  // Partial match: filter is contained in provider region or vice versa
+  // e.g., "us-east" matches "us-east-1" or "Virginia, US"
+  if (providerLower.includes(filterLower) || filterLower.includes(providerLower)) return true;
+  
+  // Handle common region format variations
+  // e.g., "us-east" should match "US East" or "us east"
+  const normalizedProvider = providerLower.replace(/[-_\s]/g, '');
+  const normalizedFilter = filterLower.replace(/[-_\s]/g, '');
+  if (normalizedProvider === normalizedFilter) return true;
+  if (normalizedProvider.includes(normalizedFilter) || normalizedFilter.includes(normalizedProvider)) return true;
+  
+  return false;
+}
+
+/**
  * Filter providers by requirements
  */
 export function filterProviders(
@@ -182,7 +206,7 @@ export function filterProviders(
       );
       if (!hasMatchingGpu) return false;
     }
-    if (filters.region && p.region !== filters.region) {
+    if (filters.region && !regionMatches(p.region, filters.region)) {
       return false;
     }
     if (filters.maxPrice && p.pricePerHour > filters.maxPrice) {

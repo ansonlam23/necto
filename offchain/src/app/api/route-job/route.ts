@@ -46,10 +46,23 @@ export async function POST(
       )
     }
 
+    // Get API key and set it in environment for Google ADK
+    const apiKey = process.env.GOOGLE_AI_STUDIO_API_KEY || process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY
+    
+    if (!apiKey) {
+      return NextResponse.json(
+        { success: false, error: 'API key not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Set the API key in environment for Google GenAI library
+    process.env.GOOGLE_GENAI_API_KEY = apiKey
+
     const agentConfig: AgentConfig = {
-      apiKey: process.env.GOOGLE_AI_STUDIO_API_KEY || '',
-      model: 'gemini-2.0-flash',
-      name: 'necto-router'
+      apiKey,
+      model: 'gemini-2.5-flash',
+      name: 'necto_router'
     }
 
     // Collect thinking steps as they come in

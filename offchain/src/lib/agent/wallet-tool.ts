@@ -1,6 +1,6 @@
 /**
  * @title Wallet Tool
- * @notice Blockchain transaction tool for ADK agent
+ * @notice Blockchain transaction FunctionTool for ADK agent
  * @dev Enables agent to submit jobs to ComputeRouter contract
  */
 
@@ -9,21 +9,15 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { COMPUTE_ROUTER_ABI, COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router'
 import { adiTestnet } from '@/lib/adi-chain'
 import type { TransactionResult } from './types'
-import { BaseTool, type RunAsyncToolRequest } from '@google/adk'
+import { FunctionTool } from '@google/adk'
+import { z } from 'zod'
 
-/**
- * Create a wallet client for the agent
- * Uses environment variable for agent private key
- */
 export function createAgentWallet(): WalletClient {
   const privateKey = process.env.AGENT_PRIVATE_KEY as `0x${string}`
-  
   if (!privateKey) {
     throw new Error('AGENT_PRIVATE_KEY not configured in environment')
   }
-  
   const account = privateKeyToAccount(privateKey)
-  
   return createWalletClient({
     account,
     chain: adiTestnet,
@@ -31,10 +25,6 @@ export function createAgentWallet(): WalletClient {
   })
 }
 
-/**
- * Submit a job transaction to the ComputeRouter contract
- * This is called by the agent after selecting a provider
- */
 export async function submitJobTransaction(
   userAddress: `0x${string}`,
   detailsHash: `0x${string}`,
@@ -43,8 +33,6 @@ export async function submitJobTransaction(
   try {
     const wallet = createAgentWallet()
     const account = wallet.account!
-    
-    // Submit job transaction
     const hash = await wallet.writeContract({
       account,
       address: COMPUTE_ROUTER_ADDRESS,
@@ -53,15 +41,7 @@ export async function submitJobTransaction(
       args: [userAddress, detailsHash, isTracked],
       chain: adiTestnet
     })
-    
-    // Wait for transaction receipt to get job ID
-    // In a real implementation, you'd wait for the receipt and parse the JobSubmitted event
-    // For now, return success
-    return {
-      success: true,
-      hash,
-      jobId: undefined // Would be extracted from event logs
-    }
+    return { success: true, hash, jobId: undefined }
   } catch (error) {
     console.error('Failed to submit job transaction:', error)
     return {
@@ -71,10 +51,6 @@ export async function submitJobTransaction(
   }
 }
 
-/**
- * Record routing decision on-chain
- * Called after agent selects a provider
- */
 export async function recordRoutingDecision(
   jobId: bigint,
   providerAddress: `0x${string}`,
@@ -84,7 +60,6 @@ export async function recordRoutingDecision(
   try {
     const wallet = createAgentWallet()
     const account = wallet.account!
-    
     const hash = await wallet.writeContract({
       account,
       address: COMPUTE_ROUTER_ADDRESS,
@@ -93,11 +68,7 @@ export async function recordRoutingDecision(
       args: [jobId, providerAddress, amount, routingHash],
       chain: adiTestnet
     })
-    
-    return {
-      success: true,
-      hash
-    }
+    return { success: true, hash }
   } catch (error) {
     console.error('Failed to record routing decision:', error)
     return {
@@ -107,60 +78,36 @@ export async function recordRoutingDecision(
   }
 }
 
-/**
- * Generate a hash for job details
- * Used to create the detailsHash for on-chain storage
- */
 export function hashJobDetails(details: object): `0x${string}` {
   const jsonString = JSON.stringify(details, Object.keys(details).sort())
   return keccak256(toBytes(jsonString))
 }
 
-/**
- * Generate a hash for routing decision
- * Used to create the routingHash for on-chain storage
- */
 export function hashRoutingDecision(decision: object): `0x${string}` {
   const jsonString = JSON.stringify(decision, Object.keys(decision).sort())
   return keccak256(toBytes(jsonString))
 }
 
-/**
- * Wallet tool class for ADK agent
- * Extends BaseTool for proper ADK integration
- */
-export class WalletTool extends BaseTool {
-  constructor() {
-    super({
-      name: 'submit_job_to_blockchain',
-      description: 'Submit a compute job to the blockchain via ComputeRouter contract. Returns transaction result with job ID.',
-      isLongRunning: false
-    })
-  }
+const walletToolSchema = z.object({
+  userAddress: z.string().describe('The user wallet address (0x...)'),
+  detailsHash: z.string().describe('Keccak256 hash of the job details'),
+  isTracked: z.boolean().describe('Whether to track this job on-chain'),
+})
 
-  /**
-   * Run the tool with the given arguments
-   * Implements the abstract runAsync method from BaseTool
-   */
-  async runAsync(request: RunAsyncToolRequest): Promise<unknown> {
-    const { args } = request
-    
-    const userAddress = args.userAddress as string
-    const detailsHash = args.detailsHash as string
-    const isTracked = args.isTracked as boolean
-    
+export const walletTool = new FunctionTool({
+  name: 'submit_job_to_blockchain',
+  description: 'Submit a compute job to the blockchain via ComputeRouter contract. Returns transaction hash and job ID.',
+  parameters: walletToolSchema,
+  execute: async ({ userAddress, detailsHash, isTracked }) => {
+    console.log('[TOOL] submit_job_to_blockchain called with:', { userAddress, isTracked })
     const result = await submitJobTransaction(
       userAddress as `0x${string}`,
       detailsHash as `0x${string}`,
       isTracked
     )
-    
-    return JSON.stringify(result)
+    return result
   }
-}
+})
 
-/**
- * Wallet tool instance for ADK agent
- * Singleton instance to be shared across the application
- */
-export const walletTool = new WalletTool()
+// Legacy class name kept as alias
+export const WalletTool = walletTool

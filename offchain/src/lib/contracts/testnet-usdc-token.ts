@@ -127,7 +127,9 @@ export const USDC_ABI = [
   }
 ] as const;
 
-export const USDC_ADDRESS = process.env.ADI_TESTNET_USDC_ADDRESS || '0x0000000000000000000000000000000000000000';
+// Testnet USDC Token contract address on ADI Testnet
+// From deployment: 0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7
+export const USDC_ADDRESS: `0x${string}` = '0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7';
 
 export const USDC_DECIMALS = 6;
 
