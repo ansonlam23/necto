@@ -14,7 +14,8 @@ import {
   FlaskConical,
   Server,
   Bot,
-  GitBranch
+  GitBranch,
+  Sparkles
 } from "lucide-react"
 
 import {
