@@ -413,7 +413,8 @@ export function sdlToYAML(sdl: SdlSpec): string {
       if (profile.resources.gpu.attributes) {
         yaml += `${indent(5)}attributes:\n`;
         for (const attr of profile.resources.gpu.attributes) {
-          yaml += `${indent(6)}${attr.key}: ${attr.value}\n`;
+          yaml += `${indent(6)}- key: ${attr.key}\n`;
+          yaml += `${indent(7)}value: ${attr.value}\n`;
         }
       }
     }
