@@ -221,4 +221,6 @@
 
 ---
 *Requirements defined: 2026-02-19*
-*Last updated: 2026-02-19 after initialization*
+*Last updated: 2026-02-19 after roadmap creation*
+
+**Phase Definitions:** See `.planning/ROADMAP.md` for detailed phase goals and success criteria
