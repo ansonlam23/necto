@@ -1,25 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { encodeFunctionData, createPublicClient, http } from 'viem';
+import { adiTestnet } from '@/lib/adi-chain';
+import { 
+  ESCROW_ABI, 
+  ESCROW_ADDRESS, 
+  EscrowStatus 
+} from '@/lib/contracts/testnet-usdc-escrow';
 
 // Testnet USDC contract address on ADI Testnet
 const TESTNET_USDC_ADDRESS = process.env.TESTNET_USDC_CONTRACT || '0x0000000000000000000000000000000000000000';
 const ADI_TESTNET_CHAIN_ID = 99999;
-const ADI_TESTNET_RPC = process.env.ADI_TESTNET_RPC_URL || 'https://rpc.ab.testnet.adifoundation.ai/';
 
-// Mock escrow data store (replace with contract calls)
-interface EscrowData {
-  jobId: string;
-  depositor: string;
-  amount: string;
-  status: 'pending' | 'active' | 'released' | 'refunded';
-  createdAt: string;
-  deploymentId?: string;
+// Create public client for reading from blockchain
+const publicClient = createPublicClient({
+  chain: adiTestnet,
+  transport: http(process.env.ADI_TESTNET_RPC_URL || 'https://rpc.ab.testnet.adifoundation.ai/')
+});
+
+/**
+ * Map contract escrow status to API status string
+ */
+function mapEscrowStatus(status: number): 'active' | 'released' | 'refunded' {
+  switch (status) {
+    case EscrowStatus.Active:
+      return 'active';
+    case EscrowStatus.Released:
+      return 'released';
+    case EscrowStatus.Refunded:
+      return 'refunded';
+    default:
+      return 'active';
+  }
 }
-
-const mockEscrows: Map<string, EscrowData> = new Map();
 
 /**
  * GET /api/escrow
  * Get escrow status for a job
+ * 
+ * Note: Since we don't have an indexer, this endpoint has limited functionality.
+ * In production, you would query an indexer or backend database to get all escrows
+ * for a user. For now, it only supports fetching a specific escrow by jobId.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -34,61 +54,54 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // If jobId provided, return specific escrow
+    // If jobId provided, return specific escrow from contract
     if (jobId) {
-      const escrow = mockEscrows.get(jobId);
-      
-      if (!escrow) {
+      try {
+        const escrow = await publicClient.readContract({
+          address: ESCROW_ADDRESS as `0x${string}`,
+          abi: ESCROW_ABI,
+          functionName: 'getEscrow',
+          args: [BigInt(jobId)]
+        });
+
+        // Verify ownership
+        if (escrow.depositor.toLowerCase() !== userAddress.toLowerCase()) {
+          return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          escrow: {
+            jobId,
+            depositor: escrow.depositor,
+            amount: escrow.amount.toString(),
+            status: mapEscrowStatus(Number(escrow.status)),
+            createdAt: new Date(Number(escrow.createdAt) * 1000).toISOString()
+          }
+        });
+      } catch (error) {
+        console.error('Contract read error:', error);
         return NextResponse.json(
-          { error: 'Escrow not found' },
+          { error: 'Escrow not found on blockchain' },
           { status: 404 }
         );
       }
-
-      // Verify ownership
-      if (escrow.depositor !== userAddress) {
-        return NextResponse.json(
-          { error: 'Access denied' },
-          { status: 403 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        escrow: {
-          jobId: escrow.jobId,
-          amount: escrow.amount,
-          status: escrow.status,
-          createdAt: escrow.createdAt,
-          deploymentId: escrow.deploymentId
-        }
-      });
     }
 
-    // Return all escrows for user
-    const userEscrows = Array.from(mockEscrows.values())
-      .filter(e => e.depositor === userAddress)
-      .map(e => ({
-        jobId: e.jobId,
-        amount: e.amount,
-        status: e.status,
-        createdAt: e.createdAt,
-        deploymentId: e.deploymentId
-      }));
-
-    // Calculate totals
-    const totalDeposited = userEscrows
-      .filter(e => ['pending', 'active'].includes(e.status))
-      .reduce((sum, e) => sum + BigInt(e.amount), BigInt(0));
-
+    // Without an indexer, we cannot list all escrows for a user
+    // In production, query an indexer or backend database
     return NextResponse.json({
       success: true,
-      escrows: userEscrows,
+      escrows: [],
       summary: {
-        totalEscrows: userEscrows.length,
-        totalDeposited: totalDeposited.toString(),
-        activeCount: userEscrows.filter(e => e.status === 'active').length,
-        pendingCount: userEscrows.filter(e => e.status === 'pending').length
+        totalEscrows: 0,
+        totalDeposited: '0',
+        activeCount: 0,
+        pendingCount: 0,
+        note: 'Escrow listing requires an indexer. Use jobId parameter to fetch specific escrow.'
       }
     });
   } catch (error) {
@@ -147,29 +160,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Check if escrow already exists for this job
-    if (mockEscrows.has(jobId)) {
-      return NextResponse.json(
-        { error: 'Escrow already exists for this job' },
-        { status: 409 }
-      );
+    try {
+      const existingEscrow = await publicClient.readContract({
+        address: ESCROW_ADDRESS as `0x${string}`,
+        abi: ESCROW_ABI,
+        functionName: 'getEscrow',
+        args: [BigInt(jobId)]
+      });
+
+      // If depositor is not zero address, escrow exists
+      if (existingEscrow.depositor !== '0x0000000000000000000000000000000000000000') {
+        return NextResponse.json(
+          { error: 'Escrow already exists for this job' },
+          { status: 409 }
+        );
+      }
+    } catch {
+      // If contract read fails, continue (escrow likely doesn't exist)
     }
-
-    // Create mock escrow entry
-    const escrow: EscrowData = {
-      jobId,
-      depositor: userAddress,
-      amount,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      deploymentId
-    };
-
-    mockEscrows.set(jobId, escrow);
 
     // Build transaction data for client-side signing
     // This is the data the client will sign and send to the blockchain
     const transactionData = {
-      to: TESTNET_USDC_ADDRESS,
+      to: ESCROW_ADDRESS,
       data: buildEscrowDepositCalldata(jobId, amount),
       value: '0',
       chainId: ADI_TESTNET_CHAIN_ID,
@@ -182,9 +195,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       message: 'Escrow deposit transaction created',
       escrow: {
         jobId,
+        depositor: userAddress,
         amount,
         status: 'pending',
-        createdAt: escrow.createdAt
+        createdAt: new Date().toISOString(),
+        deploymentId
       },
       transaction: {
         ...transactionData,
@@ -231,54 +246,60 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const escrow = mockEscrows.get(jobId);
-
-    if (!escrow) {
+    // Fetch escrow from contract
+    let escrow;
+    try {
+      escrow = await publicClient.readContract({
+        address: ESCROW_ADDRESS as `0x${string}`,
+        abi: ESCROW_ABI,
+        functionName: 'getEscrow',
+        args: [BigInt(jobId)]
+      });
+    } catch (error) {
       return NextResponse.json(
-        { error: 'Escrow not found' },
+        { error: 'Escrow not found on blockchain' },
         { status: 404 }
       );
     }
 
-    if (escrow.depositor !== userAddress) {
+    // Verify ownership
+    if (escrow.depositor.toLowerCase() !== userAddress.toLowerCase()) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
       );
     }
 
-    // Only allow refund for pending escrows
-    if (escrow.status !== 'pending') {
+    // Only allow refund for active escrows
+    if (Number(escrow.status) !== EscrowStatus.Active) {
       return NextResponse.json(
-        { error: `Cannot refund escrow with status: ${escrow.status}` },
+        { error: `Cannot refund escrow with status: ${mapEscrowStatus(Number(escrow.status))}` },
         { status: 400 }
       );
     }
 
     // Build refund transaction data
     const transactionData = {
-      to: TESTNET_USDC_ADDRESS,
+      to: ESCROW_ADDRESS,
       data: buildEscrowRefundCalldata(jobId),
       value: '0',
       chainId: ADI_TESTNET_CHAIN_ID,
       gasLimit: '150000',
     };
 
-    // Update escrow status
-    escrow.status = 'refunded';
-
     return NextResponse.json({
       success: true,
       message: 'Escrow refund transaction created',
       escrow: {
         jobId,
-        amount: escrow.amount,
+        depositor: escrow.depositor,
+        amount: escrow.amount.toString(),
         status: 'refunded',
         refundedAt: new Date().toISOString()
       },
       transaction: {
         ...transactionData,
-        description: `Refund ${formatUSDC(escrow.amount)} USDC from escrow for job ${jobId}`,
+        description: `Refund ${formatUSDC(escrow.amount.toString())} USDC from escrow for job ${jobId}`,
         network: 'ADI Testnet'
       }
     });
@@ -292,21 +313,25 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Helper function to build escrow deposit calldata
- * In production, this would encode a contract call
+ * Helper function to build escrow deposit calldata using viem
  */
 function buildEscrowDepositCalldata(jobId: string, amount: string): string {
-  // Placeholder: In production, encode ABI for escrow contract
-  // Example: contract.deposit(jobId, amount)
-  return `0x${Buffer.from(JSON.stringify({ method: 'deposit', jobId, amount })).toString('hex')}`;
+  return encodeFunctionData({
+    abi: ESCROW_ABI,
+    functionName: 'deposit',
+    args: [BigInt(jobId), BigInt(amount)]
+  });
 }
 
 /**
- * Helper function to build escrow refund calldata
+ * Helper function to build escrow refund calldata using viem
  */
 function buildEscrowRefundCalldata(jobId: string): string {
-  // Placeholder: In production, encode ABI for escrow contract
-  return `0x${Buffer.from(JSON.stringify({ method: 'refund', jobId })).toString('hex')}`;
+  return encodeFunctionData({
+    abi: ESCROW_ABI,
+    functionName: 'refund',
+    args: [BigInt(jobId)]
+  });
 }
 
 /**
