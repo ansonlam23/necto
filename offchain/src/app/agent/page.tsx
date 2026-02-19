@@ -153,18 +153,7 @@ export default function AgentPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col">
-      {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-primary" />
-          Intelligent Deployment Agent
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Describe your workload and I'll handle all the configuration
-        </p>
-      </div>
-
+    <div className="h-full flex flex-col">
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-0">
         {/* Left Sidebar - Requirements & Provider */}
         <div className="lg:col-span-1 space-y-4 overflow-y-auto">

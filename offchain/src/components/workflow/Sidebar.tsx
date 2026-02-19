@@ -35,11 +35,10 @@ const nodeTemplates: Record<string, NodeTemplate[]> = {
   ],
   Providers: [
     { type: 'akash-network', label: 'Akash Network', category: 'provider', icon: Server, description: 'Decentralized compute' },
-    { type: 'render', label: 'Render', category: 'provider', icon: Cloud, description: 'Cloud rendering' },
+    { type: 'render', label: 'Render', category: 'provider', icon: Server, description: 'Serverless GPUs' },
     { type: 'io-net', label: 'io.net', category: 'provider', icon: Server, description: 'GPU clusters' },
-    { type: 'lambda-labs', label: 'Lambda Labs', category: 'provider', icon: Cloud, description: 'GPU cloud' },
+    { type: 'lambda-labs', label: 'Helium', category: 'provider', icon: Cloud, description: 'GPU cloud' },
     { type: 'vast-ai', label: 'Vast.ai', category: 'provider', icon: HardDrive, description: 'GPU marketplace' },
-    { type: 'runpod', label: 'RunPod', category: 'provider', icon: Server, description: 'Serverless GPUs' },
   ],
   Settlement: [
     { type: 'usdc-payment', label: 'USDC Payment', category: 'settlement', icon: CreditCard, description: 'Crypto payment' },

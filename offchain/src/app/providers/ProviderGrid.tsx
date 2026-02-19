@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAkashProviders, type SynapseProvider } from '@/lib/providers/akash-fetcher';
 import { fetchLambdaProviders } from '@/lib/providers/lambda-fetcher';
-import { fetchRunPodProviders } from '@/lib/providers/runpod-fetcher';
+import { fetchRenderProviders } from '@/lib/providers/render-fetcher';
 import { useMarketplace } from '@/context/MarketplaceContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -175,10 +175,10 @@ export function ProviderGrid() {
     async function loadProviders() {
       try {
         // Fetch from all sources in parallel
-        const [akashProviders, lambdaProviders, runpodProviders] = await Promise.all([
+        const [akashProviders, lambdaProviders, renderProviders] = await Promise.all([
           fetchAkashProviders(),
           fetchLambdaProviders(),
-          fetchRunPodProviders()
+          fetchRenderProviders()
         ]);
 
         // Get user-listed machines from context
@@ -188,7 +188,7 @@ export function ProviderGrid() {
         const allProviders = [
           ...userListedProviders, // Show user-listed first
           ...lambdaProviders,
-          ...runpodProviders,
+          ...renderProviders,
           ...akashProviders
         ];
 
@@ -219,12 +219,12 @@ export function ProviderGrid() {
     );
   }
 
-  // Sort providers by source (User-Listed first, then Lambda, RunPod, Akash) then by price
+  // Sort providers by source (User-Listed first, then Lambda, Render, Akash) then by price
   const sortedProviders = providers.sort((a, b) => {
     const sourcePriority: Record<string, number> = {
       'User-Listed': 0,
       'Lambda': 1,
-      'RunPod': 2,
+      'Render': 2,
       'Akash': 3
     };
     const aPriority = sourcePriority[a.source] ?? 4;

@@ -204,7 +204,7 @@ export function ListingForm({ onSuccess }: ListingFormProps) {
 
           {/* Step 1: Hardware Specs */}
           {step === 1 && (
-            <Card className="border-primary/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+            <Card className="border-gray-700/60 bg-gray-800/80">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
                   <Cpu className="h-5 w-5 text-primary" />
@@ -302,7 +302,7 @@ export function ListingForm({ onSuccess }: ListingFormProps) {
 
           {/* Step 2: Pricing & Availability */}
           {step === 2 && (
-            <Card className="border-primary/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+            <Card className="border-gray-700/60 bg-gray-800/80">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-primary" />
@@ -392,7 +392,7 @@ export function ListingForm({ onSuccess }: ListingFormProps) {
 
           {/* Step 3: Institution Details */}
           {step === 3 && (
-            <Card className="border-primary/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+            <Card className="border-gray-700/60 bg-gray-800/80">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-primary" />
@@ -445,7 +445,7 @@ export function ListingForm({ onSuccess }: ListingFormProps) {
 
           {/* Step 4: Policy & Compliance */}
           {step === 4 && (
-            <Card className="border-primary/20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+            <Card className="border-gray-700/60 bg-gray-800/80">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
