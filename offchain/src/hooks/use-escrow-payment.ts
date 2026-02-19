@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { keccak256, toBytes } from 'viem';
+import { keccak256, toBytes, parseGwei } from 'viem';
 import { COMPUTE_ROUTER_ABI, COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router';
 import { ESCROW_ABI, ESCROW_ADDRESS } from '@/lib/contracts/testnet-usdc-escrow';
 import { USDC_ABI, USDC_ADDRESS } from '@/lib/contracts/testnet-usdc-token';
@@ -47,6 +47,13 @@ const PAYMENT_PROGRESS: Record<PaymentState, PaymentProgress> = {
   completed: { state: 'completed', step: 'Payment completed', isLoading: false },
   error: { state: 'error', step: 'Payment failed', isLoading: false }
 };
+
+// Gas configuration for ADI Testnet
+// Using low gas price to avoid high network fees on testnet
+const GAS_PRICE = parseGwei('1'); // 1 gwei - reasonable for testnet
+const GAS_LIMIT_APPROVE = BigInt(100000);
+const GAS_LIMIT_SUBMIT = BigInt(200000);
+const GAS_LIMIT_DEPOSIT = BigInt(200000);
 
 /**
  * Hash job requirements for ComputeRouter
@@ -112,7 +119,9 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
             address: USDC_ADDRESS as `0x${string}`,
             abi: USDC_ABI,
             functionName: 'approve',
-            args: [ESCROW_ADDRESS as `0x${string}`, amount]
+            args: [ESCROW_ADDRESS as `0x${string}`, amount],
+            gas: GAS_LIMIT_APPROVE,
+            gasPrice: GAS_PRICE
           });
           
           setTxHash(approveHash);
@@ -139,7 +148,9 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
           address: COMPUTE_ROUTER_ADDRESS,
           abi: COMPUTE_ROUTER_ABI,
           functionName: 'submitJob',
-          args: [address, detailsHash, isTracked]
+          args: [address, detailsHash, isTracked],
+          gas: GAS_LIMIT_SUBMIT,
+          gasPrice: GAS_PRICE
         });
         
         setTxHash(submitHash);
@@ -177,7 +188,9 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
           address: ESCROW_ADDRESS as `0x${string}`,
           abi: ESCROW_ABI,
           functionName: 'deposit',
-          args: [jobIdResult, amount]
+          args: [jobIdResult, amount],
+          gas: GAS_LIMIT_DEPOSIT,
+          gasPrice: GAS_PRICE
         });
         
         setTxHash(depositHash);
