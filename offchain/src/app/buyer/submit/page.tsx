@@ -1,9 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { cn } from '@/lib/utils';
 import { SdlTemplate, JobRequirements, generateSDL } from '@/lib/akash/sdl-generator';
 import { useAkashDeployment } from '@/hooks/use-akash-deployment';
+import { useEscrowPayment } from '@/hooks/use-escrow-payment';
 import { TemplateGallery } from '@/components/akash/template-gallery';
 import { NaturalLanguageInput } from '@/components/akash/natural-language-input';
 import { RequirementsForm } from '@/components/akash/requirements-form';
@@ -18,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Wand2,
   FileCode,
@@ -30,7 +33,10 @@ import {
   Loader2,
   Sparkles,
   Settings2,
-  Eye
+  Eye,
+  Wallet,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 
 type Step = 'input' | 'configure' | 'sdl' | 'review' | 'deploy';
@@ -45,7 +51,15 @@ const STEPS: { id: Step; label: string; icon: React.ReactNode }[] = [
 
 const STEP_ORDER: Step[] = ['input', 'configure', 'sdl', 'review', 'deploy'];
 
+// ADI Testnet explorer URL
+const EXPLORER_URL = 'https://explorer.adi.testnet';
+
 export default function SubmitJobPage() {
+  // Wallet connection
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending: isConnecting } = useConnect();
+  const { disconnect } = useDisconnect();
+
   // State
   const [currentStep, setCurrentStep] = React.useState<Step>('input');
   const [inputMethod, setInputMethod] = React.useState<'template' | 'natural' | 'manual'>('template');
@@ -55,9 +69,11 @@ export default function SubmitJobPage() {
   const [autoSign, setAutoSign] = React.useState(true);
   const [escrowAmount, setEscrowAmount] = React.useState<string>('10');
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
+  const [copiedHash, setCopiedHash] = React.useState<boolean>(false);
 
   // Deployment hook
   const deployment = useAkashDeployment();
+  const escrowPayment = useEscrowPayment();
 
   // Calculate step progress
   const stepProgress = ((STEP_ORDER.indexOf(currentStep) + 1) / STEPS.length) * 100;
@@ -114,7 +130,7 @@ export default function SubmitJobPage() {
     }
   };
 
-  // Handle deployment
+  // Handle deployment with payment
   const handleDeploy = async () => {
     if (!requirements.name || !requirements.image) {
       setFormErrors({
@@ -124,7 +140,35 @@ export default function SubmitJobPage() {
       return;
     }
 
-    await deployment.startDeployment(requirements as JobRequirements, autoSign);
+    if (!isConnected || !address) {
+      setFormErrors({
+        wallet: 'Please connect your wallet first'
+      });
+      return;
+    }
+
+    // Convert escrow amount to USDC decimals (6)
+    const amountInUSDC = BigInt(escrowAmount) * BigInt(1_000_000);
+
+    await deployment.startDeployment({
+      requirements: requirements as JobRequirements,
+      autoAccept: autoSign,
+      escrowAmount: amountInUSDC,
+      isTracked: true
+    });
+  };
+
+  // Copy transaction hash to clipboard
+  const copyTxHash = (hash: string) => {
+    navigator.clipboard.writeText(hash);
+    setCopiedHash(true);
+    setTimeout(() => setCopiedHash(false), 2000);
+  };
+
+  // Truncate hash for display
+  const truncateHash = (hash: string): string => {
+    if (hash.length <= 20) return hash;
+    return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
   };
 
   // Generate SDL for preview
@@ -134,6 +178,24 @@ export default function SubmitJobPage() {
     }
     return null;
   }, [requirements]);
+
+  // Get payment status text
+  const getPaymentStatusText = () => {
+    switch (deployment.escrowState) {
+      case 'approving':
+        return 'Approving USDC spend...';
+      case 'submitting_job':
+        return 'Submitting job to router...';
+      case 'depositing':
+        return 'Depositing to escrow...';
+      case 'completed':
+        return 'Payment completed';
+      case 'error':
+        return 'Payment failed';
+      default:
+        return 'Processing...';
+    }
+  };
 
   // Render step content
   const renderStepContent = () => {
@@ -294,7 +356,7 @@ export default function SubmitJobPage() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">GPU</span>
                         <span className="text-amber-500">
-                          {requirements.gpu.units}x {requirements.gpu.vendor || "NVIDIA" || 'NVIDIA'}
+                          {requirements.gpu.units}x {requirements.gpu.vendor || 'NVIDIA'}
                         </span>
                       </div>
                     )}
@@ -329,6 +391,56 @@ export default function SubmitJobPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Wallet Connection Status */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "p-2 rounded-full",
+                      isConnected ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                    )}>
+                      <Wallet className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {isConnected ? 'Wallet Connected' : 'Wallet Not Connected'}
+                      </p>
+                      {isConnected && address && (
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {address.slice(0, 6)}...{address.slice(-4)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isConnected ? (
+                      <Button variant="outline" size="sm" onClick={() => disconnect()}>
+                        Disconnect
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        onClick={() => connect({ connector: connectors[0] })}
+                        disabled={isConnecting}
+                      >
+                        {isConnecting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          <>
+                            <Wallet className="h-4 w-4 mr-2" />
+                            Connect Wallet
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
                 {/* Escrow */}
                 <div className="space-y-2">
                   <Label>Escrow Deposit (Testnet USDC)</Label>
@@ -340,6 +452,7 @@ export default function SubmitJobPage() {
                       value={escrowAmount}
                       onChange={(e) => setEscrowAmount(e.target.value)}
                       className="flex-1"
+                      disabled={deployment.isLoading}
                     />
                     <span className="font-mono text-lg w-20 text-right">
                       {escrowAmount} USDC
@@ -349,6 +462,8 @@ export default function SubmitJobPage() {
                     Testnet USDC for demo payment flow. Necto sponsors actual Akash costs.
                   </p>
                 </div>
+
+                <Separator />
 
                 {/* Auto-sign */}
                 <div className="flex items-center justify-between">
@@ -361,6 +476,7 @@ export default function SubmitJobPage() {
                   <Switch
                     checked={autoSign}
                     onCheckedChange={setAutoSign}
+                    disabled={deployment.isLoading}
                   />
                 </div>
               </CardContent>
@@ -374,6 +490,41 @@ export default function SubmitJobPage() {
                 (Necto sponsors Akash hosting for hackathon demo)
               </AlertDescription>
             </Alert>
+
+            {/* Payment Button */}
+            {currentStep === 'review' && (
+              <div className="flex justify-center">
+                <Button
+                  size="lg"
+                  onClick={handleDeploy}
+                  disabled={deployment.isLoading || !isConnected}
+                >
+                  {deployment.isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {deployment.state === 'paying_escrow' ? getPaymentStatusText() : 'Deploying...'}
+                    </>
+                  ) : !isConnected ? (
+                    <>
+                      <Wallet className="h-4 w-4 mr-2" />
+                      Connect Wallet to Pay & Deploy
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pay {escrowAmount} USDC & Deploy
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {formErrors.wallet && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{formErrors.wallet}</AlertDescription>
+              </Alert>
+            )}
           </div>
         );
 
@@ -388,6 +539,99 @@ export default function SubmitJobPage() {
             </div>
 
             <DeploymentStatus deployment={deployment} />
+
+            {/* Escrow Transaction Card */}
+            {(deployment.escrowTxHash || deployment.escrowJobId) && (
+              <Card className="border-amber-200">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Escrow Payment
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Status */}
+                  <div className="flex items-center gap-2">
+                    {deployment.escrowState === 'completed' ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-green-600 font-medium">Payment Completed</span>
+                      </>
+                    ) : deployment.escrowState === 'error' ? (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        <span className="text-red-600 font-medium">Payment Failed</span>
+                      </>
+                    ) : (
+                      <>
+                        <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
+                        <span className="text-amber-600 font-medium">{getPaymentStatusText()}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Transaction Hash */}
+                  {deployment.escrowTxHash && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">
+                          {truncateHash(deployment.escrowTxHash)}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyTxHash(deployment.escrowTxHash!)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={`${EXPLORER_URL}/tx/${deployment.escrowTxHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      </div>
+                      {copiedHash && (
+                        <p className="text-xs text-green-600">Copied to clipboard!</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Job ID */}
+                  {deployment.escrowJobId && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Job ID</Label>
+                      <p className="font-mono text-sm">{deployment.escrowJobId.toString()}</p>
+                    </div>
+                  )}
+
+                  {/* Amount */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Amount Deposited</Label>
+                    <p className="font-mono text-sm">{escrowAmount} USDC</p>
+                  </div>
+
+                  {/* Escrow Error */}
+                  {deployment.escrowError && (
+                    <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm">
+                      <div className="flex items-center gap-2 font-medium">
+                        <AlertCircle className="h-4 w-4" />
+                        Error
+                      </div>
+                      <p className="mt-1">{deployment.escrowError}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {deployment.state === 'idle' && (
               <div className="flex justify-center">
@@ -482,7 +726,7 @@ export default function SubmitJobPage() {
       {renderStepContent()}
 
       {/* Navigation */}
-      {currentStep !== 'deploy' && (
+      {currentStep !== 'deploy' && currentStep !== 'review' && (
         <div className="flex items-center justify-between mt-8 pt-6 border-t">
           <Button
             variant="outline"
