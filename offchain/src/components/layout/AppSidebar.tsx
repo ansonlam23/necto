@@ -13,7 +13,8 @@ import {
   User2,
   FlaskConical,
   Server,
-  Bot
+  Bot,
+  GitBranch
 } from "lucide-react"
 
 import {
@@ -47,6 +48,11 @@ const navigationItems = [
     title: "Agent",
     url: "/agent",
     icon: Bot,
+  },
+  {
+    title: "Workflow",
+    url: "/workflow",
+    icon: GitBranch,
   },
   {
     title: "Providers",
