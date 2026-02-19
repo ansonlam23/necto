@@ -94,7 +94,7 @@ export default function BuyerDashboardPage(): React.JSX.Element {
     escrowBalance: 0
   });
 
-  // Fetch deployments
+  // Fetch deployments and escrow balance
   const fetchDeployments = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -108,7 +108,7 @@ export default function BuyerDashboardPage(): React.JSX.Element {
       // Use mock data for now
       setDeployments(MOCK_DEPLOYMENTS);
       
-      // Calculate stats
+      // Calculate stats from deployments
       const activeCount = MOCK_DEPLOYMENTS.filter(d => d.status === 'active').length;
       const totalSpent = MOCK_DEPLOYMENTS.reduce((sum, d) => {
         if (d.costPerHour && d.createdAt) {
@@ -118,18 +118,37 @@ export default function BuyerDashboardPage(): React.JSX.Element {
         return sum;
       }, 0);
       
+      // Fetch escrow balance from API (which reads from contract)
+      let escrowBalance = 0;
+      if (address) {
+        try {
+          const escrowResponse = await fetch('/api/escrow', {
+            headers: { 'x-user-address': address }
+          });
+          if (escrowResponse.ok) {
+            const escrowData = await escrowResponse.json();
+            // Calculate total deposited from active escrows
+            // Note: API returns limited data without an indexer
+            const totalDeposited = escrowData.summary?.totalDeposited || '0';
+            escrowBalance = Number(totalDeposited) / 1_000_000; // Convert from USDC decimals
+          }
+        } catch (error) {
+          console.error('Failed to fetch escrow balance:', error);
+        }
+      }
+      
       setStats({
         activeDeployments: activeCount,
         totalSpent: Math.round(totalSpent * 100) / 100,
         totalDeployments: MOCK_DEPLOYMENTS.length,
-        escrowBalance: 0 // TODO: Fetch from escrow contract
+        escrowBalance
       });
     } catch (error) {
       console.error('Failed to fetch deployments:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [address]);
 
   // Load deployments on mount
   useEffect(() => {
