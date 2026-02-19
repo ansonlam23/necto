@@ -3,7 +3,7 @@
 **Project:** Necto — Two-Sided Compute Marketplace with AI Routing Agent  
 **Current Phase:** 0 (Planning complete, ready to start Phase 1)  
 **Last Updated:** 2026-02-19
-**Last activity:** 2026-02-19 - Completed quick task 1: Fix blockchain integration: escrow API, calldata encoding, dashboard contract fetch, agent tx hash
+**Last activity:** 2026-02-19 - Completed quick task 2: build out the 0g storage of llm reasoning
 
 ---
 
@@ -50,6 +50,7 @@ None. Roadmap approved and ready for planning.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Fix blockchain integration: escrow API, calldata encoding, dashboard contract fetch, agent tx hash | 2026-02-19 | 69f3a4e | [1-fix-blockchain-integration-escrow-api-ca](./quick/1-fix-blockchain-integration-escrow-api-ca/) |
+| 2 | build out the 0g storage of llm reasoning | 2026-02-19 | fceab28 | [2-build-out-the-0g-storage-of-llm-reasonin](./quick/2-build-out-the-0g-storage-of-llm-reasonin/) |
 
 ---
 
@@ -170,7 +171,7 @@ Creating project roadmap based on requirements and research. Just completed:
 ### Repository
 - **Path:** `/home/julius/Documents/necto`
 - **Branch:** main
-- **Last Commit:** 69f3a4e
+- **Last Commit:** fceab28
 
 ### Key Directories
 ```
@@ -183,6 +184,9 @@ Creating project roadmap based on requirements and research. Just completed:
     1-fix-blockchain-integration-escrow-api-ca/
       1-PLAN.md
       1-SUMMARY.md
+    2-build-out-the-0g-storage-of-llm-reasonin/
+      2-PLAN.md
+      2-SUMMARY.md
   research/
     SUMMARY.md         # Research synthesis
     ARCHITECTURE.md    # Architecture patterns
@@ -194,6 +198,7 @@ offchain/
       agent/           # ADK agent, tools
       providers/       # Provider fetchers
       contracts/       # wagmi contract interactions
+      0g/              # 0G Storage client (NEW)
     components/        # React components
     app/               # Next.js App Router
     
@@ -206,7 +211,8 @@ hardhat/
 - `@xyflow/react` — Workflow canvas
 - `zustand` — State management
 - `viem`, `wagmi` — Web3 interactions
-- `@0glabs/0g-ts-sdk` — 0G Storage (to add in Phase 3)
+- `@0glabs/0g-ts-sdk` — 0G Storage (added in quick task 2)
+- `ethers` — 0G Storage signer (added in quick task 2)
 
 ---
 
