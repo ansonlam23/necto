@@ -67,11 +67,6 @@ const navigationItems = [
     icon: CloudUpload,
   },
   {
-    title: "Test Builder",
-    url: "/test-builder",
-    icon: FlaskConical,
-  },
-  {
     title: "Audit Log",
     url: "/audit",
     icon: FileText,
