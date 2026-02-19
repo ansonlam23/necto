@@ -69,7 +69,7 @@ export function Sidebar({ onAddNode }: SidebarProps) {
   }
 
   return (
-    <div className="w-72 border-r bg-card/50 backdrop-blur">
+    <div className="w-64 border-r bg-card/50 backdrop-blur flex-shrink-0">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold">Workflow Nodes</h2>
         <p className="text-xs text-muted-foreground mt-1">
@@ -77,7 +77,7 @@ export function Sidebar({ onAddNode }: SidebarProps) {
         </p>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-5rem)]">
+      <ScrollArea className="h-[calc(100vh-8rem)]">
         <div className="p-4 space-y-4">
           {Object.entries(nodeTemplates).map(([category, templates]) => (
             <Card key={category} className="border-muted">

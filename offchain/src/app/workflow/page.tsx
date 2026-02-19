@@ -218,12 +218,12 @@ function WorkflowContent() {
   }, [nodes, edges, setEdges])
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-full bg-background overflow-hidden">
       {/* Left Sidebar - Node Palette */}
       <Sidebar onAddNode={handleAddNode} />
 
       {/* Main Canvas */}
-      <div className="flex-1 relative" ref={reactFlowWrapper}>
+      <div className="flex-1 relative overflow-hidden" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}

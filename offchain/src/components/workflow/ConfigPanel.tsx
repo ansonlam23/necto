@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Separator } from '@/components/ui/separator'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface ConfigPanelProps {
@@ -187,16 +186,16 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
 
   if (!nodeConfig) {
     return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle>{selectedNode.data?.label}</SheetTitle>
-            <SheetDescription>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">{selectedNode.data?.label}</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
               No configuration available for this node type.
-            </SheetDescription>
-          </SheetHeader>
-        </SheetContent>
-      </Sheet>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     )
   }
 
@@ -211,20 +210,22 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[400px] sm:w-[540px]">
-        <SheetHeader>
-          <SheetTitle>{selectedNode.data?.label} Configuration</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">{selectedNode.data?.label} Configuration</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             Configure the properties for this node
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <ScrollArea className="h-[calc(100vh-200px)] mt-6">
-          <div className="space-y-6 pr-4">
+        <ScrollArea className="flex-1 max-h-[50vh] pr-4">
+          <div className="space-y-4">
             {nodeConfig.fields.map((field: any) => (
               <div key={field.name} className="space-y-2">
-                <Label htmlFor={field.name}>{field.label}</Label>
+                <Label htmlFor={field.name} className="text-sm font-medium">
+                  {field.label}
+                </Label>
 
                 {field.type === 'text' && (
                   <Input
@@ -233,6 +234,7 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
                     placeholder={field.placeholder}
                     value={config[field.name] || ''}
                     onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                    className="w-full"
                   />
                 )}
 
@@ -243,13 +245,14 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
                     placeholder={field.placeholder || field.default}
                     value={config[field.name] || ''}
                     onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                    className="w-full"
                   />
                 )}
 
                 {field.type === 'textarea' && (
                   <textarea
                     id={field.name}
-                    className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                     placeholder={field.placeholder}
                     value={config[field.name] || ''}
                     onChange={(e) => handleFieldChange(field.name, e.target.value)}
@@ -261,7 +264,7 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
                     value={config[field.name] || field.default}
                     onValueChange={(value) => handleFieldChange(field.name, value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select an option" />
                     </SelectTrigger>
                     <SelectContent>
@@ -278,15 +281,15 @@ export function ConfigPanel({ isOpen, onClose, selectedNode, updateNodeConfig }:
           </div>
         </ScrollArea>
 
-        <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+          <Button variant="outline" onClick={onClose} className="px-6">
             Cancel
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} className="px-6">
             Save Configuration
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
