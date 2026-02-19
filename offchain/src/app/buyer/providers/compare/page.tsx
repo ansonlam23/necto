@@ -58,7 +58,7 @@ export default function CompareProvidersPage(): React.JSX.Element {
         requirements: {
           name: 'comparison-job',
           image: 'ubuntu:22.04',
-          gpu: { units: requirements.gpuUnits, model: requirements.gpuModel },
+          gpu: { units: requirements.gpuUnits, vendor: requirements.gpuModel },
           cpu: requirements.cpu,
           memory: requirements.memory,
           region: requirements.region

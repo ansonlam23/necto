@@ -5,13 +5,7 @@
  */
 
 import { SdlSpec, AkashDeployment, ProviderBid } from '@/types/akash';
-import {
-  createDeployment,
-  getDeploymentStatus,
-  closeDeployment,
-  getDeploymentBids,
-  acceptProviderBid
-} from '@/lib/akash/console-api';
+import { getConsoleClient } from '@/lib/akash/console-api';
 import { generateSDL, JobRequirements } from '@/lib/akash/sdl-generator';
 import {
   selectProvider,
@@ -48,6 +42,15 @@ export interface SuitabilityCheck {
   suitable: boolean;
   score: number;
   reasons: string[];
+}
+
+function parseMemoryToGi(memory?: string): number | undefined {
+  if (!memory) return undefined;
+  const match = memory.trim().match(/^(\d+(?:\.\d+)?)(mi|gi)$/i);
+  if (!match) return undefined;
+  const value = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  return unit === 'mi' ? value / 1024 : value;
 }
 
 // Mock providers for development (replace with Console API)
@@ -191,10 +194,10 @@ export async function routeToAkash(
     // Step 3: Select provider
     log('info', 'Discovering and ranking providers');
     const filters = {
-      gpuType: request.requirements.gpu?.model,
+      gpuType: request.requirements.gpu?.vendor,
       region: request.requirements.region,
       minVcpus: request.requirements.cpu,
-      minMemory: request.requirements.memory ? parseInt(request.requirements.memory) : undefined
+      minMemory: parseMemoryToGi(request.requirements.memory)
     };
 
     const filtered = filterProviders(MOCK_PROVIDERS, filters);
@@ -212,9 +215,10 @@ export async function routeToAkash(
       price: selected.provider.pricePerHour
     });
 
-    // Step 4: Create deployment
+    // Step 4: Create deployment using Console Client
     log('info', 'Creating deployment on Akash');
-    const deployment = await createDeployment(sdl);
+    const client = getConsoleClient();
+    const deployment = await client.createDeployment(sdl);
     
     log('info', `Deployment created: ${deployment.id}`, {
       dseq: deployment.dseq,
@@ -225,13 +229,13 @@ export async function routeToAkash(
     const bidTimeout = request.bidTimeoutMs || 300000; // 5 minutes
     log('info', `Waiting for bids (timeout: ${bidTimeout}ms)`);
     
-    const bids = await pollForBids(deployment.id, bidTimeout, (status) => {
+    const bids = await pollForBids(deployment.id, bidTimeout, client, (status) => {
       log('info', status);
     });
 
     if (bids.length === 0) {
       log('error', 'No bids received within timeout');
-      await closeDeployment(deployment.id);
+      await client.closeDeployment(deployment.id);
       return { 
         success: false, 
         error: 'No bids received - deployment cancelled',
@@ -246,7 +250,10 @@ export async function routeToAkash(
     if (request.autoAcceptBid && bids.length > 0) {
       log('info', 'Auto-accepting best bid');
       const bestBid = bids[0];
-      await acceptProviderBid(deployment.id, bestBid.id);
+      if (!deployment.manifest) {
+        throw new Error('Missing deployment manifest for lease creation');
+      }
+      await client.acceptBid(deployment.id, bestBid.id, deployment.manifest);
       log('info', 'Bid accepted, lease created');
     }
 
@@ -271,13 +278,14 @@ export async function routeToAkash(
 async function pollForBids(
   deploymentId: string,
   timeoutMs: number,
+  client: ReturnType<typeof getConsoleClient>,
   onStatus?: (status: string) => void
 ): Promise<ProviderBid[]> {
   const startTime = Date.now();
   const intervalMs = 10000; // 10 seconds
 
   while (Date.now() - startTime < timeoutMs) {
-    const bids = await getDeploymentBids(deploymentId);
+    const bids = await client.getBids(deploymentId);
     
     if (bids.length > 0) {
       return bids;
@@ -296,7 +304,8 @@ async function pollForBids(
 export async function cancelRoute(deploymentId?: string): Promise<void> {
   if (deploymentId) {
     try {
-      await closeDeployment(deploymentId);
+      const client = getConsoleClient();
+      await client.closeDeployment(deploymentId);
     } catch (error) {
       console.error('Failed to close deployment:', error);
     }

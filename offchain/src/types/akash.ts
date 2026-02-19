@@ -1,6 +1,7 @@
 /**
  * Akash Network Type Definitions
  * Types for Console API integration and deployments
+ * Based on official Akash SDL specification from awesome-akash
  */
 
 export interface AkashDeployment {
@@ -12,6 +13,7 @@ export interface AkashDeployment {
   expiresAt?: string;
   sdl: SdlSpec;
   leases: Lease[];
+  manifest?: string;
 }
 
 export type DeploymentStatus = 
@@ -50,21 +52,36 @@ export interface ComputeProfile {
 }
 
 export interface Resources {
-  cpu: { units: string };
+  cpu: { units: number | string };
   memory: { size: string };
-  storage: { size: string }[];
-  gpu?: { units: string; attributes?: { key: string; value: string }[] };
+  storage: { size: string }[] | { size: string };
+  gpu?: {
+    units: number | string;
+    attributes?: GpuAttributes;
+  };
+}
+
+export interface GpuAttributes {
+  vendor: {
+    [vendor: string]: GpuModel[] | undefined;
+  };
+}
+
+export interface GpuModel {
+  model: string;
 }
 
 export interface PlacementProfile {
-  attributes?: { key: string; value: string }[];
+  attributes?: Record<string, string>;
   signedBy?: { allOf?: string[]; anyOf?: string[] };
-  pricing: Record<string, { denom: string; amount: string }>;
+  pricing: Record<string, { denom: string; amount: string | number }>;
 }
 
 export interface DeploymentConfig {
-  profile: string;
-  count: number;
+  [provider: string]: {
+    profile: string;
+    count: number;
+  };
 }
 
 export interface ProviderBid {
@@ -85,12 +102,7 @@ export interface Lease {
 
 export type LeaseStatus = 'active' | 'closed';
 
-export interface CreateDeploymentRequest {
-  sdl: SdlSpec;
-  deposit?: { denom: string; amount: string };
-}
-
 export interface ConsoleApiConfig {
   apiKey: string;
-  baseUrl: string;
+  baseUrl?: string;
 }

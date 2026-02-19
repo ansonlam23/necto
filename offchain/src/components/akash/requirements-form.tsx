@@ -227,7 +227,7 @@ export function RequirementsForm({
                 onValueChange={(v) =>
                   updateField('gpu', {
                     units: parseInt(v, 10),
-                    model: value.gpu?.model
+                    vendor: value.gpu?.vendor
                   })
                 }
               >
@@ -245,11 +245,11 @@ export function RequirementsForm({
             <div className="space-y-2">
               <Label htmlFor="gpu-model" className="text-xs">GPU Model</Label>
               <Select
-                value={value.gpu?.model || 'nvidia'}
+                value={value.gpu?.vendor || 'nvidia'}
                 onValueChange={(v) =>
                   updateField('gpu', {
                     units: value.gpu?.units || 1,
-                    model: v
+                    vendor: v
                   })
                 }
                 disabled={!value.gpu?.units}

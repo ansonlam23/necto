@@ -5,7 +5,7 @@ import { AkashDeployment, ProviderBid } from '@/types/akash';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
 import { RouteLog } from '@/lib/agent/akash-router';
 
-export type DeploymentState = 
+export type DeploymentState =
   | 'idle'
   | 'checking_suitability'
   | 'generating_sdl'
@@ -54,10 +54,6 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const addLog = useCallback((log: RouteLog) => {
-    setLogs(prev => [...prev, log]);
-  }, []);
-
   const startDeployment = useCallback(async (
     requirements: JobRequirements,
     autoAccept: boolean = false
@@ -68,24 +64,29 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setState('checking_suitability');
 
     try {
-      const { routeToAkash } = await import('@/lib/agent/akash-router');
-      
-      const result = await routeToAkash(
-        {
-          jobId: `job-${Date.now()}`,
-          requirements,
-          autoAcceptBid: autoAccept,
-          bidTimeoutMs: 300000 // 5 minutes
-        },
-        addLog
-      );
+      // All server-side routing logic runs in the API route — AKASH_CONSOLE_API_KEY stays server-only
+      const res = await fetch('/api/akash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requirements, autoAcceptBid: autoAccept }),
+      });
 
-      if (result.success && result.deployment) {
-        setDeployment(result.deployment);
-        setBids(result.bids || []);
-        setState(result.bids && result.bids.length > 0 ? 'active' : 'waiting_bids');
+      if (!res.ok) {
+        const text = await res.text();
+        try { throw new Error(JSON.parse(text).error || `HTTP ${res.status}`); }
+        catch { throw new Error(`HTTP ${res.status}`); }
+      }
+
+      const data = await res.json();
+
+      setLogs(data.logs ?? []);
+
+      if (data.success && data.deployment) {
+        setDeployment(data.deployment);
+        setBids(data.bids || []);
+        setState(data.bids && data.bids.length > 0 ? 'active' : 'waiting_bids');
       } else {
-        setError(result.error || 'Deployment failed');
+        setError(data.error || 'Deployment failed');
         setState('error');
       }
     } catch (err) {
@@ -94,7 +95,7 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [addLog]);
+  }, []);
 
   const acceptBid = useCallback(async (bidId: string) => {
     if (!deployment) return;
@@ -103,13 +104,21 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setIsLoading(true);
 
     try {
-      const { acceptProviderBid, getDeploymentBids } = await import('@/lib/akash/console-api');
-      
-      await acceptProviderBid(deployment.id, bidId);
-      
-      // Refresh bids to get updated status
-      const updatedBids = await getDeploymentBids(deployment.id);
-      setBids(updatedBids);
+      const res = await fetch(`/api/deployments/${deployment.id}/bids`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bidId }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        try { throw new Error(JSON.parse(text).error || `HTTP ${res.status}`); }
+        catch { throw new Error(`HTTP ${res.status}`); }
+      }
+
+      const data = await res.json();
+
+      setBids(data.bids ?? []);
       setState('active');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to accept bid');
@@ -126,8 +135,18 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setIsLoading(true);
 
     try {
-      const { closeDeployment } = await import('@/lib/akash/console-api');
-      await closeDeployment(deployment.id);
+      const res = await fetch(`/api/deployments/${deployment.id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-user-address': deployment.owner,
+        },
+      });
+
+      if (!res.ok) {
+       const data = await res.json();
+        throw new Error(data.error || 'Failed to close deployment');
+      }
+
       setState('completed');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to close deployment');

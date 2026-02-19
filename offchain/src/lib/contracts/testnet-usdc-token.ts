@@ -2,11 +2,15 @@
  * Testnet USDC Token Integration
  * Uses fake/test USDC - NOT real money
  * For testing and demo purposes only
+ *
+ * Matches: hardhat/contracts/TestnetUSDC.sol
+ * 
+ * Contract addr: 0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7
  */
 
 import { parseUnits, formatUnits } from 'viem';
 
-// Standard ERC20 ABI for USDC
+// TestnetUSDC ABI — ERC20 + mint (faucet) + FAUCET_AMOUNT constant
 export const USDC_ABI = [
   {
     inputs: [],
@@ -45,22 +49,39 @@ export const USDC_ABI = [
   },
   {
     inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' }
-    ],
-    name: 'approve',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    inputs: [
       { name: 'owner', type: 'address' },
       { name: 'spender', type: 'address' }
     ],
     name: 'allowance',
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'FAUCET_AMOUNT',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    name: 'mint',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' }
+    ],
+    name: 'approve',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
     type: 'function'
   },
   {
@@ -125,17 +146,36 @@ export function parseUSDC(amount: string): bigint {
 }
 
 /**
+ * Mint testnet USDC (faucet) — max 10,000 tUSDC per call
+ */
+export function mintUSDC(
+  to: `0x${string}`,
+  amount: bigint
+): {
+  address: string;
+  abi: typeof USDC_ABI;
+  functionName: 'mint';
+  args: [`0x${string}`, bigint];
+} {
+  return {
+    address: USDC_ADDRESS,
+    abi: USDC_ABI,
+    functionName: 'mint',
+    args: [to, amount]
+  };
+}
+
+/**
  * Approve USDC spending
- * Returns the contract write configuration
  */
 export function approveUSDC(
-  spender: string,
+  spender: `0x${string}`,
   amount: bigint
 ): {
   address: string;
   abi: typeof USDC_ABI;
   functionName: 'approve';
-  args: [string, bigint];
+  args: [`0x${string}`, bigint];
 } {
   return {
     address: USDC_ADDRESS,
@@ -148,7 +188,7 @@ export function approveUSDC(
 /**
  * Get USDC balance configuration for reading
  */
-export function getUSDCBalanceConfig(address: string) {
+export function getUSDCBalanceConfig(address: `0x${string}`) {
   return {
     address: USDC_ADDRESS,
     abi: USDC_ABI,
@@ -160,7 +200,7 @@ export function getUSDCBalanceConfig(address: string) {
 /**
  * Get USDC allowance configuration for reading
  */
-export function getUSDCAllowanceConfig(owner: string, spender: string) {
+export function getUSDCAllowanceConfig(owner: `0x${string}`, spender: `0x${string}`) {
   return {
     address: USDC_ADDRESS,
     abi: USDC_ABI,
@@ -173,13 +213,13 @@ export function getUSDCAllowanceConfig(owner: string, spender: string) {
  * Transfer USDC configuration
  */
 export function transferUSDC(
-  recipient: string,
+  recipient: `0x${string}`,
   amount: bigint
 ): {
   address: string;
   abi: typeof USDC_ABI;
   functionName: 'transfer';
-  args: [string, bigint];
+  args: [`0x${string}`, bigint];
 } {
   return {
     address: USDC_ADDRESS,
@@ -194,12 +234,4 @@ export function transferUSDC(
  */
 export function isUSDCConfigured(): boolean {
   return USDC_ADDRESS !== '0x0000000000000000000000000000000000000000';
-}
-
-/**
- * Get faucet URL for testnet USDC
- */
-export function getUSDCFaucetUrl(): string {
-  // ADI Testnet faucet (https://faucet.ab.testnet.adifoundation.ai/)
-  return 'https://faucet.circle.com/';
 }

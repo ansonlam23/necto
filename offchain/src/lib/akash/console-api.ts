@@ -10,9 +10,9 @@ import {
   SdlSpec,
   ProviderBid,
   Lease,
-  CreateDeploymentRequest,
   ConsoleApiConfig
 } from '@/types/akash';
+import { sdlToYAML } from '@/lib/akash/sdl-generator';
 
 const DEFAULT_BASE_URL = 'https://console-api.akash.network';
 
@@ -30,7 +30,7 @@ export class AkashConsoleClient {
     const response = await fetch(url, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        'x-api-key': this.apiKey,
         'Content-Type': 'application/json',
         ...options?.headers
       }
@@ -46,12 +46,48 @@ export class AkashConsoleClient {
 
   /**
    * Create a new deployment with SDL
+   * API expects: { data: { sdl: string (YAML), deposit: number (USD) } }
+   * API returns: { data: { dseq: string, manifest: string } }
    */
-  async createDeployment(request: CreateDeploymentRequest): Promise<AkashDeployment> {
-    return this.fetch<AkashDeployment>('/v1/deployments', {
-      method: 'POST',
-      body: JSON.stringify(request)
-    });
+  async createDeployment(sdl: SdlSpec, depositUsd: number = 5): Promise<AkashDeployment> {
+    const sdlYaml = sdlToYAML(sdl);
+    
+    console.log('Creating deployment with SDL:');
+    console.log(sdlYaml);
+    
+    const response = await this.fetch<{ data?: { dseq?: string; manifest?: string; data?: { dseq?: string; manifest?: string } } }>(
+      '/v1/deployments',
+      {
+        method: 'POST',
+        body: JSON.stringify({ data: { sdl: sdlYaml, deposit: depositUsd } })
+      }
+    );
+    
+    console.log('Console API response:', JSON.stringify(response, null, 2));
+
+    const primaryData = response.data;
+    const fallbackData = response.data?.data;
+    const deploymentData = primaryData?.dseq ? primaryData : fallbackData;
+
+    if (!deploymentData?.dseq) {
+      throw new Error('Invalid API response: missing dseq');
+    }
+    if (!deploymentData.manifest || typeof deploymentData.manifest !== 'string') {
+      throw new Error('Invalid API response: missing manifest');
+    }
+
+    const { dseq, manifest } = deploymentData;
+    
+    return {
+      id: dseq,
+      owner: '',
+      dseq,
+      status: 'pending' as DeploymentStatus,
+      createdAt: new Date().toISOString(),
+      sdl,
+      leases: [],
+      manifest,
+    };
   }
 
   /**
@@ -72,69 +108,97 @@ export class AkashConsoleClient {
    * Close a deployment
    */
   async closeDeployment(deploymentId: string): Promise<void> {
-    await this.fetch<void>(`/v1/deployments/${deploymentId}/close`, {
-      method: 'POST'
+    await this.fetch<void>(`/v1/deployments/${deploymentId}`, {
+      method: 'DELETE'
     });
   }
 
   /**
    * Get bids for a deployment
+   * API: GET /v1/bids?dseq={dseq}
+   * Returns: { data: BidResponse[] }
    */
   async getBids(deploymentId: string): Promise<ProviderBid[]> {
-    return this.fetch<ProviderBid[]>(`/v1/deployments/${deploymentId}/bids`);
-  }
-
-  /**
-   * Accept a bid to create a lease
-   */
-  async acceptBid(deploymentId: string, bidId: string): Promise<Lease> {
-    return this.fetch<Lease>(`/v1/deployments/${deploymentId}/bids/${bidId}/accept`, {
-      method: 'POST'
-    });
-  }
-
-  /**
-   * Get deployment logs
-   */
-  async getLogs(deploymentId: string, follow?: boolean): Promise<ReadableStream> {
-    const url = `${this.baseUrl}/v1/deployments/${deploymentId}/logs${follow ? '?follow=true' : ''}`;
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${this.apiKey}` }
-    });
+    const response = await this.fetch<{ data: Array<{
+      bid: {
+        id: {
+          owner: string;
+          dseq: string;
+          gseq: number;
+          oseq: number;
+          provider: string;
+          bseq: number;
+        };
+        state: string;
+        price: {
+          denom: string;
+          amount: string;
+        };
+        created_at: string;
+      };
+    }> }>(`/v1/bids?dseq=${deploymentId}`);
     
-    if (!response.ok || !response.body) {
-      throw new Error('Failed to fetch logs');
+    // Map bid response to ProviderBid format
+    return response.data.map(item => ({
+      id: `${item.bid.id.dseq}-${item.bid.id.provider}`,
+      provider: item.bid.id.provider,
+      price: item.bid.price,
+      resources: {
+        cpu: { units: '0' },
+        memory: { size: '0' },
+        storage: { size: '0' }
+      },
+      createdAt: item.bid.created_at
+    }));
+  }
+
+  /**
+   * Accept a bid and create a lease
+   * API: POST /v1/leases
+   * Request: { manifest, leases: [{ dseq, gseq, oseq, provider }] }
+   */
+  async acceptBid(deploymentId: string, bidId: string, manifest: string): Promise<void> {
+    // Parse bidId to extract provider info (format: "dseq-provider")
+    const parts = bidId.split('-');
+    const provider = parts.length > 1 ? parts[parts.length - 1] : bidId;
+    
+    await this.fetch<void>('/v1/leases', {
+      method: 'POST',
+      body: JSON.stringify({
+        manifest: manifest,
+        leases: [{
+          dseq: deploymentId,
+          gseq: 1,  // Default group sequence
+          oseq: 1,  // Default order sequence  
+          provider: provider
+        }]
+      })
+    });
+  }
+
+  /**
+   * Get logs for a deployment
+   * API: GET /v1/deployments/{dseq}/logs
+   */
+  async getLogs(deploymentId: string, follow: boolean = false): Promise<ReadableStream<Uint8Array>> {
+    const url = `${this.baseUrl}/v1/deployments/${deploymentId}/logs?follow=${follow}`;
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': this.apiKey,
+        'Accept': 'text/event-stream'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Console API error: ${response.status} - ${error}`);
+    }
+
+    if (!response.body) {
+      throw new Error('No response body from log stream');
     }
 
     return response.body;
-  }
-
-  /**
-   * Get deployment status with polling
-   */
-  async pollDeploymentStatus(
-    deploymentId: string,
-    targetStatus: DeploymentStatus,
-    timeoutMs: number = 300000,
-    intervalMs: number = 5000
-  ): Promise<AkashDeployment> {
-    const startTime = Date.now();
-    
-    while (Date.now() - startTime < timeoutMs) {
-      const deployment = await this.getDeployment(deploymentId);
-      
-      if (deployment.status === targetStatus) {
-        return deployment;
-      }
-      
-      if (deployment.status === 'error') {
-        throw new Error('Deployment failed');
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, intervalMs));
-    }
-    
-    throw new Error('Deployment polling timeout');
   }
 }
 
@@ -144,46 +208,14 @@ let consoleClient: AkashConsoleClient | null = null;
 export function getConsoleClient(): AkashConsoleClient {
   if (!consoleClient) {
     const apiKey = process.env.AKASH_CONSOLE_API_KEY;
-    const baseUrl = process.env.AKASH_CONSOLE_API_URL || DEFAULT_BASE_URL;
-    
     if (!apiKey) {
-      throw new Error('AKASH_CONSOLE_API_KEY not configured');
+      throw new Error('AKASH_CONSOLE_API_KEY environment variable not set');
     }
-    
-    consoleClient = new AkashConsoleClient({ apiKey, baseUrl });
+    consoleClient = new AkashConsoleClient({ apiKey });
   }
-  
   return consoleClient;
 }
 
 export function resetConsoleClient(): void {
   consoleClient = null;
-}
-
-/**
- * Convenience functions using singleton
- */
-export async function createDeployment(sdl: SdlSpec): Promise<AkashDeployment> {
-  const client = getConsoleClient();
-  return client.createDeployment({ sdl });
-}
-
-export async function getDeploymentStatus(deploymentId: string): Promise<AkashDeployment> {
-  const client = getConsoleClient();
-  return client.getDeployment(deploymentId);
-}
-
-export async function closeDeployment(deploymentId: string): Promise<void> {
-  const client = getConsoleClient();
-  return client.closeDeployment(deploymentId);
-}
-
-export async function getDeploymentBids(deploymentId: string): Promise<ProviderBid[]> {
-  const client = getConsoleClient();
-  return client.getBids(deploymentId);
-}
-
-export async function acceptProviderBid(deploymentId: string, bidId: string): Promise<Lease> {
-  const client = getConsoleClient();
-  return client.acceptBid(deploymentId, bidId);
 }

@@ -294,7 +294,7 @@ export default function SubmitJobPage() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">GPU</span>
                         <span className="text-amber-500">
-                          {requirements.gpu.units}x {requirements.gpu.model || 'NVIDIA'}
+                          {requirements.gpu.units}x {requirements.gpu.vendor || "NVIDIA" || 'NVIDIA'}
                         </span>
                       </div>
                     )}

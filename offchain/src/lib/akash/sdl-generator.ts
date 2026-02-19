@@ -5,7 +5,7 @@
  */
 
 import YAML from 'js-yaml';
-import { SdlSpec, Service, Resources, ComputeProfile, PlacementProfile } from '@/types/akash';
+import { SdlSpec, Service, Resources, ComputeProfile, PlacementProfile, GpuAttributes } from '@/types/akash';
 
 export interface JobRequirements {
   name: string;
@@ -18,7 +18,8 @@ export interface JobRequirements {
   storage?: string;
   gpu?: {
     units: number;
-    model?: string;
+    vendor?: string;
+    models?: string[];
   };
   port?: number;
   expose?: boolean;
@@ -47,7 +48,7 @@ const TEMPLATES: SdlTemplate[] = [
       cpu: 4,
       memory: '16Gi',
       storage: '100Gi',
-      gpu: { units: 1, model: 'nvidia' },
+      gpu: { units: 1, vendor: 'nvidia' },
       port: 8888,
       expose: true
     },
@@ -80,7 +81,7 @@ const TEMPLATES: SdlTemplate[] = [
       cpu: 4,
       memory: '16Gi',
       storage: '100Gi',
-      gpu: { units: 1, model: 'nvidia' },
+      gpu: { units: 1, vendor: 'nvidia' },
       port: 7860,
       expose: true
     },
@@ -97,7 +98,7 @@ const TEMPLATES: SdlTemplate[] = [
       cpu: 8,
       memory: '32Gi',
       storage: '200Gi',
-      gpu: { units: 1, model: 'nvidia' },
+      gpu: { units: 1, vendor: 'nvidia' },
       port: 11434,
       expose: true
     },
@@ -170,17 +171,35 @@ export function generateSDL(requirements: JobRequirements): SdlSpec {
   }
 
   const resources: Resources = {
-    cpu: { units: String(requirements.cpu || 1) },
+    cpu: { units: requirements.cpu || 1 },
     memory: { size: requirements.memory || '1Gi' },
-    storage: [{ size: requirements.storage || '10Gi' }]
+    storage: requirements.storage 
+      ? { size: requirements.storage }
+      : { size: '10Gi' }
   };
 
   if (requirements.gpu && requirements.gpu.units > 0) {
+    const gpuAttributes: GpuAttributes = {
+      vendor: {}
+    };
+    
+    if (requirements.gpu.vendor) {
+      if (requirements.gpu.models && requirements.gpu.models.length > 0) {
+        // With specific models: vendor:
+        //   nvidia:
+        //     - model: t4
+        gpuAttributes.vendor[requirements.gpu.vendor] = requirements.gpu.models.map(m => ({ model: m }));
+      } else {
+        // Without models: vendor:
+        //   nvidia:
+        // Use empty object which YAML will serialize as empty key
+        gpuAttributes.vendor[requirements.gpu.vendor] = [];
+      }
+    }
+    
     resources.gpu = {
-      units: String(requirements.gpu.units),
-      attributes: requirements.gpu.model
-        ? [{ key: 'vendor', value: 'nvidia' }]
-        : undefined
+      units: requirements.gpu.units,
+      attributes: gpuAttributes
     };
   }
 
@@ -188,14 +207,12 @@ export function generateSDL(requirements: JobRequirements): SdlSpec {
 
   const placementProfile: PlacementProfile = {
     pricing: {
-      [requirements.name]: { denom: 'uakt', amount: '1000' }
+      [requirements.name]: { denom: 'uakt', amount: 10000 }
     }
   };
 
   if (requirements.region) {
-    placementProfile.attributes = [
-      { key: 'region', value: requirements.region }
-    ];
+    placementProfile.attributes = { region: requirements.region };
   }
 
   return {
@@ -208,13 +225,15 @@ export function generateSDL(requirements: JobRequirements): SdlSpec {
         [requirements.name]: computeProfile
       },
       placement: {
-        [requirements.name]: placementProfile
+        akash: placementProfile
       }
     },
     deployment: {
       [requirements.name]: {
-        profile: requirements.name,
-        count: requirements.count || 1
+        akash: {
+          profile: requirements.name,
+          count: requirements.count || 1
+        }
       }
     }
   };
@@ -319,11 +338,11 @@ export function parseNaturalLanguage(input: string): Partial<JobRequirements> {
   } else if (lower.includes('stable diffusion') || lower.includes('sd')) {
     requirements.image = 'neonstable/stable-diffusion-webui:latest';
     requirements.name = 'sd-webui';
-    requirements.gpu = { units: requirements.gpu?.units || 1, model: 'nvidia' };
+    requirements.gpu = { units: requirements.gpu?.units || 1, vendor: 'nvidia' };
   } else if (lower.includes('ollama') || lower.includes('llm')) {
     requirements.image = 'ollama/ollama:latest';
     requirements.name = 'ollama';
-    requirements.gpu = { units: requirements.gpu?.units || 1, model: 'nvidia' };
+    requirements.gpu = { units: requirements.gpu?.units || 1, vendor: 'nvidia' };
   }
 
   // Detect resource requirements
@@ -342,101 +361,20 @@ export function parseNaturalLanguage(input: string): Partial<JobRequirements> {
 
 /**
  * Convert SDL to YAML string
+ * Uses official Akash SDL format from awesome-akash
  */
 export function sdlToYAML(sdl: SdlSpec): string {
-  // Simple YAML serialization
-  const indent = (level: number) => '  '.repeat(level);
+  let yaml = YAML.dump(sdl, {
+    indent: 2,
+    lineWidth: -1,
+    noRefs: true,
+    sortKeys: false,
+    quotingType: '"'
+  });
   
-  let yaml = `version: "${sdl.version}"\n\n`;
-  
-  yaml += 'services:\n';
-  for (const [name, service] of Object.entries(sdl.services)) {
-    yaml += `${indent(1)}${name}:\n`;
-    yaml += `${indent(2)}image: ${service.image}\n`;
-    
-    if (service.command) {
-      yaml += `${indent(2)}command:\n`;
-      for (const cmd of service.command) {
-        yaml += `${indent(3)}- ${cmd}\n`;
-      }
-    }
-    
-    if (service.args) {
-      yaml += `${indent(2)}args:\n`;
-      for (const arg of service.args) {
-        yaml += `${indent(3)}- ${arg}\n`;
-      }
-    }
-    
-    if (service.env) {
-      yaml += `${indent(2)}env:\n`;
-      for (const env of service.env) {
-        yaml += `${indent(3)}- ${env}\n`;
-      }
-    }
-    
-    if (service.expose.length > 0) {
-      yaml += `${indent(2)}expose:\n`;
-      for (const exp of service.expose) {
-        yaml += `${indent(3)}- port: ${exp.port}\n`;
-        yaml += `${indent(4)}as: ${exp.as}\n`;
-        if (exp.to) {
-          yaml += `${indent(4)}to:\n`;
-          for (const to of exp.to) {
-            yaml += `${indent(5)}- global: ${to.global}\n`;
-          }
-        }
-      }
-    }
-  }
-  
-  yaml += '\nprofiles:\n';
-  yaml += `${indent(1)}compute:\n`;
-  for (const [name, profile] of Object.entries(sdl.profiles.compute)) {
-    yaml += `${indent(2)}${name}:\n`;
-    yaml += `${indent(3)}resources:\n`;
-    yaml += `${indent(4)}cpu:\n`;
-    yaml += `${indent(5)}units: ${profile.resources.cpu.units}\n`;
-    yaml += `${indent(4)}memory:\n`;
-    yaml += `${indent(5)}size: ${profile.resources.memory.size}\n`;
-    
-    if (profile.resources.storage.length > 0) {
-      yaml += `${indent(4)}storage:\n`;
-      for (const storage of profile.resources.storage) {
-        yaml += `${indent(5)}- size: ${storage.size}\n`;
-      }
-    }
-    
-    if (profile.resources.gpu) {
-      yaml += `${indent(4)}gpu:\n`;
-      yaml += `${indent(5)}units: ${profile.resources.gpu.units}\n`;
-      if (profile.resources.gpu.attributes) {
-        yaml += `${indent(5)}attributes:\n`;
-        for (const attr of profile.resources.gpu.attributes) {
-          yaml += `${indent(6)}- key: ${attr.key}\n`;
-          yaml += `${indent(7)}value: ${attr.value}\n`;
-        }
-      }
-    }
-  }
-  
-  yaml += `${indent(1)}placement:\n`;
-  for (const [name, placement] of Object.entries(sdl.profiles.placement)) {
-    yaml += `${indent(2)}${name}:\n`;
-    yaml += `${indent(3)}pricing:\n`;
-    for (const [svc, price] of Object.entries(placement.pricing)) {
-      yaml += `${indent(4)}${svc}:\n`;
-      yaml += `${indent(5)}denom: ${price.denom}\n`;
-      yaml += `${indent(5)}amount: ${price.amount}\n`;
-    }
-  }
-  
-  yaml += '\ndeployment:\n';
-  for (const [name, config] of Object.entries(sdl.deployment)) {
-    yaml += `${indent(1)}${name}:\n`;
-    yaml += `${indent(2)}profile: ${config.profile}\n`;
-    yaml += `${indent(2)}count: ${config.count}\n`;
-  }
+  // Post-process: replace empty array markers with empty YAML keys
+  // vendor: [] -> vendor:
+  yaml = yaml.replace(/(\s+)(\w+): \[\]/g, '$1$2:');
   
   return yaml;
 }

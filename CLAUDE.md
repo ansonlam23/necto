@@ -18,6 +18,9 @@ npm run lint     # Run ESLint on entire project
 npx eslint offchain/src/path/to/file.tsx  # Lint specific file
 ```
 
+## Note about typechecking
+cd offchain && npx tsc --noEmit 2>&1
+
 **Note**: No test framework is configured. Install Vitest or Jest if adding tests.
 
 ## Architecture

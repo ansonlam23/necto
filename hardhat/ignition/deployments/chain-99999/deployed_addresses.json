@@ -1,4 +1,6 @@
 {
   "CounterModule#Counter": "0x3f0c2Bee1b84038525E4abD172138090B68862C9",
-  "ComputeRouterModule#ComputeRouter": "0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd"
+  "ComputeRouterModule#ComputeRouter": "0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd",
+  "TestnetUSDCModule#TestnetUSDC": "0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7",
+  "USDCEscrowModule#USDCEscrow": "0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA"
 }

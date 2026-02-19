@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-ed07210bc969f1f6b8b5ecadeae946400355623b",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/TestnetUSDC.sol": "project/contracts/TestnetUSDC.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/TestnetUSDC.sol": {
+        "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.28;\n\n/**\n * @title TestnetUSDC\n * @notice Fake USDC token for testnet use only - NOT real money\n * @dev ERC20 with public mint (faucet) for testing purposes\n *      Uses 6 decimals to match real USDC\n */\ncontract TestnetUSDC {\n    string public constant name = \"Testnet USDC\";\n    string public constant symbol = \"tUSDC\";\n    uint8 public constant decimals = 6;\n\n    uint256 public totalSupply;\n    mapping(address => uint256) public balanceOf;\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    /// @notice Maximum amount per faucet drip (10,000 tUSDC)\n    uint256 public constant FAUCET_AMOUNT = 10_000 * 1e6;\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n\n    /**\n     * @notice Mint tokens to any address (faucet)\n     * @dev Anyone can call this on testnet. Capped at FAUCET_AMOUNT per call.\n     * @param to Recipient address\n     * @param amount Amount to mint (max FAUCET_AMOUNT)\n     */\n    function mint(address to, uint256 amount) external {\n        require(to != address(0), \"TestnetUSDC: mint to zero address\");\n        require(amount <= FAUCET_AMOUNT, \"TestnetUSDC: exceeds faucet limit\");\n\n        totalSupply += amount;\n        balanceOf[to] += amount;\n        emit Transfer(address(0), to, amount);\n    }\n\n    function approve(address spender, uint256 amount) external returns (bool) {\n        require(spender != address(0), \"TestnetUSDC: approve to zero address\");\n\n        allowance[msg.sender][spender] = amount;\n        emit Approval(msg.sender, spender, amount);\n        return true;\n    }\n\n    function transfer(address recipient, uint256 amount) external returns (bool) {\n        return _transfer(msg.sender, recipient, amount);\n    }\n\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {\n        uint256 currentAllowance = allowance[sender][msg.sender];\n        require(currentAllowance >= amount, \"TestnetUSDC: transfer amount exceeds allowance\");\n\n        allowance[sender][msg.sender] = currentAllowance - amount;\n        return _transfer(sender, recipient, amount);\n    }\n\n    function _transfer(address sender, address recipient, uint256 amount) internal returns (bool) {\n        require(sender != address(0), \"TestnetUSDC: transfer from zero address\");\n        require(recipient != address(0), \"TestnetUSDC: transfer to zero address\");\n        require(balanceOf[sender] >= amount, \"TestnetUSDC: transfer amount exceeds balance\");\n\n        balanceOf[sender] -= amount;\n        balanceOf[recipient] += amount;\n        emit Transfer(sender, recipient, amount);\n        return true;\n    }\n}\n"
+      }
+    }
+  }
+}

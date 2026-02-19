@@ -79,7 +79,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const client = getConsoleClient();
-    const deployment = await client.createDeployment({ sdl });
+    const deployment = await client.createDeployment(sdl);
 
     // If auto-accept is enabled and bids come in quickly, accept the first one
     let acceptedBid = null;
@@ -90,9 +90,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const bids = await client.getBids(deployment.id);
         
         if (bids.length > 0) {
+          if (!deployment.manifest) {
+            throw new Error('Missing deployment manifest for lease creation');
+          }
           // Accept the first (usually cheapest) bid
           const bid = bids[0];
-          await client.acceptBid(deployment.id, bid.id);
+          await client.acceptBid(deployment.id, bid.id, deployment.manifest);
           acceptedBid = bid;
         }
       } catch (bidError) {

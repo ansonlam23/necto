@@ -104,7 +104,7 @@ function RequirementPreview({
               <div>
                 <p className="text-xs text-muted-foreground">GPU</p>
                 <p className="text-sm text-amber-500">
-                  {requirements.gpu.units}x {requirements.gpu.model || 'GPU'}
+                  {requirements.gpu.units}x {requirements.gpu.vendor || 'GPU'}
                 </p>
               </div>
             </div>

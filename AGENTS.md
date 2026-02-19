@@ -116,3 +116,6 @@ offchain/src/
 
 ### The edit tool is broken for opencode agents
 - Use the write tool instead
+
+### Typechecking
+cd offchain && npx tsc --noEmit 2>&1

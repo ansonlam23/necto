@@ -31,7 +31,7 @@ function toSdlRequirements(
     memory: `${requirements.minGpuMemoryGB || 8}Gi`,
     gpu: requirements.gpuModel ? {
       units: requirements.minGpuCount || 1,
-      model: requirements.gpuModel
+      vendor: requirements.gpuModel
     } : undefined,
     region: requirements.region
   };

@@ -134,10 +134,10 @@ function generatePros(
   if (provider.specs.vcpus >= 32) {
     pros.push('High CPU cores');
   }
-  if (requirements.gpu?.model && provider.gpuTypes.some(g => 
-    g.toLowerCase().includes(requirements.gpu?.model?.toLowerCase() || '')
+  if (requirements.gpu?.vendor && provider.gpuTypes.some(g => 
+    g.toLowerCase().includes(requirements.gpu?.vendor?.toLowerCase() || '')
   )) {
-    pros.push(`Matching GPU model (${requirements.gpu.model})`);
+    pros.push(`Matching GPU model (${requirements.gpu.vendor})`);
   }
   if (score > 80) {
     pros.push('Excellent overall match');
@@ -196,7 +196,7 @@ export async function executeCompareProviders(
     
     // Get providers from Akash
     const filters = {
-      gpuType: params.requirements.gpu?.model,
+      gpuType: params.requirements.gpu?.vendor,
       region: params.requirements.region,
       minVcpus: params.requirements.cpu,
       minMemory: params.requirements.memory ? parseInt(params.requirements.memory) : undefined

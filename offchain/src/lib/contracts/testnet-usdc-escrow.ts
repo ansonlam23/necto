@@ -1,23 +1,54 @@
 /**
- * Testnet USDC Escrow Contract
- * Holds fake/test USDC on-chain, releases on deployment
+ * USDC Escrow Contract Integration
+ * Holds testnet USDC in escrow for compute jobs, linked to ComputeRouter
  * NOT real money - for testing and demo only
+ * 
+ * Contract addr: 0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA
+ *
+ * Matches: hardhat/contracts/USDCEscrow.sol
  */
 
-import { parseUnits } from 'viem';
-
-// Escrow contract ABI
+// Escrow contract ABI — linked to ComputeRouter, uint256 jobIds
 export const ESCROW_ABI = [
   {
     inputs: [
-      { name: '_usdcToken', type: 'address' }
+      { name: '_usdcToken', type: 'address' },
+      { name: '_computeRouter', type: 'address' }
     ],
     stateMutability: 'nonpayable',
     type: 'constructor'
   },
   {
+    inputs: [],
+    name: 'usdcToken',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'computeRouter',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'owner',
+    outputs: [{ name: '', type: 'address' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'DEFAULT_DEPOSIT',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     inputs: [
-      { name: 'jobId', type: 'bytes32' },
+      { name: 'jobId', type: 'uint256' },
       { name: 'amount', type: 'uint256' }
     ],
     name: 'deposit',
@@ -27,7 +58,7 @@ export const ESCROW_ABI = [
   },
   {
     inputs: [
-      { name: 'jobId', type: 'bytes32' }
+      { name: 'jobId', type: 'uint256' }
     ],
     name: 'release',
     outputs: [],
@@ -36,7 +67,7 @@ export const ESCROW_ABI = [
   },
   {
     inputs: [
-      { name: 'jobId', type: 'bytes32' }
+      { name: 'jobId', type: 'uint256' }
     ],
     name: 'refund',
     outputs: [],
@@ -45,7 +76,7 @@ export const ESCROW_ABI = [
   },
   {
     inputs: [
-      { name: 'jobId', type: 'bytes32' }
+      { name: 'jobId', type: 'uint256' }
     ],
     name: 'getEscrow',
     outputs: [{
@@ -63,7 +94,7 @@ export const ESCROW_ABI = [
   },
   {
     inputs: [
-      { name: 'jobId', type: 'bytes32' }
+      { name: 'jobId', type: 'uint256' }
     ],
     name: 'escrows',
     outputs: [
@@ -78,7 +109,7 @@ export const ESCROW_ABI = [
   {
     anonymous: false,
     inputs: [
-      { indexed: true, name: 'jobId', type: 'bytes32' },
+      { indexed: true, name: 'jobId', type: 'uint256' },
       { indexed: true, name: 'depositor', type: 'address' },
       { indexed: false, name: 'amount', type: 'uint256' }
     ],
@@ -88,7 +119,8 @@ export const ESCROW_ABI = [
   {
     anonymous: false,
     inputs: [
-      { indexed: true, name: 'jobId', type: 'bytes32' }
+      { indexed: true, name: 'jobId', type: 'uint256' },
+      { indexed: false, name: 'amount', type: 'uint256' }
     ],
     name: 'Released',
     type: 'event'
@@ -96,7 +128,7 @@ export const ESCROW_ABI = [
   {
     anonymous: false,
     inputs: [
-      { indexed: true, name: 'jobId', type: 'bytes32' },
+      { indexed: true, name: 'jobId', type: 'uint256' },
       { indexed: false, name: 'amount', type: 'uint256' }
     ],
     name: 'Refunded',
@@ -106,6 +138,9 @@ export const ESCROW_ABI = [
 
 export const ESCROW_ADDRESS = process.env.ESCROW_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
 
+/** Default deposit: $5 USDC (5 * 10^6) */
+export const DEFAULT_DEPOSIT = BigInt(5_000_000);
+
 export enum EscrowStatus {
   Active = 0,
   Released = 1,
@@ -113,23 +148,25 @@ export enum EscrowStatus {
 }
 
 export interface Escrow {
-  depositor: string;
+  depositor: `0x${string}`;
   amount: bigint;
   status: EscrowStatus;
   createdAt: bigint;
 }
 
 /**
- * Deposit USDC into escrow for a job
+ * Deposit USDC into escrow for a router job
+ * @param jobId Job ID from ComputeRouter (uint256)
+ * @param amount Amount of USDC to escrow (default: DEFAULT_DEPOSIT = $5)
  */
 export function depositEscrow(
-  jobId: string,
-  amount: bigint
+  jobId: bigint,
+  amount: bigint = DEFAULT_DEPOSIT
 ): {
   address: string;
   abi: typeof ESCROW_ABI;
   functionName: 'deposit';
-  args: [string, bigint];
+  args: [bigint, bigint];
 } {
   return {
     address: ESCROW_ADDRESS,
@@ -140,15 +177,16 @@ export function depositEscrow(
 }
 
 /**
- * Release escrowed funds to provider
+ * Release escrowed funds to owner (agent wallet)
+ * Requires job to be routed in ComputeRouter
  */
 export function releaseEscrow(
-  jobId: string
+  jobId: bigint
 ): {
   address: string;
   abi: typeof ESCROW_ABI;
   functionName: 'release';
-  args: [string];
+  args: [bigint];
 } {
   return {
     address: ESCROW_ADDRESS,
@@ -159,15 +197,15 @@ export function releaseEscrow(
 }
 
 /**
- * Refund escrowed funds to buyer
+ * Refund escrowed funds back to buyer
  */
 export function refundEscrow(
-  jobId: string
+  jobId: bigint
 ): {
   address: string;
   abi: typeof ESCROW_ABI;
   functionName: 'refund';
-  args: [string];
+  args: [bigint];
 } {
   return {
     address: ESCROW_ADDRESS,
@@ -180,23 +218,13 @@ export function refundEscrow(
 /**
  * Get escrow details configuration
  */
-export function getEscrowConfig(jobId: string) {
+export function getEscrowConfig(jobId: bigint) {
   return {
     address: ESCROW_ADDRESS,
     abi: ESCROW_ABI,
     functionName: 'getEscrow',
     args: [jobId]
   };
-}
-
-/**
- * Calculate required deposit based on estimated duration
- * @param hourlyRate Hourly rate in USDC
- * @param hours Number of hours to pre-fund
- */
-export function calculateDepositAmount(hourlyRate: number, hours: number = 24): bigint {
-  const total = hourlyRate * hours;
-  return parseUnits(total.toString(), 6); // USDC has 6 decimals
 }
 
 /**
