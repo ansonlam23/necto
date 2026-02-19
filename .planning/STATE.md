@@ -1,8 +1,8 @@
 # Project State: Necto - Two-Sided Compute Marketplace
 
 **Created:** February 11, 2026  
-**Last Updated:** February 18, 2026 (Plan 02-09 Complete)  
-**Current Focus:** Milestone v2.0 — Critical deployment fixes applied
+**Last Updated:** February 19, 2026 (Plan 02-06 SUMMARY.md Created)
+**Current Focus:** Milestone v2.0 — Gap closure complete (Select bug fix documented)
 
 ### Gap Closure Complete ✅
 **Plan 02-05:** Google ADK tool architecture implemented. SYS-06 gap (ADK integration) RESOLVED.
@@ -10,6 +10,8 @@
 **Plan 02-07:** Provider score breakdown and detail dialog. SYS-04 gap (provider selection display) RESOLVED.
 
 **Plan 02-09:** Critical deployment fixes (GPU filtering, YAML parsing, SDL validation). SYS-03 gap RESOLVED.
+
+**Plan 02-06:** Select component empty value bug fix (requirements-form.tsx). Job submission wizard unblocked. GAP-01 RESOLVED.
 
 ## Project Reference
 
@@ -75,7 +77,8 @@
 - Buyer dashboard with real-time updates ✅
 - **Google ADK tool architecture** ✅
 - **Provider score breakdown** ✅
-- **Critical deployment fixes** ✅ **(NEW - SYS-03 resolved)**
+- **Critical deployment fixes** ✅ **(SYS-03 resolved)**
+- **Select component bug fix** ✅ **(GAP-01 resolved)**
 - Console API funding integration (pending)
 - Testnet USDC escrow contracts (pending)
 - Sponsored hosting model for hackathon (Necto pays Akash costs)
@@ -107,7 +110,7 @@
 - **v1.0 Phases Completed:** 1 (archived)
 - **Quick Tasks Completed:** 2 (cleaned up)
 - **Reorganizations:** 1 (cleanup)
-- **Gap Closures:** 2 (SYS-06 ADK integration, SYS-04 provider UI, SYS-03 deployment fixes)
+- **Gap Closures:** 4 (SYS-06 ADK integration, SYS-04 provider UI, SYS-03 deployment fixes, GAP-01 Select bug fix)
 
 ### Quality Indicators
 - **v1.0 Requirements Coverage:** 100% ✅
@@ -179,6 +182,9 @@
 22. **Header Click for Details** — Card header opens detail dialog for full provider information
 23. **Bottom Section for Selection** — Separate click area for selecting a provider
 24. **Full Score Visibility** — Display all four score components: price, reliability, performance, latency
+
+### Gap Closure Decisions (Plan 02-06)
+25. **Sentinel value for optional Select** — Use 'any' string instead of empty string for Radix UI Select optional fields; convert to undefined in onValueChange handler
 
 ---
 
