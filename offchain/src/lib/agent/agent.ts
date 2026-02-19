@@ -208,39 +208,28 @@ export async function routeComputeJob(
   };
 
   // Step 4: Submit to blockchain if tracked
+  // TODO: Implement walletTool-based blockchain submission
+  // Currently disabled - jobs are routed off-chain only until blockchain
+  // integration is fully implemented. The walletTool exists but needs
+  // proper integration with the ComputeRouter contract.
   let transaction: TransactionResult | undefined;
   
   if (request.isTracked) {
     onThinking?.({
       id: '3',
-      message: 'Submitting job to blockchain...',
-      status: 'active',
+      message: 'Blockchain tracking not yet implemented - job routed off-chain only',
+      status: 'complete',
       timestamp: Date.now()
     });
     
-    // Note: Actual blockchain submission would use walletTool
-    // This is a placeholder for the tool-based approach
-    transaction = {
-      success: true,
-      hash: `0x${Date.now().toString(16)}`,
-      jobId: BigInt(Date.now())
-    };
-    
-    if (transaction.success) {
-      onThinking?.({
-        id: '3',
-        message: `Job submitted on-chain (tx: ${transaction.hash?.slice(0, 10)}...)`,
-        status: 'complete',
-        timestamp: Date.now()
-      });
-    } else {
-      onThinking?.({
-        id: '3',
-        message: `Transaction failed`,
-        status: 'error',
-        timestamp: Date.now()
-      });
-    }
+    // Blockchain submission not yet implemented
+    // transaction = await walletTool({
+    //   action: 'submit_job',
+    //   jobId: BigInt(Date.now()),
+    //   provider: recommendedProvider,
+    //   amount: BigInt(Math.floor((result.estimatedCost || 0) * 1_000_000))
+    // });
+    transaction = undefined;
   }
   
   return { result, transaction, routeResult };
