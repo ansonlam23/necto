@@ -1,0 +1,123 @@
+/* Dark mode styles for React Flow canvas - more aggressive overrides */
+.dark .react-flow,
+.dark .react-flow__viewport,
+.dark .react-flow__renderer,
+.dark .react-flow__container,
+.dark .react-flow__pane,
+.dark .react-flow__viewport-parent {
+  background-color: #374151 !important; /* Gray-700 */
+  background: #374151 !important;
+}
+
+/* Override the background component */
+.dark .react-flow__background {
+  background-color: #374151 !important;
+  background: #374151 !important;
+}
+
+.dark .react-flow__background rect {
+  fill: #374151 !important;
+}
+
+/* Target svg elements */
+.dark .react-flow svg {
+  background-color: #374151 !important;
+}
+
+.dark .react-flow__background-pattern {
+  stroke: #6b7280 !important;
+}
+
+.dark .react-flow__node {
+  background: #1e293b;
+  color: white;
+  border: 2px solid #475569;
+}
+
+.dark .react-flow__node.selected {
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.dark .react-flow__controls {
+  background: #1e293b;
+  border: 1px solid #475569;
+}
+
+.dark .react-flow__controls-button {
+  background: #1e293b;
+  border-color: #475569;
+  color: white;
+}
+
+.dark .react-flow__controls-button:hover {
+  background: #334155;
+}
+
+/* Light mode styles */
+.react-flow {
+  background-color: #ffffff !important;
+}
+
+.react-flow__viewport {
+  background-color: #ffffff !important;
+}
+
+.react-flow__background {
+  background-color: #ffffff !important;
+}
+
+.react-flow__renderer {
+  background-color: #ffffff !important;
+}
+
+.react-flow__container {
+  background-color: #ffffff !important;
+}
+
+/* Fix for handle/connection styling */
+.react-flow__handle {
+  width: 12px;
+  height: 12px;
+  background: #6b7280;
+  border: 2px solid #374151;
+}
+
+.react-flow__handle-connecting {
+  background: #3b82f6 !important;
+}
+
+.react-flow__handle-valid {
+  background: #10b981 !important;
+}
+
+/* Remove the gray box that appears when dragging */
+.react-flow__connection {
+  stroke: #6b7280 !important;
+  stroke-width: 2 !important;
+}
+
+.react-flow__connection-path {
+  stroke: #6b7280 !important;
+  stroke-width: 2 !important;
+}
+
+/* Fix node selection box */
+.react-flow__nodesselection {
+  background: transparent !important;
+  border: 1px dashed #6b7280 !important;
+}
+
+/* Ensure node text is visible */
+.react-flow__node-custom {
+  font-size: 14px !important;
+  color: #ffffff !important;
+}
+
+/* Force text visibility in custom nodes */
+.react-flow__node-custom div {
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: block !important;
+  visibility: visible !important;
+}

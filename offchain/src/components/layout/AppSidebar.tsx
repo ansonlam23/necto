@@ -54,11 +54,6 @@ const navigationItems = [
     icon: Server,
   },
   {
-    title: "Workflow Builder",
-    url: "/builder",
-    icon: Boxes,
-  },
-  {
     title: "Test Builder",
     url: "/test-builder",
     icon: FlaskConical,
