@@ -16,7 +16,7 @@ import { type Abi } from 'viem'
  */
 export const COMPUTE_ROUTER_ABI = [
   {
-    inputs: [{ internalType: 'address', name: '_agent', type: 'address' }],
+    inputs: [],
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
@@ -56,6 +56,13 @@ export const COMPUTE_ROUTER_ABI = [
     name: 'jobCount',
     outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
     stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'address', name: '_agent', type: 'address' }],
+    name: 'setInitialAgent',
+    outputs: [],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
   {
@@ -119,30 +126,6 @@ export const COMPUTE_ROUTER_ABI = [
     name: 'AgentUpdated',
     type: 'event',
   },
-  {
-    inputs: [{ internalType: 'uint256', name: '_jobId', type: 'uint256' }],
-    name: 'getJob',
-    outputs: [
-      {
-        components: [
-          { internalType: 'uint256', name: 'id', type: 'uint256' },
-          { internalType: 'address', name: 'user', type: 'address' },
-          { internalType: 'bytes32', name: 'detailsHash', type: 'bytes32' },
-          { internalType: 'bytes32', name: 'routingHash', type: 'bytes32' },
-          { internalType: 'address', name: 'provider', type: 'address' },
-          { internalType: 'uint256', name: 'amount', type: 'uint256' },
-          { internalType: 'bool', name: 'isTracked', type: 'bool' },
-          { internalType: 'uint256', name: 'createdAt', type: 'uint256' },
-          { internalType: 'uint256', name: 'routedAt', type: 'uint256' },
-        ],
-        internalType: 'struct ComputeRouter.Job',
-        name: '',
-        type: 'tuple',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
 ] as const satisfies Abi
 
 /**
@@ -191,9 +174,9 @@ export interface AgentUpdatedEvent {
 
 /**
  * ComputeRouter contract address on ADI Testnet
- * UPDATE THIS AFTER DEPLOYMENT
+ * Updated: V2 deployment - parameterless constructor
  */
-export const COMPUTE_ROUTER_ADDRESS = '0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd' as `0x${string}`
+export const COMPUTE_ROUTER_ADDRESS = '0xe899A74296e641D674E8BeA07ef79a0772033ebe' as `0x${string}`
 
 /**
  * Helper to check if contract address is configured

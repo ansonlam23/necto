@@ -5,7 +5,7 @@
  *
  * Matches: hardhat/contracts/TestnetUSDC.sol
  * 
- * Contract addr: 0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7
+ * Contract addr: 0xfDc76858e4Bd9CF760F1b52e57434977605931AC
  */
 
 import { parseUnits, formatUnits } from 'viem';
@@ -128,8 +128,8 @@ export const USDC_ABI = [
 ] as const;
 
 // Testnet USDC Token contract address on ADI Testnet
-// From deployment: 0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7
-export const USDC_ADDRESS: `0x${string}` = '0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7';
+// Updated: New OpenZeppelin deployment
+export const USDC_ADDRESS: `0x${string}` = '0xfDc76858e4Bd9CF760F1b52e57434977605931AC';
 
 export const USDC_DECIMALS = 6;
 

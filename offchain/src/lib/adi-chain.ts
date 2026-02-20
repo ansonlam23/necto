@@ -10,7 +10,7 @@
  * 
  * Faucet: Get testnet ADI tokens from the ADI Chain Faucet
  */
-import { defineChain } from 'viem'
+import { defineChain, parseGwei } from 'viem'
 
 export const adiTestnet = defineChain({
   id: 99999,
@@ -24,6 +24,11 @@ export const adiTestnet = defineChain({
     default: {
       http: ['https://rpc.ab.testnet.adifoundation.ai'],
     },
+  },
+  fees: {
+    // Testnet fees should be very low
+    baseFeeMultiplier: 1,
+    defaultPriorityFee: parseGwei('0.001'), // Very low priority fee for testnet
   },
   testnet: true,
 })

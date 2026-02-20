@@ -50,6 +50,11 @@ const STEP_MESSAGES: Record<PaymentState, string> = {
   error: 'Payment failed'
 };
 
+// Higher gas limits for ADI Testnet - ensures transactions don't run out of gas
+const GAS_LIMIT_APPROVE = BigInt(200000);      // ERC20 approve
+const GAS_LIMIT_SUBMIT_JOB = BigInt(500000);   // submitJob - generous limit
+const GAS_LIMIT_DEPOSIT = BigInt(500000);      // deposit - generous limit
+
 export function useEscrowPayment(): UseEscrowPaymentReturn {
   const [state, setState] = useState<PaymentState>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -67,6 +72,7 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
   /**
    * Execute the full payment flow using viem
    * Following pattern from hardhat/scripts/interact-router.ts
+   * Uses explicit gas limits to prevent MetaMask from over-estimating
    */
   const executePayment = useCallback(async (params: PaymentParams): Promise<bigint | null> => {
     const { requirements, amount, isTracked } = params;
@@ -101,6 +107,23 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
 
       console.log('Connected to ADI Testnet');
       console.log('Wallet address:', address);
+      console.log('USDC Address:', USDC_ADDRESS);
+      console.log('Escrow Address:', ESCROW_ADDRESS);
+      console.log('ComputeRouter Address:', COMPUTE_ROUTER_ADDRESS);
+
+      // Step 0: Check USDC balance
+      console.log('Checking USDC balance...');
+      const usdcBalance = await publicClient.readContract({
+        address: USDC_ADDRESS as `0x${string}`,
+        abi: USDC_ABI,
+        functionName: 'balanceOf',
+        args: [address]
+      }) as bigint;
+      console.log('USDC Balance:', usdcBalance.toString(), '(need:', amount.toString() + ')');
+      
+      if (usdcBalance < amount) {
+        throw new Error(`Insufficient USDC balance. Have: ${usdcBalance.toString()}, Need: ${amount.toString()}`);
+      }
 
       // Step 1: Check USDC allowance
       console.log('Checking USDC allowance...');
@@ -117,31 +140,45 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       if (currentAllowance < amount) {
         setState('approving');
         console.log('Submitting USDC approval transaction...');
+        console.log('Approving', amount.toString(), 'USDC for spender', ESCROW_ADDRESS);
         
         try {
-          // Direct writeContract call (matches hardhat/scripts pattern)
+          // Use explicit gas limit to prevent MetaMask over-estimation
           const approvalHash = await walletClient.writeContract({
             address: USDC_ADDRESS as `0x${string}`,
             abi: USDC_ABI,
             functionName: 'approve',
             args: [ESCROW_ADDRESS as `0x${string}`, amount],
-            account: address
+            account: address,
+            gas: GAS_LIMIT_APPROVE
           });
 
           console.log('Approval transaction hash:', approvalHash);
           setTxHash(approvalHash);
           setState('approval_confirming');
 
-          // Wait for confirmation (matches hardhat/scripts pattern)
+          // Wait for confirmation
           const approvalReceipt = await publicClient.waitForTransactionReceipt({ 
             hash: approvalHash 
           });
           console.log('Approval confirmed in block:', approvalReceipt.blockNumber);
+          console.log('Gas used:', approvalReceipt.gasUsed.toString());
+          console.log('Status:', approvalReceipt.status);
 
           if (approvalReceipt.status === 'reverted') {
-            throw new Error('USDC approval transaction reverted');
+            throw new Error('USDC approval transaction reverted on-chain');
           }
+          
+          // Verify allowance was updated
+          const newAllowance = await publicClient.readContract({
+            address: USDC_ADDRESS as `0x${string}`,
+            abi: USDC_ABI,
+            functionName: 'allowance',
+            args: [address, ESCROW_ADDRESS as `0x${string}`]
+          }) as bigint;
+          console.log('New allowance after approval:', newAllowance.toString());
         } catch (err) {
+          console.error('Approval error details:', err);
           const message = err instanceof Error ? err.message : 'Unknown error';
           if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
             throw new Error('Transaction rejected by user');
@@ -154,21 +191,24 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       setState('submitting_job');
       const detailsHash = hashJobRequirements(requirements);
       
-      console.log('Submitting job transaction...', {
+      console.log('Submitting job transaction...');
+      console.log('Params:', {
         user: address,
         detailsHash,
-        isTracked
+        isTracked,
+        routerAddress: COMPUTE_ROUTER_ADDRESS
       });
 
       let jobIdResult: bigint;
       try {
-        // Direct writeContract call (matches hardhat/scripts/interact-router.ts pattern)
+        // Use explicit gas limit
         const jobHash = await walletClient.writeContract({
           address: COMPUTE_ROUTER_ADDRESS,
           abi: COMPUTE_ROUTER_ABI,
           functionName: 'submitJob',
           args: [address, detailsHash, isTracked],
-          account: address
+          account: address,
+          gas: GAS_LIMIT_SUBMIT_JOB
         });
 
         console.log('Job submission transaction hash:', jobHash);
@@ -180,23 +220,41 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
           hash: jobHash 
         });
         console.log('Job submission confirmed in block:', jobReceipt.blockNumber);
+        console.log('Gas used:', jobReceipt.gasUsed.toString());
+        console.log('Status:', jobReceipt.status);
 
         if (jobReceipt.status === 'reverted') {
-          throw new Error('Job submission transaction reverted');
+          throw new Error('Job submission transaction reverted on-chain');
         }
         
-        // Get job ID from API (similar to reading jobCount in scripts)
-        const response = await fetch('/api/job-count');
-        if (response.ok) {
-          const data = await response.json();
-          jobIdResult = BigInt(data.count);
-        } else {
-          jobIdResult = BigInt(1);
+        // Verify job was created by reading jobCount
+        const jobCountOnChain = await publicClient.readContract({
+          address: COMPUTE_ROUTER_ADDRESS,
+          abi: COMPUTE_ROUTER_ABI,
+          functionName: 'jobCount'
+        }) as bigint;
+        console.log('Job count on chain:', jobCountOnChain.toString());
+        
+        // Get job ID - use the on-chain count
+        jobIdResult = jobCountOnChain;
+        
+        // Verify the job exists
+        const jobData = await publicClient.readContract({
+          address: COMPUTE_ROUTER_ADDRESS,
+          abi: COMPUTE_ROUTER_ABI,
+          functionName: 'getJob',
+          args: [jobIdResult]
+        }) as { id: bigint; createdAt: bigint };
+        console.log('Job data from chain:', jobData);
+        
+        if (jobData.createdAt === BigInt(0)) {
+          throw new Error(`Job ${jobIdResult.toString()} was not created properly`);
         }
         
         setJobId(jobIdResult);
         console.log('New job ID:', jobIdResult.toString());
       } catch (err) {
+        console.error('Job submission error details:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';
         if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
           throw new Error('Transaction rejected by user');
@@ -207,19 +265,39 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       // Step 3: Deposit to escrow
       setState('depositing');
       
-      console.log('Submitting escrow deposit transaction...', {
+      console.log('Submitting escrow deposit transaction...');
+      console.log('Params:', {
         jobId: jobIdResult.toString(),
-        amount: amount.toString()
+        amount: amount.toString(),
+        escrowAddress: ESCROW_ADDRESS
       });
+      
+      // Verify job exists before depositing
+      try {
+        const jobCheck = await publicClient.readContract({
+          address: COMPUTE_ROUTER_ADDRESS,
+          abi: COMPUTE_ROUTER_ABI,
+          functionName: 'getJob',
+          args: [jobIdResult]
+        }) as { createdAt: bigint };
+        console.log('Job exists check - createdAt:', jobCheck.createdAt.toString());
+        if (jobCheck.createdAt === BigInt(0)) {
+          throw new Error(`Cannot deposit: Job ${jobIdResult.toString()} does not exist in router`);
+        }
+      } catch (err) {
+        console.error('Job verification failed:', err);
+        throw new Error(`Job verification failed before deposit: ${err instanceof Error ? err.message : 'Unknown'}`);
+      }
 
       try {
-        // Direct writeContract call
+        // Use explicit gas limit to prevent the 35M gas estimate issue
         const depositHash = await walletClient.writeContract({
           address: ESCROW_ADDRESS as `0x${string}`,
           abi: ESCROW_ABI,
           functionName: 'deposit',
           args: [jobIdResult, amount],
-          account: address
+          account: address,
+          gas: GAS_LIMIT_DEPOSIT
         });
 
         console.log('Escrow deposit transaction hash:', depositHash);
@@ -231,11 +309,23 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
           hash: depositHash 
         });
         console.log('Escrow deposit confirmed in block:', depositReceipt.blockNumber);
+        console.log('Gas used:', depositReceipt.gasUsed.toString());
+        console.log('Status:', depositReceipt.status);
 
         if (depositReceipt.status === 'reverted') {
-          throw new Error('Escrow deposit transaction reverted');
+          throw new Error('Escrow deposit transaction reverted on-chain');
         }
+        
+        // Verify escrow was created
+        const escrowData = await publicClient.readContract({
+          address: ESCROW_ADDRESS as `0x${string}`,
+          abi: ESCROW_ABI,
+          functionName: 'getEscrow',
+          args: [jobIdResult]
+        }) as { depositor: string; amount: bigint; createdAt: bigint };
+        console.log('Escrow created:', escrowData);
       } catch (err) {
+        console.error('Escrow deposit error details:', err);
         const message = err instanceof Error ? err.message : 'Unknown error';
         if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
           throw new Error('Transaction rejected by user');

@@ -3,7 +3,7 @@
  * Holds testnet USDC in escrow for compute jobs, linked to ComputeRouter
  * NOT real money - for testing and demo only
  * 
- * Contract addr: 0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA
+ * Contract addr: 0x6d48cA6f37688593B82e34888F9fdC897B9B837B
  *
  * Matches: hardhat/contracts/USDCEscrow.sol
  */
@@ -137,8 +137,8 @@ export const ESCROW_ABI = [
 ] as const;
 
 // Escrow contract address on ADI Testnet
-// From deployment: 0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA
-export const ESCROW_ADDRESS: `0x${string}` = '0x0Fc569ACAf6196A2dEf11C9363193c89083e6aDA';
+// Updated: New OpenZeppelin deployment
+export const ESCROW_ADDRESS: `0x${string}` = '0x6d48cA6f37688593B82e34888F9fdC897B9B837B';
 
 /** Default deposit: $5 USDC (5 * 10^6) */
 export const DEFAULT_DEPOSIT = BigInt(5_000_000);
