@@ -95,16 +95,14 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
           isTracked
         };
 
-        // Execute payment and wait for result
-        await escrowPayment.executePayment(paymentParams);
+        // Execute payment and get jobId from return value
+        // (React state updates from executePayment won't be available until next render,
+        // so we use the returned value directly. Throws on failure.)
+        const returnedJobId = await escrowPayment.executePayment(paymentParams);
 
-        // Check if payment succeeded (executePayment will have updated escrowPayment state)
-        // Note: executePayment updates the hook state internally and throws on error
-        // If we're here without exception, payment succeeded
-        
-        if (escrowPayment.jobId) {
-          setEscrowJobId(escrowPayment.jobId);
-          escrowJobIdRef.current = escrowPayment.jobId;
+        if (returnedJobId) {
+          setEscrowJobId(returnedJobId);
+          escrowJobIdRef.current = returnedJobId;
         }
       }
 

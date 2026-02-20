@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
-import { keccak256, toBytes, parseGwei } from 'viem';
+import 'viem/window';
+import { createWalletClient, custom, createPublicClient, http, keccak256, toBytes } from 'viem';
 import { COMPUTE_ROUTER_ABI, COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router';
 import { ESCROW_ABI, ESCROW_ADDRESS } from '@/lib/contracts/testnet-usdc-escrow';
 import { USDC_ABI, USDC_ADDRESS } from '@/lib/contracts/testnet-usdc-token';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
+import { adiTestnet } from '@/lib/adi-chain';
 
 export type PaymentState = 
   | 'idle' 
   | 'approving' 
+  | 'approval_confirming'
   | 'submitting_job' 
+  | 'job_confirming'
   | 'depositing' 
+  | 'deposit_confirming'
   | 'completed' 
   | 'error';
 
@@ -23,114 +27,123 @@ export interface UseEscrowPaymentReturn {
   error: string | null;
   isLoading: boolean;
   currentStep: string;
-  executePayment: (params: PaymentParams) => Promise<void>;
+  executePayment: (params: PaymentParams) => Promise<bigint | null>;
   reset: () => void;
 }
 
 export interface PaymentParams {
   requirements: JobRequirements;
-  amount: bigint; // USDC amount (6 decimals)
+  amount: bigint;
   isTracked: boolean;
 }
 
-interface PaymentProgress {
-  state: PaymentState;
-  step: string;
-  isLoading: boolean;
-}
-
-const PAYMENT_PROGRESS: Record<PaymentState, PaymentProgress> = {
-  idle: { state: 'idle', step: 'Ready to pay', isLoading: false },
-  approving: { state: 'approving', step: 'Approving USDC spend', isLoading: true },
-  submitting_job: { state: 'submitting_job', step: 'Submitting job to router', isLoading: true },
-  depositing: { state: 'depositing', step: 'Depositing to escrow', isLoading: true },
-  completed: { state: 'completed', step: 'Payment completed', isLoading: false },
-  error: { state: 'error', step: 'Payment failed', isLoading: false }
+// Progress messages for each state
+const STEP_MESSAGES: Record<PaymentState, string> = {
+  idle: 'Ready to pay',
+  approving: 'Requesting USDC approval...',
+  approval_confirming: 'Confirming USDC approval on-chain...',
+  submitting_job: 'Submitting job to router...',
+  job_confirming: 'Confirming job submission on-chain...',
+  depositing: 'Depositing to escrow...',
+  deposit_confirming: 'Confirming escrow deposit on-chain...',
+  completed: 'Payment completed successfully',
+  error: 'Payment failed'
 };
 
-// Gas configuration for ADI Testnet
-// Using low gas price to avoid high network fees on testnet
-const GAS_PRICE = parseGwei('1'); // 1 gwei - reasonable for testnet
-const GAS_LIMIT_APPROVE = BigInt(100000);
-const GAS_LIMIT_SUBMIT = BigInt(200000);
-const GAS_LIMIT_DEPOSIT = BigInt(200000);
-
-/**
- * Hash job requirements for ComputeRouter
- */
-function hashJobRequirements(requirements: JobRequirements): `0x${string}` {
-  const jsonString = JSON.stringify(requirements, Object.keys(requirements).sort());
-  return keccak256(toBytes(jsonString));
-}
-
-/**
- * Hook for managing escrow payment flow
- * 1. Check/approve USDC allowance
- * 2. Submit job to ComputeRouter
- * 3. Deposit USDC into escrow
- */
 export function useEscrowPayment(): UseEscrowPaymentReturn {
-  const { address } = useAccount();
   const [state, setState] = useState<PaymentState>('idle');
   const [txHash, setTxHash] = useState<string | null>(null);
   const [jobId, setJobId] = useState<bigint | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // USDC approval write
-  const { writeContractAsync: approveUSDC } = useWriteContract();
-  // ComputeRouter submitJob write
-  const { writeContractAsync: submitJob } = useWriteContract();
-  // Escrow deposit write
-  const { writeContractAsync: depositEscrow } = useWriteContract();
+  /**
+   * Hash job requirements for ComputeRouter
+   */
+  function hashJobRequirements(requirements: JobRequirements): `0x${string}` {
+    const jsonString = JSON.stringify(requirements, Object.keys(requirements).sort());
+    return keccak256(toBytes(jsonString));
+  }
 
-  // Read USDC allowance
-  const { data: allowance } = useReadContract({
-    address: USDC_ADDRESS as `0x${string}`,
-    abi: USDC_ABI,
-    functionName: 'allowance',
-    args: address && ESCROW_ADDRESS ? [address, ESCROW_ADDRESS as `0x${string}`] : undefined,
-    query: {
-      enabled: !!address && !!ESCROW_ADDRESS
-    }
-  });
-
-  const executePayment = useCallback(async (params: PaymentParams) => {
+  /**
+   * Execute the full payment flow using viem
+   * Following pattern from hardhat/scripts/interact-router.ts
+   */
+  const executePayment = useCallback(async (params: PaymentParams): Promise<bigint | null> => {
     const { requirements, amount, isTracked } = params;
 
-    if (!address) {
-      setError('Wallet not connected');
-      setState('error');
-      return;
-    }
-
-    setError(null);
-    setTxHash(null);
-    setJobId(null);
-
     try {
-      // Step 1: Check and approve USDC allowance
-      setState('approving');
-      
-      const currentAllowance = allowance ?? BigInt(0);
-      
+      setError(null);
+      setTxHash(null);
+      setJobId(null);
+
+      // Check if MetaMask is available
+      if (!window.ethereum) {
+        throw new Error('MetaMask not installed');
+      }
+
+      // Create public client for reading state
+      const publicClient = createPublicClient({
+        chain: adiTestnet,
+        transport: http('https://rpc.ab.testnet.adifoundation.ai')
+      });
+
+      // Create wallet client connected to MetaMask
+      const walletClient = createWalletClient({
+        chain: adiTestnet,
+        transport: custom(window.ethereum)
+      });
+
+      // Get connected address (matches pattern from hardhat/scripts)
+      const [address] = await walletClient.getAddresses();
+      if (!address) {
+        throw new Error('No wallet connected');
+      }
+
+      console.log('Connected to ADI Testnet');
+      console.log('Wallet address:', address);
+
+      // Step 1: Check USDC allowance
+      console.log('Checking USDC allowance...');
+      const currentAllowance = await publicClient.readContract({
+        address: USDC_ADDRESS as `0x${string}`,
+        abi: USDC_ABI,
+        functionName: 'allowance',
+        args: [address, ESCROW_ADDRESS as `0x${string}`]
+      }) as bigint;
+
+      console.log('Current allowance:', currentAllowance.toString());
+
+      // Step 1: Approve USDC if needed
       if (currentAllowance < amount) {
+        setState('approving');
+        console.log('Submitting USDC approval transaction...');
+        
         try {
-          const approveHash = await approveUSDC({
+          // Direct writeContract call (matches hardhat/scripts pattern)
+          const approvalHash = await walletClient.writeContract({
             address: USDC_ADDRESS as `0x${string}`,
             abi: USDC_ABI,
             functionName: 'approve',
             args: [ESCROW_ADDRESS as `0x${string}`, amount],
-            gas: GAS_LIMIT_APPROVE,
-            gasPrice: GAS_PRICE
+            account: address
           });
-          
-          setTxHash(approveHash);
-          
-          // Wait for approval confirmation
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          console.log('Approval transaction hash:', approvalHash);
+          setTxHash(approvalHash);
+          setState('approval_confirming');
+
+          // Wait for confirmation (matches hardhat/scripts pattern)
+          const approvalReceipt = await publicClient.waitForTransactionReceipt({ 
+            hash: approvalHash 
+          });
+          console.log('Approval confirmed in block:', approvalReceipt.blockNumber);
+
+          if (approvalReceipt.status === 'reverted') {
+            throw new Error('USDC approval transaction reverted');
+          }
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
-          if (message.includes('rejected') || message.includes('denied')) {
+          if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
             throw new Error('Transaction rejected by user');
           }
           throw new Error(`USDC approval failed: ${message}`);
@@ -139,42 +152,53 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
 
       // Step 2: Submit job to ComputeRouter
       setState('submitting_job');
-      
       const detailsHash = hashJobRequirements(requirements);
       
+      console.log('Submitting job transaction...', {
+        user: address,
+        detailsHash,
+        isTracked
+      });
+
       let jobIdResult: bigint;
       try {
-        const submitHash = await submitJob({
+        // Direct writeContract call (matches hardhat/scripts/interact-router.ts pattern)
+        const jobHash = await walletClient.writeContract({
           address: COMPUTE_ROUTER_ADDRESS,
           abi: COMPUTE_ROUTER_ABI,
           functionName: 'submitJob',
           args: [address, detailsHash, isTracked],
-          gas: GAS_LIMIT_SUBMIT,
-          gasPrice: GAS_PRICE
+          account: address
         });
+
+        console.log('Job submission transaction hash:', jobHash);
+        setTxHash(jobHash);
+        setState('job_confirming');
+
+        // Wait for confirmation
+        const jobReceipt = await publicClient.waitForTransactionReceipt({ 
+          hash: jobHash 
+        });
+        console.log('Job submission confirmed in block:', jobReceipt.blockNumber);
+
+        if (jobReceipt.status === 'reverted') {
+          throw new Error('Job submission transaction reverted');
+        }
         
-        setTxHash(submitHash);
-        
-        // Wait a bit for transaction to be mined
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        
-        // Get job count (jobId = jobCount after submission)
-        // Note: In a production app, we'd watch for JobSubmitted event
-        // For now, we'll fetch jobCount and use that as the jobId
-        // This is a simplification - in production, parse event logs
+        // Get job ID from API (similar to reading jobCount in scripts)
         const response = await fetch('/api/job-count');
         if (response.ok) {
           const data = await response.json();
           jobIdResult = BigInt(data.count);
         } else {
-          // Fallback: assume sequential job IDs starting from 1
           jobIdResult = BigInt(1);
         }
         
         setJobId(jobIdResult);
+        console.log('New job ID:', jobIdResult.toString());
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        if (message.includes('rejected') || message.includes('denied')) {
+        if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
           throw new Error('Transaction rejected by user');
         }
         throw new Error(`Job submission failed: ${message}`);
@@ -183,23 +207,37 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       // Step 3: Deposit to escrow
       setState('depositing');
       
+      console.log('Submitting escrow deposit transaction...', {
+        jobId: jobIdResult.toString(),
+        amount: amount.toString()
+      });
+
       try {
-        const depositHash = await depositEscrow({
+        // Direct writeContract call
+        const depositHash = await walletClient.writeContract({
           address: ESCROW_ADDRESS as `0x${string}`,
           abi: ESCROW_ABI,
           functionName: 'deposit',
           args: [jobIdResult, amount],
-          gas: GAS_LIMIT_DEPOSIT,
-          gasPrice: GAS_PRICE
+          account: address
         });
-        
+
+        console.log('Escrow deposit transaction hash:', depositHash);
         setTxHash(depositHash);
-        
-        // Wait for deposit confirmation
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        setState('deposit_confirming');
+
+        // Wait for confirmation
+        const depositReceipt = await publicClient.waitForTransactionReceipt({ 
+          hash: depositHash 
+        });
+        console.log('Escrow deposit confirmed in block:', depositReceipt.blockNumber);
+
+        if (depositReceipt.status === 'reverted') {
+          throw new Error('Escrow deposit transaction reverted');
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        if (message.includes('rejected') || message.includes('denied')) {
+        if (message.includes('rejected') || message.includes('denied') || message.includes('User rejected')) {
           throw new Error('Transaction rejected by user');
         }
         if (message.includes('insufficient') || message.includes('balance')) {
@@ -209,13 +247,19 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       }
 
       setState('completed');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Payment flow completed successfully!');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      return jobIdResult;
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Payment failed';
       setError(errorMessage);
       setState('error');
       console.error('Payment flow error:', err);
+      throw err;
     }
-  }, [address, allowance, approveUSDC, submitJob, depositEscrow]);
+  }, []);
 
   const reset = useCallback(() => {
     setState('idle');
@@ -224,15 +268,15 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
     setError(null);
   }, []);
 
-  const progress = PAYMENT_PROGRESS[state];
+  const isLoading = state !== 'idle' && state !== 'completed' && state !== 'error';
 
   return {
     state,
     txHash,
     jobId,
     error,
-    isLoading: progress.isLoading,
-    currentStep: progress.step,
+    isLoading,
+    currentStep: STEP_MESSAGES[state],
     executePayment,
     reset
   };

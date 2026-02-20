@@ -5,7 +5,6 @@ import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { cn } from '@/lib/utils';
 import { SdlTemplate, JobRequirements, generateSDL } from '@/lib/akash/sdl-generator';
 import { useAkashDeployment } from '@/hooks/use-akash-deployment';
-import { useEscrowPayment } from '@/hooks/use-escrow-payment';
 import { TemplateGallery } from '@/components/akash/template-gallery';
 import { NaturalLanguageInput } from '@/components/akash/natural-language-input';
 import { RequirementsForm } from '@/components/akash/requirements-form';
@@ -52,7 +51,7 @@ const STEPS: { id: Step; label: string; icon: React.ReactNode }[] = [
 const STEP_ORDER: Step[] = ['input', 'configure', 'sdl', 'review', 'deploy'];
 
 // ADI Testnet explorer URL
-const EXPLORER_URL = 'https://explorer.adi.testnet';
+const EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai';
 
 export default function SubmitJobPage() {
   // Wallet connection
@@ -73,7 +72,6 @@ export default function SubmitJobPage() {
 
   // Deployment hook
   const deployment = useAkashDeployment();
-  const escrowPayment = useEscrowPayment();
 
   // Calculate step progress
   const stepProgress = ((STEP_ORDER.indexOf(currentStep) + 1) / STEPS.length) * 100;
@@ -149,6 +147,9 @@ export default function SubmitJobPage() {
 
     // Convert escrow amount to USDC decimals (6)
     const amountInUSDC = BigInt(escrowAmount) * BigInt(1_000_000);
+
+    // Navigate to deploy step immediately so user sees status trackers
+    setCurrentStep('deploy');
 
     await deployment.startDeployment({
       requirements: requirements as JobRequirements,
