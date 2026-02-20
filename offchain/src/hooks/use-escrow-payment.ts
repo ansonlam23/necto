@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import 'viem/window';
 import { createWalletClient, custom, createPublicClient, http } from 'viem';
+import { getMetaMaskProvider } from '@/lib/metamask-provider';
 import { USDC_ABI, USDC_ADDRESS } from '@/lib/contracts/testnet-usdc-token';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
 import { adiTestnet } from '@/lib/adi-chain';
@@ -96,9 +97,7 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
       setJobId(null);
       setAgentAddress(null);
 
-      if (!window.ethereum) {
-        throw new Error('MetaMask not installed');
-      }
+      const metaMaskProvider = await getMetaMaskProvider();
 
       const publicClient = createPublicClient({
         chain: adiTestnet,
@@ -107,12 +106,21 @@ export function useEscrowPayment(): UseEscrowPaymentReturn {
 
       const walletClient = createWalletClient({
         chain: adiTestnet,
-        transport: custom(window.ethereum)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transport: custom(metaMaskProvider as any)
       });
 
       const [address] = await walletClient.getAddresses();
       if (!address) {
         throw new Error('No wallet connected');
+      }
+
+      // Ensure wallet is on ADI Testnet before any transactions
+      try {
+        await walletClient.switchChain({ id: adiTestnet.id });
+      } catch {
+        await walletClient.addChain({ chain: adiTestnet });
+        await walletClient.switchChain({ id: adiTestnet.id });
       }
 
       console.log('Payment Flow: User -> Agent -> Escrow');

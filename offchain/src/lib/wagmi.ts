@@ -6,11 +6,12 @@ import { adiTestnet } from './adi-chain'
 export const config = createConfig({
   chains: [mainnet, sepolia, adiTestnet],
   ssr: true,
+  multiInjectedProviderDiscovery: true,
   storage: createStorage({
     storage: cookieStorage,
   }),
   connectors: [
-    injected(),
+    injected({ target: 'metaMask' }),
   ],
   transports: {
     [mainnet.id]: http(),

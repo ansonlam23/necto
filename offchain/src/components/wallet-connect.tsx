@@ -24,14 +24,6 @@ export function WalletConnect() {
     setMounted(true)
   }, [])
 
-  const handleConnect = async () => {
-    try {
-      await connect()
-    } catch (error) {
-      console.error('Connection failed:', error)
-    }
-  }
-
   const handleDisconnect = async () => {
     try {
       await disconnect()
@@ -40,7 +32,6 @@ export function WalletConnect() {
     }
   }
 
-  // Don't render wallet state until mounted on client
   if (!mounted) {
     return (
       <Button size="sm" className="h-8 gap-2" disabled>
@@ -100,7 +91,7 @@ export function WalletConnect() {
 
   return (
     <Button
-      onClick={handleConnect}
+      onClick={() => connect('metaMask')}
       disabled={isConnecting}
       size="sm"
       className="h-8 gap-2"

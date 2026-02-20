@@ -28,7 +28,7 @@ interface WalletState {
 }
 
 interface WalletActions {
-  connect: () => Promise<void>
+  connect: (connectorId?: string) => Promise<void>
   disconnect: () => Promise<void>
   switchChain: (chainId: number) => Promise<void>
   /**
@@ -68,9 +68,11 @@ export function useWallet(): WalletState & WalletActions {
   const { mutateAsync: switchChainAsync } = useSwitchChain()
   const { writeContractAsync } = useWriteContract()
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (connectorId?: string) => {
     try {
-      const connector = connectors.find((c) => c.id === 'injected')
+      const connector = connectorId
+        ? connectors.find((c) => c.id === connectorId)
+        : connectors.find((c) => c.id === 'metaMask') ?? connectors.find((c) => c.id === 'injected')
       if (connector) {
         await connectAsync({ connector })
       }

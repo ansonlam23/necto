@@ -8,6 +8,10 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { createWalletClient, createPublicClient, custom, http, parseUnits } from 'viem';
+import { adiTestnet } from '@/lib/adi-chain';
+import { USDC_ABI, USDC_ADDRESS } from '@/lib/contracts/testnet-usdc-token';
+import { getMetaMaskProvider } from '@/lib/metamask-provider';
 import {
   CheckCircle2,
   XCircle,
@@ -19,7 +23,8 @@ import {
   Upload,
   Activity,
   AlertCircle,
-  CreditCard
+  CreditCard,
+  Droplets
 } from 'lucide-react';
 
 interface DeploymentStatusProps {
@@ -71,6 +76,84 @@ const STATE_COLORS: Record<DeploymentState, string> = {
   completed: 'text-green-500',
   error: 'text-red-500'
 };
+
+function USDCFaucetButton() {
+  const [minting, setMinting] = React.useState(false);
+  const [minted, setMinted] = React.useState(false);
+  const [mintError, setMintError] = React.useState<string | null>(null);
+
+  const handleMint = async () => {
+    setMinting(true);
+    setMintError(null);
+    try {
+      const metaMaskProvider = await getMetaMaskProvider();
+      const walletClient = createWalletClient({
+        chain: adiTestnet,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        transport: custom(metaMaskProvider as any),
+      });
+      const publicClient = createPublicClient({
+        chain: adiTestnet,
+        transport: http('https://rpc.ab.testnet.adifoundation.ai'),
+      });
+      const [address] = await walletClient.getAddresses();
+      if (!address) throw new Error('No wallet connected');
+
+      // Switch to ADI Testnet — add it first if the wallet doesn't know it
+      try {
+        await walletClient.switchChain({ id: adiTestnet.id });
+      } catch {
+        await walletClient.addChain({ chain: adiTestnet });
+        await walletClient.switchChain({ id: adiTestnet.id });
+      }
+
+      const amount = parseUnits('1000', 6); // mint 1000 tUSDC
+      const hash = await walletClient.writeContract({
+        address: USDC_ADDRESS,
+        abi: USDC_ABI,
+        functionName: 'mint',
+        args: [address, amount],
+        account: address,
+        chain: adiTestnet,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setMinted(true);
+    } catch (err) {
+      setMintError(err instanceof Error ? err.message : 'Mint failed');
+    } finally {
+      setMinting(false);
+    }
+  };
+
+  if (minted) {
+    return (
+      <p className="text-green-700 font-medium flex items-center gap-1">
+        <CheckCircle2 className="h-4 w-4" />
+        1000 tUSDC minted — retry your deployment
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleMint}
+        disabled={minting}
+        className="border-red-300 text-red-800 hover:bg-red-100"
+      >
+        {minting ? (
+          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+        ) : (
+          <Droplets className="h-3.5 w-3.5 mr-1.5" />
+        )}
+        {minting ? 'Minting...' : 'Get Testnet USDC'}
+      </Button>
+      {mintError && <p className="text-xs text-red-700">{mintError}</p>}
+    </div>
+  );
+}
 
 export function DeploymentStatus({ deployment, className }: DeploymentStatusProps) {
   const { state, progress, logs, error, deployment: deployData, isLoading } = deployment;
@@ -124,12 +207,15 @@ export function DeploymentStatus({ deployment, className }: DeploymentStatusProp
 
         {/* Error */}
         {error && (
-          <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm">
+          <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm space-y-2">
             <div className="flex items-center gap-2 font-medium">
               <AlertCircle className="h-4 w-4" />
               Error
             </div>
-            <p className="mt-1">{error}</p>
+            <p>{error}</p>
+            {error.includes('Insufficient USDC balance') && (
+              <USDCFaucetButton />
+            )}
           </div>
         )}
 
