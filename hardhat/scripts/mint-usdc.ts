@@ -1,8 +1,10 @@
 import { network } from 'hardhat';
 import { defineChain } from 'viem';
 
-const CONTRACT_ADDRESS = '0x213E3C8C9C3E5F94455Fc1606D97555e5aaf7FA7';
-const FAUCET_AMOUNT = 10_000n * 1_000_000n; // 10,000 tUSDC (6 decimals)
+const USDC_ADDRESS: `0x${string}` = '0xfDc76858e4Bd9CF760F1b52e57434977605931AC';
+const USDC_DECIMALS = 6;
+
+const FAUCET_AMOUNT = 10_000n * BigInt(10 ** USDC_DECIMALS);
 
 const adiChain = defineChain({
   id: 99999,
@@ -12,7 +14,6 @@ const adiChain = defineChain({
   rpcUrls: { default: { http: ['https://rpc.ab.testnet.adifoundation.ai'] } },
 });
 
-// const recipient = process.argv[2];
 const recipient = process.env.RECIPIENT_ADDRESS;
 if (!recipient) {
   console.error('Usage: RECIPIENT_ADDRESS=<address> npx hardhat run scripts/mint-usdc.ts --network adiTestnet');
@@ -25,16 +26,22 @@ const publicClient = await viem.getPublicClient({ chain: adiChain });
 const [senderClient] = await viem.getWalletClients({ chain: adiChain });
 if (!senderClient) throw new Error('No wallet client. Set TESTNET_PRIVATE_KEY in hardhat config.');
 
-const usdcContract = await viem.getContractAt('TestnetUSDC', CONTRACT_ADDRESS, {
+const [account] = await senderClient.getAddresses();
+if (!account) throw new Error('No account found in wallet client.');
+
+const usdcContract = await viem.getContractAt('TestnetUSDC', USDC_ADDRESS, {
   client: { public: publicClient, wallet: senderClient },
 });
 
-const tx = await senderClient.writeContract({
-  address: CONTRACT_ADDRESS,
+const { request } = await publicClient.simulateContract({
+  address: USDC_ADDRESS,
   abi: usdcContract.abi,
   functionName: 'mint',
   args: [recipient as `0x${string}`, FAUCET_AMOUNT],
+  account,
 });
+
+const tx = await senderClient.writeContract(request);
 
 await publicClient.waitForTransactionReceipt({ hash: tx });
 console.log(`Minted 10,000 tUSDC to ${recipient}`);

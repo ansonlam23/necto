@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-
 /*
 CounterModule#Counter - 0x3f0c2Bee1b84038525E4abD172138090B68862C9
 ComputeRouterModule#ComputeRouter - 0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd
@@ -38,7 +37,15 @@ contract ComputeRouter {
         agent = _agent;
     }
 
-    function submitJob(address _user, bytes32 _detailsHash, bool _isTracked) external onlyAgent returns (uint256) {
+    /**
+     * @notice Submit a new compute job
+     * @dev Open to all users - removed onlyAgent restriction
+     * @param _user User address (can be msg.sender or another address)
+     * @param _detailsHash Hash of job details/requirements
+     * @param _isTracked Whether to track the user address on-chain
+     * @return jobId The ID of the newly created job
+     */
+    function submitJob(address _user, bytes32 _detailsHash, bool _isTracked) external returns (uint256) {
         jobCount++;
         uint256 jobId = jobCount;
 

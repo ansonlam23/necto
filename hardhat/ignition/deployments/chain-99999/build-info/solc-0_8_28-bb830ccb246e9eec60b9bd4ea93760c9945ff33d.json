@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-bb830ccb246e9eec60b9bd4ea93760c9945ff33d",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/ComputeRouter.sol": "project/contracts/ComputeRouter.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/ComputeRouter.sol": {
+        "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.28;\n\n\n/*\nCounterModule#Counter - 0x3f0c2Bee1b84038525E4abD172138090B68862C9\nComputeRouterModule#ComputeRouter - 0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd\n*/\n \ncontract ComputeRouter {\n    struct Job {\n        uint256 id;\n        address user;\n        bytes32 detailsHash;\n        bytes32 routingHash;\n        address provider;\n        uint256 amount;\n        bool isTracked;\n        uint256 createdAt;\n        uint256 routedAt;\n    }\n\n    mapping(uint256 => Job) private jobs;\n    uint256 public jobCount;\n    address public agent;\n\n    event JobSubmitted(uint256 indexed jobId, address indexed user, bytes32 detailsHash, bool isTracked);\n    event RoutingDecision(uint256 indexed jobId, address indexed provider, uint256 amount, bytes32 routingHash);\n    event AgentUpdated(address indexed oldAgent, address indexed newAgent);\n\n    modifier onlyAgent() {\n        require(msg.sender == agent, \"ComputeRouter: caller is not the agent\");\n        _;\n    }\n\n    constructor(address _agent) {\n        require(_agent != address(0), \"ComputeRouter: agent cannot be zero address\");\n        agent = _agent;\n    }\n\n    function submitJob(address _user, bytes32 _detailsHash, bool _isTracked) external onlyAgent returns (uint256) {\n        jobCount++;\n        uint256 jobId = jobCount;\n\n        address storedUser = _isTracked ? _user : address(0);\n\n        jobs[jobId] = Job({\n            id: jobId,\n            user: storedUser,\n            detailsHash: _detailsHash,\n            routingHash: bytes32(0),\n            provider: address(0),\n            amount: 0,\n            isTracked: _isTracked,\n            createdAt: block.timestamp,\n            routedAt: 0\n        });\n\n        emit JobSubmitted(jobId, storedUser, _detailsHash, _isTracked);\n\n        return jobId;\n    }\n\n    function recordRoutingDecision(\n        uint256 _jobId,\n        address _provider,\n        uint256 _amount,\n        bytes32 _routingHash\n    ) external onlyAgent {\n        require(_jobId > 0 && _jobId <= jobCount, \"ComputeRouter: job does not exist\");\n        require(jobs[_jobId].routedAt == 0, \"ComputeRouter: job already routed\");\n        require(_provider != address(0), \"ComputeRouter: provider cannot be zero address\");\n        require(_routingHash != bytes32(0), \"ComputeRouter: routing hash cannot be zero\");\n\n        Job storage job = jobs[_jobId];\n        job.provider = _provider;\n        job.amount = _amount;\n        job.routingHash = _routingHash;\n        job.routedAt = block.timestamp;\n\n        emit RoutingDecision(_jobId, _provider, _amount, _routingHash);\n    }\n\n    function getJob(uint256 _jobId) external view returns (Job memory) {\n        require(_jobId > 0 && _jobId <= jobCount, \"ComputeRouter: job does not exist\");\n        return jobs[_jobId];\n    }\n\n    function updateAgent(address _newAgent) external onlyAgent {\n        require(_newAgent != address(0), \"ComputeRouter: new agent cannot be zero address\");\n        address oldAgent = agent;\n        agent = _newAgent;\n        emit AgentUpdated(oldAgent, _newAgent);\n    }\n}\n"
+      }
+    }
+  }
+}

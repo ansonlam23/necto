@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import "./TestnetUSDC.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./ComputeRouter.sol";
 
 /**
@@ -10,8 +11,9 @@ import "./ComputeRouter.sol";
  * @dev On-chain link to ComputeRouter: deposit validates job exists, release validates job is routed.
  *      Owner (deployer) = agent wallet. Release sends funds to owner.
  *      NOT real money - for testing and demo only.
+ *      Uses OpenZeppelin standards for better security and gas efficiency.
  */
-contract USDCEscrow {
+contract USDCEscrow is Ownable {
     enum EscrowStatus {
         Active,
         Released,
@@ -25,9 +27,8 @@ contract USDCEscrow {
         uint256 createdAt;
     }
 
-    TestnetUSDC public usdcToken;
+    IERC20 public usdcToken;
     ComputeRouter public computeRouter;
-    address public owner;
 
     /// @notice Default deposit amount: $5 USDC (5 * 10^6)
     uint256 public constant DEFAULT_DEPOSIT = 5 * 1e6;
@@ -38,17 +39,11 @@ contract USDCEscrow {
     event Released(uint256 indexed jobId, uint256 amount);
     event Refunded(uint256 indexed jobId, uint256 amount);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "USDCEscrow: caller is not the owner");
-        _;
-    }
-
-    constructor(address _usdcToken, address _computeRouter) {
+    constructor(address _usdcToken, address _computeRouter) Ownable(msg.sender) {
         require(_usdcToken != address(0), "USDCEscrow: token cannot be zero address");
         require(_computeRouter != address(0), "USDCEscrow: router cannot be zero address");
-        usdcToken = TestnetUSDC(_usdcToken);
+        usdcToken = IERC20(_usdcToken);
         computeRouter = ComputeRouter(_computeRouter);
-        owner = msg.sender;
     }
 
     /**
@@ -66,6 +61,7 @@ contract USDCEscrow {
         ComputeRouter.Job memory job = computeRouter.getJob(jobId);
         require(job.createdAt > 0, "USDCEscrow: job does not exist in router");
 
+        // Use OpenZeppelin's safeTransferFrom pattern
         bool success = usdcToken.transferFrom(msg.sender, address(this), amount);
         require(success, "USDCEscrow: USDC transfer failed");
 
@@ -96,7 +92,7 @@ contract USDCEscrow {
 
         escrow.status = EscrowStatus.Released;
 
-        bool success = usdcToken.transfer(owner, escrow.amount);
+        bool success = usdcToken.transfer(owner(), escrow.amount);
         require(success, "USDCEscrow: release transfer failed");
 
         emit Released(jobId, escrow.amount);
@@ -127,5 +123,17 @@ contract USDCEscrow {
      */
     function getEscrow(uint256 jobId) external view returns (Escrow memory) {
         return escrows[jobId];
+    }
+
+    /**
+     * @notice Emergency function to recover any ERC20 tokens sent to this contract by mistake
+     * @dev Only owner can recover. Useful if someone sends wrong tokens.
+     * @param token The ERC20 token to recover
+     * @param amount Amount to recover
+     */
+    function recoverTokens(IERC20 token, uint256 amount) external onlyOwner {
+        require(address(token) != address(usdcToken), "USDCEscrow: cannot recover USDC");
+        bool success = token.transfer(owner(), amount);
+        require(success, "USDCEscrow: token recovery failed");
     }
 }

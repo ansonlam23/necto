@@ -37,12 +37,11 @@ function getExplorerBlockUrl(blockNumber: bigint): string {
 }
 
 /*
-CounterModule#Counter - 0x3f0c2Bee1b84038525E4abD172138090B68862C9
-ComputeRouterModule#ComputeRouter - 0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd
+Compute Router: 0xe899A74296e641D674E8BeA07ef79a0772033ebe
 */
 
 // UPDATE THIS AFTER DEPLOYMENT
-const CONTRACT_ADDRESS = '0x369CbbB21c7b85e3BB0f29DE5dCC92B2583E09Dd' as `0x${string}`;
+const CONTRACT_ADDRESS = '0xe899A74296e641D674E8BeA07ef79a0772033ebe' as `0x${string}`;
 
 // ADI Testnet chain configuration
 const adiChain = defineChain({

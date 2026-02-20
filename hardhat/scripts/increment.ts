@@ -8,7 +8,7 @@ const adiChain = defineChain({
   name: 'ADI Chain',
   network: 'adiTestnet',
   nativeCurrency: { name: 'ADI', symbol: 'ADI', decimals: 18 },
-  rpcUrls: { default: { http: ['https://rpc.ab.testnet.adifoundation.ai'] } },
+  rpcUrls: { default: { http: ['https://rpc.testnet.adifoundation.ai'] } },
 });
 
 const { viem } = await network.connect('adiTestnet');

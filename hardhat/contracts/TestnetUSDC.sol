@@ -1,26 +1,35 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 /**
  * @title TestnetUSDC
  * @notice Fake USDC token for testnet use only - NOT real money
- * @dev ERC20 with public mint (faucet) for testing purposes
+ * @dev Standard ERC20 with public mint (faucet) for testing purposes
  *      Uses 6 decimals to match real USDC
+ *      Extends OpenZeppelin's audited ERC20 implementation
  */
-contract TestnetUSDC {
-    string public constant name = "Testnet USDC";
-    string public constant symbol = "tUSDC";
-    uint8 public constant decimals = 6;
-
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-
+contract TestnetUSDC is ERC20, Ownable {
     /// @notice Maximum amount per faucet drip (10,000 tUSDC)
     uint256 public constant FAUCET_AMOUNT = 10_000 * 1e6;
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    /**
+     * @notice Initialize the Testnet USDC token
+     * @dev Sets name, symbol, and 6 decimals (matching real USDC)
+     */
+    constructor() ERC20("Testnet USDC", "tUSDC") Ownable(msg.sender) {
+        // ERC20 uses 18 decimals by default, override to 6
+    }
+
+    /**
+     * @notice Override decimals to match real USDC (6)
+     * @return uint8 Number of decimals (6)
+     */
+    function decimals() public pure override returns (uint8) {
+        return 6;
+    }
 
     /**
      * @notice Mint tokens to any address (faucet)
@@ -32,39 +41,21 @@ contract TestnetUSDC {
         require(to != address(0), "TestnetUSDC: mint to zero address");
         require(amount <= FAUCET_AMOUNT, "TestnetUSDC: exceeds faucet limit");
 
-        totalSupply += amount;
-        balanceOf[to] += amount;
-        emit Transfer(address(0), to, amount);
+        _mint(to, amount);
     }
 
-    function approve(address spender, uint256 amount) external returns (bool) {
-        require(spender != address(0), "TestnetUSDC: approve to zero address");
-
-        allowance[msg.sender][spender] = amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-
-    function transfer(address recipient, uint256 amount) external returns (bool) {
-        return _transfer(msg.sender, recipient, amount);
-    }
-
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
-        uint256 currentAllowance = allowance[sender][msg.sender];
-        require(currentAllowance >= amount, "TestnetUSDC: transfer amount exceeds allowance");
-
-        allowance[sender][msg.sender] = currentAllowance - amount;
-        return _transfer(sender, recipient, amount);
-    }
-
-    function _transfer(address sender, address recipient, uint256 amount) internal returns (bool) {
-        require(sender != address(0), "TestnetUSDC: transfer from zero address");
-        require(recipient != address(0), "TestnetUSDC: transfer to zero address");
-        require(balanceOf[sender] >= amount, "TestnetUSDC: transfer amount exceeds balance");
-
-        balanceOf[sender] -= amount;
-        balanceOf[recipient] += amount;
-        emit Transfer(sender, recipient, amount);
-        return true;
+    /**
+     * @notice Batch mint tokens for testing (owner only)
+     * @dev Useful for setting up test scenarios with multiple addresses
+     * @param recipients Array of recipient addresses
+     * @param amounts Array of amounts to mint
+     */
+    function batchMint(address[] calldata recipients, uint256[] calldata amounts) external onlyOwner {
+        require(recipients.length == amounts.length, "TestnetUSDC: array length mismatch");
+        
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(recipients[i] != address(0), "TestnetUSDC: mint to zero address");
+            _mint(recipients[i], amounts[i]);
+        }
     }
 }
