@@ -39,7 +39,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Web3Provider>
+        <Web3Provider initialState={initialState}>
           <MarketplaceProvider>
             <AppShell>
               {children}

@@ -13,7 +13,7 @@ import {
   User2,
   FlaskConical,
   Server,
-  Shield
+  Shield,
   Bot,
   GitBranch,
   Sparkles,

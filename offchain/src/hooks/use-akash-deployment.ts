@@ -132,12 +132,20 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
 
       const data = await res.json();
 
+      console.log('[useAkashDeployment] API response:', data);
+      console.log('[useAkashDeployment] Lease response from API:', data.leaseResponse);
+
       setLogs(data.logs ?? []);
 
       if (data.success && data.deployment) {
         setDeployment(data.deployment);
         setBids(data.bids || []);
-        setLeaseResponse(data.leaseResponse || null);
+        if (data.leaseResponse) {
+          console.log('[useAkashDeployment] Setting leaseResponse:', JSON.stringify(data.leaseResponse, null, 2));
+          setLeaseResponse(data.leaseResponse);
+        } else {
+          console.log('[useAkashDeployment] No leaseResponse in API response');
+        }
         setState(data.bids && data.bids.length > 0 ? 'active' : 'waiting_bids');
       } else {
         setError(data.error || 'Deployment failed');

@@ -31,6 +31,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       (log) => logs.push(log)
     );
 
+    // Debug: Log lease response
+    if (result.leaseResponse) {
+      console.log('[API /api/akash] Lease response:', JSON.stringify(result.leaseResponse, null, 2));
+    } else {
+      console.log('[API /api/akash] No lease response in result');
+    }
+
     return NextResponse.json({ ...result, logs });
   } catch (error) {
     console.error('Akash route error:', error);

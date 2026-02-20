@@ -48,7 +48,7 @@ export default function CompareProvidersPage(): React.JSX.Element {
     gpuModel: 'nvidia',
     cpu: 4,
     memory: '8Gi',
-    region: 'us-east'
+    region: ''
   });
 
   const handleCompare = async () => {
@@ -173,7 +173,7 @@ export default function CompareProvidersPage(): React.JSX.Element {
                     ...requirements,
                     region: e.target.value
                   })}
-                  placeholder="us-east"
+                  placeholder=""
                 />
               </div>
             </div>
