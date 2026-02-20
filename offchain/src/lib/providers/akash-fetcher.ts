@@ -1,7 +1,7 @@
 export interface SynapseProvider {
   id: string;
   name: string;
-  source: 'Akash' | 'Lambda' | 'Render' | 'User-Listed';
+  source: 'Akash' | 'Lambda' | 'Render' | 'User-Listed' | 'io.net' | 'Nosana' | 'Spheron' | 'Aethir' | 'Gensyn' | 'Hyperspace';
   hardware: {
     gpuModel: string;
     gpuCount: number;

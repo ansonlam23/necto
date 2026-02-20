@@ -15,7 +15,7 @@ export default function ProvidersPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">GPU Providers</h1>
         <p className="text-muted-foreground">
-          Discover available GPU providers from Helium, Render, and Akash Network
+          Discover GPU providers across DePIN networks — io.net, Nosana, Spheron, Aethir, Render, Gensyn, Hyperspace, and Akash
         </p>
       </div>
 
