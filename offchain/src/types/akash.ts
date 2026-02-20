@@ -102,6 +102,80 @@ export interface Lease {
 
 export type LeaseStatus = 'active' | 'closed';
 
+export type LeaseResponse = {
+  data: {
+    deployment: {
+      id: {
+        owner: string;
+        dseq: string;
+      };
+      state: string;
+      hash: string;
+      created_at: string;
+    };
+    leases: {
+      id: {
+        owner: string;
+        dseq: string;
+        gseq: number;
+        oseq: number;
+        provider: string;
+        bseq: number;
+      };
+      state: string;
+      price: {
+        denom: string;
+        amount: string;
+      };
+      created_at: string;
+      closed_on: string;
+      reason?: string;
+      status: {
+        forwarded_ports: Record<string, {
+          port: number;
+          externalPort: number;
+          host?: string;
+          available?: number;
+        }[]>;
+        ips: Record<string, {
+          IP: string;
+          Port: number;
+          ExternalPort: number;
+          Protocol: string;
+        }[]>;
+        services: Record<string, {
+          name: string;
+          available: number;
+          total: number;
+          uris: string[];
+          observed_generation: number;
+          replicas: number;
+          updated_replicas: number;
+          ready_replicas: number;
+          available_replicas: number;
+        }>;
+      } | null;
+    }[];
+    escrow_account: {
+      id: { scope: string; xid: string };
+      state: {
+        owner: string;
+        state: string;
+        transferred: { denom: string; amount: string }[];
+        settled_at: string;
+        funds: { denom: string; amount: string }[];
+        deposits: {
+          owner: string;
+          height: string;
+          source: string;
+          balance: { denom: string; amount: string };
+        }[];
+      };
+    };
+  }
+}
+
+
 export interface ConsoleApiConfig {
   apiKey: string;
   baseUrl?: string;

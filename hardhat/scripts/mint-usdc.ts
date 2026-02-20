@@ -1,5 +1,5 @@
 import { network } from 'hardhat';
-import { defineChain } from 'viem';
+import { defineChain, createPublicClient, http } from 'viem';
 
 const USDC_ADDRESS: `0x${string}` = '0xfDc76858e4Bd9CF760F1b52e57434977605931AC';
 const USDC_DECIMALS = 6;
@@ -22,7 +22,14 @@ if (!recipient) {
 
 const { viem } = await network.connect('adiTestnet');
 
-const publicClient = await viem.getPublicClient({ chain: adiChain });
+const publicClient = createPublicClient({
+  chain: adiChain,
+  transport: http('https://rpc.ab.testnet.adifoundation.ai', {
+    timeout: 30000,
+    retryCount: 3,
+  }),
+});
+
 const [senderClient] = await viem.getWalletClients({ chain: adiChain });
 if (!senderClient) throw new Error('No wallet client. Set TESTNET_PRIVATE_KEY in hardhat config.');
 

@@ -7,6 +7,8 @@
 import { createWalletClient, http, keccak256, toBytes, type WalletClient } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { COMPUTE_ROUTER_ABI, COMPUTE_ROUTER_ADDRESS } from '@/lib/contracts/compute-router'
+import { ESCROW_ABI, ESCROW_ADDRESS } from '@/lib/contracts/testnet-usdc-escrow'
+import { USDC_ABI, USDC_ADDRESS } from '@/lib/contracts/testnet-usdc-token'
 import { adiTestnet } from '@/lib/adi-chain'
 import type { TransactionResult } from './types'
 import { FunctionTool } from '@google/adk'
@@ -23,6 +25,15 @@ export function createAgentWallet(): WalletClient {
     chain: adiTestnet,
     transport: http()
   })
+}
+
+export function getAgentAddress(): `0x${string}` {
+  const privateKey = process.env.AGENT_PRIVATE_KEY as `0x${string}`
+  if (!privateKey) {
+    throw new Error('AGENT_PRIVATE_KEY not configured in environment')
+  }
+  const account = privateKeyToAccount(privateKey)
+  return account.address
 }
 
 export async function submitJobTransaction(
@@ -71,6 +82,70 @@ export async function recordRoutingDecision(
     return { success: true, hash }
   } catch (error) {
     console.error('Failed to record routing decision:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+
+export async function transferUSDCToAgent(
+  fromAddress: `0x${string}`,
+  amount: bigint
+): Promise<TransactionResult> {
+  try {
+    const wallet = createAgentWallet()
+    const agentAddress = wallet.account!.address
+    const hash = await wallet.writeContract({
+      account: wallet.account!,
+      address: USDC_ADDRESS as `0x${string}`,
+      abi: USDC_ABI,
+      functionName: 'transferFrom',
+      args: [fromAddress, agentAddress, amount],
+      chain: adiTestnet
+    })
+    return { success: true, hash }
+  } catch (error) {
+    console.error('Failed to transfer USDC to agent:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+
+export async function depositToEscrowFromAgent(
+  jobId: bigint,
+  amount: bigint
+): Promise<TransactionResult> {
+  try {
+    const wallet = createAgentWallet()
+    const account = wallet.account!
+    
+    // First approve escrow to spend agent's USDC
+    const approveHash = await wallet.writeContract({
+      account,
+      address: USDC_ADDRESS as `0x${string}`,
+      abi: USDC_ABI,
+      functionName: 'approve',
+      args: [ESCROW_ADDRESS as `0x${string}`, amount],
+      chain: adiTestnet
+    })
+    
+    // Wait a bit for approval to be mined (in production, should wait for confirmation)
+    // Then deposit to escrow
+    const depositHash = await wallet.writeContract({
+      account,
+      address: ESCROW_ADDRESS as `0x${string}`,
+      abi: ESCROW_ABI,
+      functionName: 'deposit',
+      args: [jobId, amount],
+      chain: adiTestnet
+    })
+    
+    return { success: true, hash: depositHash }
+  } catch (error) {
+    console.error('Failed to deposit to escrow from agent:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

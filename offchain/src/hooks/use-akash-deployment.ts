@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { AkashDeployment, ProviderBid } from '@/types/akash';
+import { AkashDeployment, ProviderBid, LeaseResponse } from '@/types/akash';
 import { JobRequirements } from '@/lib/akash/sdl-generator';
 import { RouteLog } from '@/lib/agent/akash-router';
-import { useEscrowPayment, PaymentParams } from '@/hooks/use-escrow-payment';
+import { useEscrowPayment, PaymentParams, TransactionHashes } from '@/hooks/use-escrow-payment';
 
 export type DeploymentState =
   | 'idle'
@@ -36,9 +36,11 @@ interface UseAkashDeploymentReturn {
   isLoading: boolean;
   progress: number;
   escrowTxHash: string | null;
+  escrowTransactions: TransactionHashes;
   escrowJobId: bigint | null;
   escrowError: string | null;
   escrowState: import('@/hooks/use-escrow-payment').PaymentState;
+  leaseResponse: LeaseResponse | null;
   startDeployment: (params: StartDeploymentParams) => Promise<void>;
   acceptBid: (bidId: string) => Promise<void>;
   close: () => Promise<void>;
@@ -68,6 +70,7 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [escrowJobId, setEscrowJobId] = useState<bigint | null>(null);
+  const [leaseResponse, setLeaseResponse] = useState<LeaseResponse | null>(null);
   const escrowJobIdRef = useRef<bigint | null>(null);
 
   // Escrow payment hook
@@ -82,6 +85,7 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setError(null);
     setLogs([]);
     setEscrowJobId(null);
+    setLeaseResponse(null);
     escrowJobIdRef.current = null;
 
     try {
@@ -133,6 +137,7 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
       if (data.success && data.deployment) {
         setDeployment(data.deployment);
         setBids(data.bids || []);
+        setLeaseResponse(data.leaseResponse || null);
         setState(data.bids && data.bids.length > 0 ? 'active' : 'waiting_bids');
       } else {
         setError(data.error || 'Deployment failed');
@@ -214,6 +219,7 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     setLogs([]);
     setError(null);
     setEscrowJobId(null);
+    setLeaseResponse(null);
     escrowJobIdRef.current = null;
     setIsLoading(false);
     escrowPayment.reset();
@@ -228,9 +234,11 @@ export function useAkashDeployment(): UseAkashDeploymentReturn {
     isLoading,
     progress: STATE_PROGRESS[state],
     escrowTxHash: escrowPayment.txHash,
+    escrowTransactions: escrowPayment.transactions,
     escrowJobId: escrowJobId || escrowPayment.jobId,
     escrowError: escrowPayment.error,
     escrowState: escrowPayment.state,
+    leaseResponse,
     startDeployment,
     acceptBid,
     close,

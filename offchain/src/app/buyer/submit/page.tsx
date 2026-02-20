@@ -35,8 +35,12 @@ import {
   Eye,
   Wallet,
   ExternalLink,
-  Copy
+  Copy,
+  ArrowRightLeft,
+  User,
+  Globe
 } from 'lucide-react';
+import { LeaseResponse } from '@/types/akash';
 
 type Step = 'input' | 'configure' | 'sdl' | 'review' | 'deploy';
 
@@ -52,6 +56,26 @@ const STEP_ORDER: Step[] = ['input', 'configure', 'sdl', 'review', 'deploy'];
 
 // ADI Testnet explorer URL
 const EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai';
+// Akash Console URL
+const AKASH_CONSOLE_URL = 'https://console.akash.network';
+
+// Helper function to extract all URIs from lease response
+function extractServiceUris(leaseResponse: LeaseResponse | null): string[] {
+  if (!leaseResponse?.data?.leases) return [];
+  
+  const uris: string[] = [];
+  for (const lease of leaseResponse.data.leases) {
+    if (lease.status?.services) {
+      for (const serviceName in lease.status.services) {
+        const service = lease.status.services[serviceName];
+        if (service.uris && service.uris.length > 0) {
+          uris.push(...service.uris);
+        }
+      }
+    }
+  }
+  return uris;
+}
 
 export default function SubmitJobPage() {
   // Wallet connection
@@ -69,9 +93,15 @@ export default function SubmitJobPage() {
   const [escrowAmount, setEscrowAmount] = React.useState<string>('10');
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
   const [copiedHash, setCopiedHash] = React.useState<boolean>(false);
+  const [copiedUri, setCopiedUri] = React.useState<string | null>(null);
 
   // Deployment hook
   const deployment = useAkashDeployment();
+
+  // Extract service URIs from lease response
+  const serviceUris = React.useMemo(() => {
+    return extractServiceUris(deployment.leaseResponse);
+  }, [deployment.leaseResponse]);
 
   // Calculate step progress
   const stepProgress = ((STEP_ORDER.indexOf(currentStep) + 1) / STEPS.length) * 100;
@@ -166,6 +196,13 @@ export default function SubmitJobPage() {
     setTimeout(() => setCopiedHash(false), 2000);
   };
 
+  // Copy URI to clipboard
+  const copyUri = (uri: string) => {
+    navigator.clipboard.writeText(uri);
+    setCopiedUri(uri);
+    setTimeout(() => setCopiedUri(null), 2000);
+  };
+
   // Truncate hash for display
   const truncateHash = (hash: string): string => {
     if (hash.length <= 20) return hash;
@@ -183,20 +220,23 @@ export default function SubmitJobPage() {
   // Get payment status text
   const getPaymentStatusText = () => {
     switch (deployment.escrowState) {
-      case 'approving':
-        return 'Approving USDC spend...';
-      case 'submitting_job':
-        return 'Submitting job to router...';
-      case 'depositing':
-        return 'Depositing to escrow...';
-      case 'completed':
-        return 'Payment completed';
-      case 'error':
-        return 'Payment failed';
+      case "approving":
+        return "Approving USDC spend...";
+      case "approval_confirming":
+        return "Confirming approval...";
+      case "processing_payment":
+        return "Submitting payment request...";
+      case "payment_processing":
+        return "Agent processing payment...";
+      case "completed":
+        return "Payment completed";
+      case "error":
+        return "Payment failed";
       default:
-        return 'Processing...';
+        return "Processing...";
     }
   };
+
 
   // Render step content
   const renderStepContent = () => {
@@ -541,8 +581,127 @@ export default function SubmitJobPage() {
 
             <DeploymentStatus deployment={deployment} />
 
-            {/* Escrow Transaction Card */}
-            {(deployment.escrowTxHash || deployment.escrowJobId) && (
+            {/* Transaction Blocks */}
+            {(deployment.escrowTransactions.transferHash || deployment.escrowTransactions.submitJobHash) && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Payment Transactions</h3>
+                
+                {/* Transfer to Agent Transaction */}
+                {deployment.escrowTransactions.transferHash && (
+                  <Card className="border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <ArrowRightLeft className="h-4 w-4 text-blue-500" />
+                        Transfer to Agent
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-green-600 font-medium">USDC Transfer Completed</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">
+                            {truncateHash(deployment.escrowTransactions.transferHash)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyTxHash(deployment.escrowTransactions.transferHash!)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <a
+                              href={`${EXPLORER_URL}/tx/${deployment.escrowTransactions.transferHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                        {copiedHash && (
+                          <p className="text-xs text-green-600">Copied to clipboard!</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Amount</Label>
+                        <p className="font-mono text-sm">{escrowAmount} USDC</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Agent Transaction to Contract */}
+                {deployment.escrowTransactions.submitJobHash && (
+                  <Card className="border-purple-200">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <User className="h-4 w-4 text-purple-500" />
+                        Agent Transaction to Contract
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-green-600 font-medium">Job Submitted to Escrow Contract</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">
+                            {truncateHash(deployment.escrowTransactions.submitJobHash)}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyTxHash(deployment.escrowTransactions.submitJobHash!)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <a
+                              href={`${EXPLORER_URL}/tx/${deployment.escrowTransactions.submitJobHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Job ID */}
+                      {deployment.escrowJobId && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Job ID</Label>
+                          <p className="font-mono text-sm">{deployment.escrowJobId.toString()}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Legacy single transaction card - show if only escrowTxHash is available */}
+            {(deployment.escrowTxHash || deployment.escrowJobId) && 
+             !deployment.escrowTransactions.transferHash && 
+             !deployment.escrowTransactions.submitJobHash && (
               <Card className="border-amber-200">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -632,6 +791,115 @@ export default function SubmitJobPage() {
                   )}
                 </CardContent>
               </Card>
+            )}
+
+            {/* Akash Deployment Cards - Side by Side */}
+            {(deployment.deployment?.id || serviceUris.length > 0) && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Akash Console Deployment Link */}
+                {deployment.deployment?.id && (
+                  <Card className="bg-card border">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Server className="h-4 w-4" />
+                        Akash Deployment
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-green-600 font-medium">Deployment Created</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Deployment ID</Label>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 bg-black p-2 rounded text-xs font-mono border">
+                            {deployment.deployment.id}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyTxHash(deployment.deployment!.id)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        asChild
+                      >
+                        <a
+                          href={`${AKASH_CONSOLE_URL}/deployments/${deployment.deployment.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View on Akash Console
+                        </a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Service URLs Card */}
+                {serviceUris.length > 0 && (
+                  <Card className="bg-card border">
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        Service URLs
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-green-600 font-medium">Your services are live</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Access URLs</Label>
+                        <div className="space-y-2">
+                          {serviceUris.map((uri, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <code className="flex-1 bg-black p-2 rounded text-xs font-mono border truncate">
+                                {uri}
+                              </code>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyUri(uri)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                              >
+                                <a
+                                  href={uri.startsWith('http') ? uri : `http://${uri}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        {copiedUri && (
+                          <p className="text-xs text-green-600">Copied to clipboard!</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
 
             {deployment.state === 'idle' && (

@@ -4,7 +4,7 @@
  * Handles bid polling and deployment lifecycle
  */
 
-import { AkashDeployment, ProviderBid } from '@/types/akash';
+import { AkashDeployment, LeaseResponse, ProviderBid } from '@/types/akash';
 import { getConsoleClient } from '@/lib/akash/console-api';
 import { generateSDL, JobRequirements } from '@/lib/akash/sdl-generator';
 import {
@@ -28,6 +28,7 @@ export interface AkashRouteResult {
   bids?: ProviderBid[];
   error?: string;
   logs: RouteLog[];
+  leaseResponse?: LeaseResponse;
 }
 
 export interface RouteLog {
@@ -239,6 +240,7 @@ export async function routeToAkash(
     }
 
     log('info', `Received ${bids.length} bid(s)`, { bids: bids.map(b => b.provider) });
+    let leaseResponse: LeaseResponse | undefined;
 
     // Step 6: Auto-accept or return bids
     if (request.autoAcceptBid && bids.length > 0) {
@@ -247,7 +249,7 @@ export async function routeToAkash(
       if (!deployment.manifest) {
         throw new Error('Missing deployment manifest for lease creation');
       }
-      await client.acceptBid(deployment.id, bestBid.id, deployment.manifest);
+      leaseResponse = await client.acceptBid(deployment.id, bestBid.id, deployment.manifest);
       log('info', 'Bid accepted, lease created');
     }
 
@@ -256,7 +258,8 @@ export async function routeToAkash(
       deployment,
       provider: selected.provider,
       bids,
-      logs
+      logs, 
+      leaseResponse
     };
 
   } catch (error) {

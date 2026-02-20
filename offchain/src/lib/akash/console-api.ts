@@ -10,7 +10,8 @@ import {
   SdlSpec,
   ProviderBid,
   Lease,
-  ConsoleApiConfig
+  ConsoleApiConfig,
+  LeaseResponse
 } from '@/types/akash';
 import { sdlToYAML } from '@/lib/akash/sdl-generator';
 
@@ -157,12 +158,12 @@ export class AkashConsoleClient {
    * API: POST /v1/leases
    * Request: { manifest, leases: [{ dseq, gseq, oseq, provider }] }
    */
-  async acceptBid(deploymentId: string, bidId: string, manifest: string): Promise<void> {
+  async acceptBid(deploymentId: string, bidId: string, manifest: string): Promise<LeaseResponse> {
     // Parse bidId to extract provider info (format: "dseq-provider")
     const parts = bidId.split('-');
     const provider = parts.length > 1 ? parts[parts.length - 1] : bidId;
     
-    await this.fetch<void>('/v1/leases', {
+    const response = await this.fetch<LeaseResponse>('/v1/leases', {
       method: 'POST',
       body: JSON.stringify({
         manifest: manifest,
@@ -174,6 +175,8 @@ export class AkashConsoleClient {
         }]
       })
     });
+
+    return response;
   }
 
   /**
