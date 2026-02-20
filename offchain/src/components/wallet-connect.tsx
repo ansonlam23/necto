@@ -17,7 +17,12 @@ function formatAddress(address: string): string {
 }
 
 export function WalletConnect() {
+  const [mounted, setMounted] = React.useState(false)
   const { address, isConnected, isConnecting, connect, disconnect } = useWallet()
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleConnect = async () => {
     try {
@@ -33,6 +38,16 @@ export function WalletConnect() {
     } catch (error) {
       console.error('Disconnect failed:', error)
     }
+  }
+
+  // Don't render wallet state until mounted on client
+  if (!mounted) {
+    return (
+      <Button size="sm" className="h-8 gap-2" disabled>
+        <Wallet className="h-4 w-4" />
+        Connect Wallet
+      </Button>
+    )
   }
 
   if (isConnected && address) {

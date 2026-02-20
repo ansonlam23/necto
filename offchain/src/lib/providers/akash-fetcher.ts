@@ -1,7 +1,7 @@
 export interface SynapseProvider {
   id: string;
   name: string;
-  source: 'Akash' | 'Lambda' | 'RunPod';
+  source: 'Akash' | 'Lambda' | 'Render' | 'User-Listed';
   hardware: {
     gpuModel: string;
     gpuCount: number;

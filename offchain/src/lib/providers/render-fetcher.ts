@@ -1,6 +1,6 @@
 import { SynapseProvider } from './akash-fetcher';
 
-interface RunPodGpuType {
+interface RenderGpuType {
   id: string;
   displayName: string;
   manufacturer?: string;
@@ -17,9 +17,9 @@ interface RunPodGpuType {
   communitySpotStock?: number;
 }
 
-interface RunPodGraphQLResponse {
+interface RenderGraphQLResponse {
   data?: {
-    gpuTypes?: RunPodGpuType[];
+    gpuTypes?: RenderGpuType[];
   };
   errors?: Array<{
     message: string;
@@ -27,21 +27,21 @@ interface RunPodGraphQLResponse {
 }
 
 /**
- * Fetches available GPU instances from RunPod
+ * Fetches available GPU instances from Render
  */
-export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
+export async function fetchRenderProviders(): Promise<SynapseProvider[]> {
   try {
     // Check if API key is available
-    const apiKey = process.env.RUNPOD_API_KEY;
+    const apiKey = process.env.RENDER_API_KEY;
     if (!apiKey) {
-      console.warn('RunPod API key not configured (RUNPOD_API_KEY) - using mock data');
+      console.warn('Render API key not configured (RENDER_API_KEY) - using mock data');
 
-      // Return mock RunPod providers for demonstration
+      // Return mock Render providers for demonstration
       return [
         {
-          id: 'runpod-rtx-4090',
+          id: 'render-rtx-4090',
           name: 'RTX 4090',
-          source: 'RunPod',
+          source: 'Render',
           hardware: {
             gpuModel: 'NVIDIA RTX 4090',
             gpuCount: 1,
@@ -56,9 +56,9 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
           uptimePercentage: 98.5, // Community cloud
         },
         {
-          id: 'runpod-rtx-a6000',
+          id: 'render-rtx-a6000',
           name: 'RTX A6000',
-          source: 'RunPod',
+          source: 'Render',
           hardware: {
             gpuModel: 'NVIDIA RTX A6000',
             gpuCount: 1,
@@ -73,9 +73,9 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
           uptimePercentage: 99.5, // Secure cloud
         },
         {
-          id: 'runpod-a100-80gb',
+          id: 'render-a100-80gb',
           name: 'A100 80GB',
-          source: 'RunPod',
+          source: 'Render',
           hardware: {
             gpuModel: 'NVIDIA A100 80GB',
             gpuCount: 1,
@@ -90,9 +90,9 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
           uptimePercentage: 98.5,
         },
         {
-          id: 'runpod-h100-sxm5',
+          id: 'render-h100-sxm5',
           name: 'H100 80GB SXM5',
-          source: 'RunPod',
+          source: 'Render',
           hardware: {
             gpuModel: 'NVIDIA H100 80GB SXM5',
             gpuCount: 1,
@@ -107,9 +107,9 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
           uptimePercentage: 99.5, // Secure cloud
         },
         {
-          id: 'runpod-l4',
+          id: 'render-l4',
           name: 'L4',
-          source: 'RunPod',
+          source: 'Render',
           hardware: {
             gpuModel: 'NVIDIA L4',
             gpuCount: 1,
@@ -159,19 +159,19 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch RunPod GPU types:', response.status, response.statusText);
+      console.error('Failed to fetch Render GPU types:', response.status, response.statusText);
       return [];
     }
 
-    const data: RunPodGraphQLResponse = await response.json();
+    const data: RenderGraphQLResponse = await response.json();
 
     if (data.errors && data.errors.length > 0) {
-      console.error('RunPod GraphQL errors:', data.errors);
+      console.error('Render GraphQL errors:', data.errors);
       return [];
     }
 
     if (!data.data?.gpuTypes) {
-      console.warn('RunPod API returned no GPU types');
+      console.warn('Render API returned no GPU types');
       return [];
     }
 
@@ -241,12 +241,12 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
       const estimatedMemoryGB = Math.min(gpu.memoryInGb * 3, 512);
 
       synapseProviders.push({
-        id: `runpod-${gpu.id.toLowerCase().replace(/\s+/g, '-')}`,
+        id: `render-${gpu.id.toLowerCase().replace(/\s+/g, '-')}`,
         name: gpu.displayName || gpu.id,
-        source: 'RunPod',
+        source: 'Render',
         hardware: {
           gpuModel,
-          gpuCount: 1, // RunPod typically offers per-GPU pricing
+          gpuCount: 1, // Render typically offers per-GPU pricing
           cpuUnits: estimatedCpu,
           memory: estimatedMemoryGB * 1024 * 1024 * 1024, // Convert to bytes
           cpuCount: estimatedCpu,
@@ -260,14 +260,13 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
 
       // If maxGpuCount > 1, also add multi-GPU configurations
       if (gpu.maxGpuCount && gpu.maxGpuCount > 1) {
-        const maxGpuCount = gpu.maxGpuCount!
-        const multiGpuConfigs = [2, 4, 8].filter(count => count <= maxGpuCount);
+        const multiGpuConfigs = [2, 4, 8].filter(count => count <= gpu.maxGpuCount!);
 
         for (const gpuCount of multiGpuConfigs) {
           synapseProviders.push({
-            id: `runpod-${gpu.id.toLowerCase().replace(/\s+/g, '-')}-x${gpuCount}`,
+            id: `render-${gpu.id.toLowerCase().replace(/\s+/g, '-')}-x${gpuCount}`,
             name: `${gpuCount}x ${gpu.displayName || gpu.id}`,
-            source: 'RunPod',
+            source: 'Render',
             hardware: {
               gpuModel,
               gpuCount,
@@ -285,11 +284,11 @@ export async function fetchRunPodProviders(): Promise<SynapseProvider[]> {
       }
     }
 
-    console.log(`Successfully fetched ${synapseProviders.length} RunPod GPU configurations`);
+    console.log(`Successfully fetched ${synapseProviders.length} Render GPU configurations`);
     return synapseProviders;
 
   } catch (error) {
-    console.error('Error fetching RunPod GPU types:', error);
+    console.error('Error fetching Render GPU types:', error);
     return [];
   }
 }

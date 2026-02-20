@@ -5,6 +5,8 @@ import { cookieToInitialState } from "wagmi";
 import { AppShell } from "@/components/layout/AppShell";
 import { Web3Provider } from "@/components/web3-provider";
 import { config } from "@/lib/wagmi";
+import { MarketplaceProvider } from "@/context/MarketplaceContext";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,10 +39,13 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Web3Provider initialState={initialState}>
-          <AppShell>
-            {children}
-          </AppShell>
+        <Web3Provider>
+          <MarketplaceProvider>
+            <AppShell>
+              {children}
+            </AppShell>
+            <Toaster />
+          </MarketplaceProvider>
         </Web3Provider>
       </body>
     </html>

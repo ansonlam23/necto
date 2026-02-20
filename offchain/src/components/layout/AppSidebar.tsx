@@ -14,6 +14,10 @@ import {
   FlaskConical,
   Server,
   Shield
+  Bot,
+  GitBranch,
+  Sparkles,
+  CloudUpload
 } from "lucide-react"
 
 import {
@@ -44,19 +48,24 @@ const navigationItems = [
     icon: Home,
   },
   {
+    title: "Agent",
+    url: "/agent",
+    icon: Bot,
+  },
+  {
+    title: "Workflow",
+    url: "/workflow",
+    icon: GitBranch,
+  },
+  {
     title: "Providers",
     url: "/providers",
     icon: Server,
   },
   {
-    title: "Workflow Builder",
-    url: "/builder",
-    icon: Boxes,
-  },
-  {
-    title: "Test Builder",
-    url: "/test-builder",
-    icon: FlaskConical,
+    title: "Host Compute",
+    url: "/host",
+    icon: CloudUpload,
   },
   {
     title: "Verify Agent",
