@@ -3,12 +3,12 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Home,
   Boxes,
   FileText,
   Settings,
-  Activity,
   ChevronUp,
   User2,
   FlaskConical,
@@ -92,15 +92,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
-      <SidebarHeader className="h-16 flex flex-row items-center px-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2 font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Activity className="h-4 w-4" />
-          </div>
-          <span className="text-lg tracking-tight cyberpunk-glow group-data-[collapsible=icon]:hidden">
-            Necto
-          </span>
-        </div>
+      <SidebarHeader className="h-16 flex flex-row items-center px-2 border-b border-sidebar-border">
+        <Image
+          src="/necto_logo.png"
+          alt="Necto"
+          width={64}
+          height={64}
+          className="object-contain"
+          priority
+        />
+        <span className="necto-gradient-text text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">Necto</span>
       </SidebarHeader>
 
       <SidebarContent>
