@@ -4,7 +4,6 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { DeploymentState, useAkashDeployment } from '@/hooks/use-akash-deployment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createWalletClient, createPublicClient, custom, http, parseUnits } from 'viem';
@@ -48,7 +47,7 @@ const STATE_ICONS: Record<DeploymentState, React.ReactNode> = {
 
 const STATE_LABELS: Record<DeploymentState, string> = {
   idle: 'Ready',
-  checking_suitability: 'Checking Suitability',
+  checking_suitability: 'Connecting to Provider',
   generating_sdl: 'Generating SDL',
   selecting_provider: 'Selecting Provider',
   paying_escrow: 'Processing Payment',
@@ -160,17 +159,10 @@ export function DeploymentStatus({ deployment, className }: DeploymentStatusProp
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Deployment Status
-          </CardTitle>
-          <Badge 
-            variant={state === 'error' ? 'destructive' : state === 'active' ? 'default' : 'secondary'}
-          >
-            {STATE_LABELS[state]}
-          </Badge>
-        </div>
+        <CardTitle className="flex items-center gap-2">
+          <Server className="h-5 w-5" />
+          Deployment Status
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">

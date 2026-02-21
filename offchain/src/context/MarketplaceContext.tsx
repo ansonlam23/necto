@@ -38,8 +38,8 @@ export function MarketplaceProvider({ children }: { children: React.ReactNode })
       metadata: {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        totalEarnings: Math.random() * 1000, // Mock earnings
-        totalHours: Math.floor(Math.random() * 500), // Mock hours
+        totalEarnings: 0,
+        totalHours: 0,
         isVerified: Math.random() > 0.3, // 70% chance of being "verified"
       },
     };
