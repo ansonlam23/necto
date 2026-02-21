@@ -220,6 +220,8 @@ export default function AgentPage() {
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+
+    await new Promise<void>(resolve => setTimeout(resolve, 2000));
     setIsThinking(true);
 
     const response = RESPONSES[Math.min(responseIndex, RESPONSES.length - 1)];
@@ -230,7 +232,7 @@ export default function AgentPage() {
     // Progress through each thinking step
     const stepDurations = [500, 750, 750, 650];
     for (let i = 0; i < steps.length; i++) {
-      await new Promise<void>(resolve => setTimeout(resolve, i === 0 ? 300 : stepDurations[i]));
+      await new Promise<void>(resolve => setTimeout(resolve, i === 0 ? 1200 : stepDurations[i]));
       setThinkingSteps(prev =>
         prev.map((s, idx) => ({
           ...s,
