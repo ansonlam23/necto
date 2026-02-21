@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Webhook, Clock, Link, FileUp, Zap,
+  Webhook, Clock, Link, FileUp, Zap, Rocket,
   Brain, Shield, DollarSign, Filter, Code, Database,
   Server, Cloud, HardDrive,
   CreditCard, FileText, Bell, Archive, Send
@@ -19,6 +19,7 @@ interface NodeTemplate {
 
 const nodeTemplates: Record<string, NodeTemplate[]> = {
   Triggers: [
+    { type: 'deploy-button', label: 'Run Click', category: 'trigger', icon: Rocket, description: 'Triggered on deploy' },
     { type: 'webhook', label: 'Webhook', category: 'trigger', icon: Webhook, description: 'HTTP endpoint trigger' },
     { type: 'schedule', label: 'Schedule (Cron)', category: 'trigger', icon: Clock, description: 'Time-based trigger' },
     { type: 'onchain-event', label: 'On-Chain Event', category: 'trigger', icon: Link, description: 'Blockchain events' },

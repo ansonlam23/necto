@@ -5,7 +5,7 @@ import {
   Webhook, Clock, Activity,
   Brain, Shield, DollarSign,
   Server, Cpu, Cloud,
-  CreditCard, FileCheck,
+  CreditCard, FileCheck, Rocket,
   LucideIcon
 } from 'lucide-react'
 import { NodeCategory } from '@/lib/workflow-store'
@@ -32,7 +32,8 @@ const iconMap: Record<string, LucideIcon> = {
   Cpu,
   Cloud,
   CreditCard,
-  FileCheck
+  FileCheck,
+  Rocket
 }
 
 function getNodeStyle(category: NodeCategory, selected: boolean) {
@@ -107,6 +108,7 @@ export const nodeTypes = {
 // Node templates for the palette
 export const nodeTemplates = {
   triggers: [
+    { type: 'trigger', label: 'Run Click', icon: Rocket, iconName: 'Rocket', category: 'trigger' as NodeCategory },
     { type: 'trigger', label: 'Webhook', icon: Webhook, iconName: 'Webhook', category: 'trigger' as NodeCategory },
     { type: 'trigger', label: 'Schedule (Cron)', icon: Clock, iconName: 'Clock', category: 'trigger' as NodeCategory },
     { type: 'trigger', label: 'On-Chain Event', icon: Activity, iconName: 'Activity', category: 'trigger' as NodeCategory },

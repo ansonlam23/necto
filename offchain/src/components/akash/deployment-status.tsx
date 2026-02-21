@@ -4,7 +4,6 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { DeploymentState, useAkashDeployment } from '@/hooks/use-akash-deployment';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -175,16 +174,16 @@ export function DeploymentStatus({ deployment, className }: DeploymentStatusProp
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className={cn("flex items-center gap-2", STATE_COLORS[state])}>
-              {STATE_ICONS[state]}
-              {STATE_LABELS[state]}
-            </span>
-            <span className="text-muted-foreground">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
+        {/* Status */}
+        <div className="flex items-center gap-3">
+          {isLoading ? (
+            <Loader2 className={cn("h-5 w-5 animate-spin shrink-0", STATE_COLORS[state])} />
+          ) : (
+            <span className={cn("shrink-0", STATE_COLORS[state])}>{STATE_ICONS[state]}</span>
+          )}
+          <span className={cn("text-sm font-medium", STATE_COLORS[state])}>
+            {STATE_LABELS[state]}
+          </span>
         </div>
 
         {/* Deployment Info */}
