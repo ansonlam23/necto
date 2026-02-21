@@ -49,21 +49,21 @@ export function RequirementsChecklist({ config, className }: RequirementsCheckli
       label: 'GPU',
       value: config.gpu ? `${config.gpu}${config.gpuCount ? ` x${config.gpuCount}` : ''}` : null,
       icon: Cpu,
-      required: false,
+      required: true,
     },
     {
       key: 'port',
       label: 'Port',
       value: config.port ? `${config.port}` : null,
       icon: Hash,
-      required: false,
+      required: true,
     },
     {
       key: 'region',
       label: 'Region',
       value: config.region,
       icon: Globe,
-      required: false,
+      required: true,
     },
   ];
 

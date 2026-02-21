@@ -139,7 +139,7 @@ export async function routeToAkash(
 
   try {
     // Step 1: Check suitability
-    log('info', 'Checking workload suitability for Akash');
+    log('info', 'Connecting to provider');
     const suitability = isAkashSuitable(request.requirements);
     
     if (!suitability.suitable) {
