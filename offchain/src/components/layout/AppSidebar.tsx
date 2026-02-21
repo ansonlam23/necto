@@ -95,7 +95,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           className="object-contain"
           priority
         />
-        <span className="necto-gradient-text text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">Necto</span>
       </SidebarHeader>
 
       <SidebarContent>

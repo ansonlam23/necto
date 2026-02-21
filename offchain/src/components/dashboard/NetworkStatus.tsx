@@ -34,7 +34,7 @@ export function NetworkStatus() {
               <div className="flex-1">
                 <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                    className="h-full rounded-full bg-blue-600"
                     style={{ width: `${network.utilization}%` }}
                   />
                 </div>
