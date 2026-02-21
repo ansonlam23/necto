@@ -11,18 +11,16 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div className="h-screen overflow-hidden bg-background">
-      <SidebarProvider defaultOpen={true}>
-        <AppSidebar />
-        <SidebarInset>
-          <AppHeader />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-7xl">
-              {children}
-            </div>
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+    <SidebarProvider defaultOpen={true} className="h-screen bg-background">
+      <AppSidebar />
+      <SidebarInset>
+        <AppHeader />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="mx-auto max-w-7xl">
+            {children}
+          </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

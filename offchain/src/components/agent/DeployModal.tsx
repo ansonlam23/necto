@@ -3,598 +3,560 @@
 import * as React from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { cn } from '@/lib/utils';
-import { SdlTemplate, JobRequirements, generateSDL } from '@/lib/akash/sdl-generator';
+import YAML from 'js-yaml';
+import { generateSDL } from '@/lib/akash/sdl-generator';
+import type { JobRequirements } from '@/lib/akash/sdl-generator';
 import { useAkashDeployment } from '@/hooks/use-akash-deployment';
-import { TemplateGallery } from '@/components/akash/template-gallery';
-import { NaturalLanguageInput } from '@/components/akash/natural-language-input';
-import { RequirementsForm } from '@/components/akash/requirements-form';
-import { SdlEditor } from '@/components/akash/sdl-editor';
-import { ProviderList } from '@/components/akash/provider-list';
 import { DeploymentStatus } from '@/components/akash/deployment-status';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { LeaseResponse } from '@/types/akash';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { DeploymentConfig } from '@/types/deployment';
+import type { LeaseResponse } from '@/types/akash';
 import {
-  Wand2,
-  FileCode,
   Server,
   CreditCard,
   CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
   AlertCircle,
   Loader2,
-  Sparkles,
-  Settings2,
-  Eye,
   Wallet,
   ExternalLink,
   Copy,
   ArrowRightLeft,
   User,
   Globe,
+  FileCode,
+  Settings2,
+  Activity,
 } from 'lucide-react';
 
-type Step = 'input' | 'configure' | 'sdl' | 'review' | 'deploy';
-
-const STEPS: { id: Step; label: string; icon: React.ReactNode }[] = [
-  { id: 'input',     label: 'Create Job',  icon: <Sparkles  className="h-4 w-4" /> },
-  { id: 'configure', label: 'Configure',   icon: <Settings2 className="h-4 w-4" /> },
-  { id: 'sdl',       label: 'SDL',         icon: <FileCode  className="h-4 w-4" /> },
-  { id: 'review',    label: 'Review',      icon: <Eye       className="h-4 w-4" /> },
-  { id: 'deploy',    label: 'Deploy',      icon: <Server    className="h-4 w-4" /> },
-];
-
-const STEP_ORDER: Step[] = ['input', 'configure', 'sdl', 'review', 'deploy'];
-
-const EXPLORER_URL   = 'https://explorer.ab.testnet.adifoundation.ai';
+const EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai';
 const AKASH_CONSOLE_URL = 'https://console.akash.network';
+
+const HARDCODED_DEFAULTS: Required<Omit<DeploymentConfig, 'token'>> = {
+  dockerImage: 'pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime',
+  cpu: 2,
+  memory: 16,
+  memoryUnit: 'Gi',
+  storage: 40,
+  storageUnit: 'Gi',
+  gpu: 'NVIDIA A100',
+  gpuCount: 1,
+  port: 8888,
+  region: 'us-east',
+};
+
+interface EditableConfig {
+  dockerImage: string;
+  cpu: number;
+  memory: number;
+  memoryUnit: 'Mi' | 'Gi';
+  storage: number;
+  storageUnit: 'Mi' | 'Gi';
+  gpu: string;
+  gpuCount: number;
+  port: number;
+  region: string;
+}
+
+function normalizeGpuModel(raw: string): string {
+  // "NVIDIA A100" → "a100", "NVIDIA RTX 4090" → "rtx4090"
+  return raw
+    .replace(/nvidia\s*/i, '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
+}
+
+function configToRequirements(cfg: EditableConfig): JobRequirements {
+  return {
+    name: 'pytorch-training',
+    image: cfg.dockerImage,
+    cpu: cfg.cpu,
+    memory: `${cfg.memory}${cfg.memoryUnit}`,
+    storage: `${cfg.storage}${cfg.storageUnit}`,
+    // Only pass vendor, no model — avoids "Invalid GPU attributes" rejections
+    gpu: cfg.gpu && cfg.gpuCount > 0 ? { units: cfg.gpuCount, vendor: 'nvidia' } : undefined,
+    port: cfg.port,
+    expose: true,
+    // Omit region from SDL to avoid placement attribute rejections
+  };
+}
+
+function estimateHourlyPrice(cfg: EditableConfig): number {
+  let price = 0.02;
+  price += cfg.cpu * 0.015;
+  const memGi = cfg.memoryUnit === 'Gi' ? cfg.memory : cfg.memory / 1024;
+  price += memGi * 0.008;
+  if (cfg.gpu && cfg.gpuCount > 0) {
+    const gpuName = cfg.gpu.toLowerCase();
+    const gpuBase = gpuName.includes('h100') ? 1.20
+      : gpuName.includes('a100') ? 0.65
+      : gpuName.includes('a10') ? 0.35
+      : 0.25;
+    price += cfg.gpuCount * gpuBase;
+  }
+  return price;
+}
 
 function extractServiceUris(leaseResponse: LeaseResponse | null): string[] {
   if (!leaseResponse?.data?.leases) return [];
   const uris: string[] = [];
   for (const lease of leaseResponse.data.leases) {
     if (lease.status?.services) {
-      for (const serviceName in lease.status.services) {
-        const service = lease.status.services[serviceName];
-        if (service.uris?.length) uris.push(...service.uris);
+      for (const svcName in lease.status.services) {
+        const svc = lease.status.services[svcName];
+        if (svc.uris?.length) uris.push(...svc.uris);
       }
     }
   }
   return uris;
 }
 
+function truncateHash(hash: string) {
+  return hash.length <= 20 ? hash : `${hash.slice(0, 10)}...${hash.slice(-8)}`;
+}
+
 interface DeployModalProps {
   open: boolean;
   onClose: () => void;
+  config?: DeploymentConfig;
 }
 
-export function DeployModal({ open, onClose }: DeployModalProps) {
+export function DeployModal({ open, onClose, config }: DeployModalProps) {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
-
-  const [currentStep, setCurrentStep]           = React.useState<Step>('input');
-  const [inputMethod, setInputMethod]           = React.useState<'template' | 'natural' | 'manual'>('template');
-  const [selectedTemplate, setSelectedTemplate] = React.useState<SdlTemplate | null>(null);
-  const [requirements, setRequirements]         = React.useState<Partial<JobRequirements>>({});
-  const [selectedProviderId, setSelectedProviderId] = React.useState<string | null>(null);
-  const [autoSign, setAutoSign]                 = React.useState(true);
-  const [escrowAmount, setEscrowAmount]         = React.useState<string>('10');
-  const [formErrors, setFormErrors]             = React.useState<Record<string, string>>({});
-  const [copiedHash, setCopiedHash]             = React.useState<boolean>(false);
-  const [copiedUri, setCopiedUri]               = React.useState<string | null>(null);
-
   const deployment = useAkashDeployment();
+
+  const initConfig = React.useMemo<EditableConfig>(() => ({
+    dockerImage: config?.dockerImage ?? HARDCODED_DEFAULTS.dockerImage,
+    cpu:         config?.cpu         ?? HARDCODED_DEFAULTS.cpu,
+    memory:      config?.memory      ?? HARDCODED_DEFAULTS.memory,
+    memoryUnit:  config?.memoryUnit  ?? HARDCODED_DEFAULTS.memoryUnit,
+    storage:     config?.storage     ?? HARDCODED_DEFAULTS.storage,
+    storageUnit: config?.storageUnit ?? HARDCODED_DEFAULTS.storageUnit,
+    gpu:         config?.gpu         ?? HARDCODED_DEFAULTS.gpu,
+    gpuCount:    config?.gpuCount    ?? HARDCODED_DEFAULTS.gpuCount,
+    port:        config?.port        ?? HARDCODED_DEFAULTS.port,
+    region:      config?.region      ?? HARDCODED_DEFAULTS.region,
+  }), [config]);
+
+  const [editConfig, setEditConfig] = React.useState<EditableConfig>(initConfig);
+  const [escrowAmount, setEscrowAmount] = React.useState('10');
+  const [copiedHash, setCopiedHash] = React.useState(false);
+  const [copiedUri, setCopiedUri] = React.useState<string | null>(null);
+  const [deployError, setDeployError] = React.useState<string | null>(null);
+
+  React.useEffect(() => { setEditConfig(initConfig); }, [initConfig]);
+
+  const set = <K extends keyof EditableConfig>(key: K, value: EditableConfig[K]) =>
+    setEditConfig(prev => ({ ...prev, [key]: value }));
+
+  const hourlyPrice = React.useMemo(() => estimateHourlyPrice(editConfig), [editConfig]);
+
+  const generatedSDL = React.useMemo(() => {
+    try { return YAML.dump(generateSDL(configToRequirements(editConfig))); }
+    catch { return null; }
+  }, [editConfig]);
 
   const serviceUris = React.useMemo(
     () => extractServiceUris(deployment.leaseResponse),
     [deployment.leaseResponse]
   );
 
-  const stepProgress = ((STEP_ORDER.indexOf(currentStep) + 1) / STEPS.length) * 100;
-
-  const handleTemplateSelect = (template: SdlTemplate) => {
-    setSelectedTemplate(template);
-    setRequirements(template.requirements);
-  };
-
-  const handleNaturalLanguageParsed = (parsed: Partial<JobRequirements>) => {
-    setRequirements(prev => ({ ...prev, ...parsed }));
-  };
-
-  const handleRequirementsChange = (newRequirements: Partial<JobRequirements>) => {
-    setRequirements(newRequirements);
-    setFormErrors({});
-  };
-
-  const validateRequirements = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!requirements.name)  errors.name  = 'Service name is required';
-    if (!requirements.image) errors.image = 'Docker image is required';
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const goToNextStep = () => {
-    const i = STEP_ORDER.indexOf(currentStep);
-    if (currentStep === 'configure' && !validateRequirements()) return;
-    if (i < STEP_ORDER.length - 1) setCurrentStep(STEP_ORDER[i + 1]);
-  };
-
-  const goToPreviousStep = () => {
-    const i = STEP_ORDER.indexOf(currentStep);
-    if (i > 0) setCurrentStep(STEP_ORDER[i - 1]);
-  };
-
   const handleDeploy = async () => {
-    if (!requirements.name || !requirements.image) {
-      setFormErrors({
-        name:  !requirements.name  ? 'Service name is required'  : '',
-        image: !requirements.image ? 'Docker image is required' : '',
-      });
-      return;
-    }
+    setDeployError(null);
     if (!isConnected || !address) {
-      setFormErrors({ wallet: 'Please connect your wallet first' });
+      setDeployError('Please connect your wallet first');
       return;
     }
     const amountInUSDC = BigInt(escrowAmount) * BigInt(1_000_000);
-    setCurrentStep('deploy');
     await deployment.startDeployment({
-      requirements: requirements as JobRequirements,
-      autoAccept: autoSign,
+      requirements: configToRequirements(editConfig),
+      autoAccept: true,
       escrowAmount: amountInUSDC,
       isTracked: true,
     });
   };
 
-  const copyTxHash = (hash: string) => {
-    navigator.clipboard.writeText(hash);
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2000);
-  };
-
-  const copyUri = (uri: string) => {
-    navigator.clipboard.writeText(uri);
-    setCopiedUri(uri);
-    setTimeout(() => setCopiedUri(null), 2000);
-  };
-
-  const truncateHash = (hash: string) =>
-    hash.length <= 20 ? hash : `${hash.slice(0, 10)}...${hash.slice(-8)}`;
-
-  const generatedSDL = React.useMemo(() => {
-    if (requirements.name && requirements.image) return generateSDL(requirements as JobRequirements);
-    return null;
-  }, [requirements]);
-
-  const getPaymentStatusText = () => {
-    switch (deployment.escrowState) {
-      case 'approving':            return 'Approving USDC spend...';
-      case 'approval_confirming':  return 'Confirming approval...';
-      case 'processing_payment':   return 'Submitting payment request...';
-      case 'payment_processing':   return 'Agent processing payment...';
-      case 'completed':            return 'Payment completed';
-      case 'error':                return 'Payment failed';
-      default:                     return 'Processing...';
+  const copyText = (text: string, kind: 'hash' | string) => {
+    navigator.clipboard.writeText(text);
+    if (kind === 'hash') {
+      setCopiedHash(true);
+      setTimeout(() => setCopiedHash(false), 2000);
+    } else {
+      setCopiedUri(text);
+      setTimeout(() => setCopiedUri(null), 2000);
     }
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 'input':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Create Your Compute Job</h2>
-              <p className="text-muted-foreground">Choose how you want to define your deployment</p>
-            </div>
+  const getPaymentStatusText = () => {
+    switch (deployment.escrowState) {
+      case 'approving':           return 'Approving USDC spend...';
+      case 'approval_confirming': return 'Confirming approval...';
+      case 'processing_payment':  return 'Submitting payment request...';
+      case 'payment_processing':  return 'Agent processing payment...';
+      case 'completed':           return 'Payment completed';
+      case 'error':               return 'Payment failed';
+      default:                    return 'Processing...';
+    }
+  };
 
-            <Tabs value={inputMethod} onValueChange={(v) => setInputMethod(v as typeof inputMethod)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="template" className="gap-2">
-                  <Sparkles className="h-4 w-4" /> Templates
-                </TabsTrigger>
-                <TabsTrigger value="natural" className="gap-2">
-                  <Wand2 className="h-4 w-4" /> Natural Language
-                </TabsTrigger>
-                <TabsTrigger value="manual" className="gap-2">
-                  <Settings2 className="h-4 w-4" /> Manual
-                </TabsTrigger>
-              </TabsList>
+  const isDeploying = deployment.isLoading || deployment.state !== 'idle';
 
-              <TabsContent value="template" className="mt-6">
-                <TemplateGallery onSelect={handleTemplateSelect} selectedId={selectedTemplate?.id} />
-              </TabsContent>
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="!max-w-[90vw] w-[90vw] h-[92vh] flex flex-col p-0 gap-0">
 
-              <TabsContent value="natural" className="mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Describe Your Job</CardTitle>
-                    <CardDescription>Tell us what you need in plain language</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <NaturalLanguageInput onParsed={handleNaturalLanguageParsed} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="manual" className="mt-6">
-                <RequirementsForm value={requirements} onChange={handleRequirementsChange} errors={formErrors} />
-              </TabsContent>
-            </Tabs>
-
-            {(selectedTemplate || requirements.name) && (
-              <Card className="bg-muted/50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">{selectedTemplate?.name || requirements.name}</p>
-                      <p className="text-sm text-muted-foreground">{requirements.image}</p>
-                    </div>
-                    <Badge variant="outline">
-                      {requirements.gpu ? `${requirements.gpu.units}x GPU` : 'CPU Only'}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        {/* Header */}
+        <DialogHeader className="px-6 pt-5 pb-4 border-b border-border/50 shrink-0">
+          <DialogTitle className="text-lg font-semibold">Deploy to Akash Network</DialogTitle>
+          <div className="flex items-center gap-3 mt-2">
+            <SectionBadge n={1} label="Configuration" />
+            <div className="flex-1 h-px bg-border/50" />
+            <SectionBadge n={2} label="Payment" />
+            <div className="flex-1 h-px bg-border/50" />
+            <SectionBadge n={3} label="Deploy" />
           </div>
-        );
+        </DialogHeader>
 
-      case 'configure':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Configure Resources</h2>
-              <p className="text-muted-foreground">Fine-tune your deployment settings</p>
-            </div>
-            <RequirementsForm value={requirements} onChange={handleRequirementsChange} errors={formErrors} />
-          </div>
-        );
+        {/* 3-column body */}
+        <div className="flex-1 overflow-hidden grid grid-cols-[2fr_1.4fr_2fr] divide-x divide-border/50">
 
-      case 'sdl':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">SDL Configuration</h2>
-              <p className="text-muted-foreground">Review and customize your deployment manifest</p>
-            </div>
-            <SdlEditor requirements={requirements} sdl={generatedSDL || undefined} />
-          </div>
-        );
-
-      case 'review':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Review & Deploy</h2>
-              <p className="text-muted-foreground">Confirm your deployment settings</p>
+          {/* ── Section 1: Configuration ── */}
+          <div className="overflow-y-auto p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">Configuration</h3>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader><CardTitle className="text-base">Deployment Summary</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Service</span><span className="font-medium">{requirements.name}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Image</span><span className="font-mono text-xs">{requirements.image}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">CPU</span><span>{requirements.cpu || 1} cores</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Memory</span><span>{requirements.memory || '1Gi'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Storage</span><span>{requirements.storage || '10Gi'}</span></div>
-                    {requirements.gpu && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">GPU</span>
-                        <span className="text-amber-500">{requirements.gpu.units}x {requirements.gpu.vendor || 'NVIDIA'}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between"><span className="text-muted-foreground">Region</span><span>{requirements.region || 'Any'}</span></div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="space-y-3">
+              <FieldRow label="Docker Image">
+                <Input
+                  value={editConfig.dockerImage}
+                  onChange={e => set('dockerImage', e.target.value)}
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
 
-              <Card>
-                <CardHeader><CardTitle className="text-base">Provider Selection</CardTitle></CardHeader>
-                <CardContent>
-                  <ProviderList onSelect={setSelectedProviderId} selectedId={selectedProviderId || undefined} />
-                </CardContent>
-              </Card>
-            </div>
+              <FieldRow label="CPU (vCPU)">
+                <Input
+                  type="number" min={1} max={64}
+                  value={editConfig.cpu}
+                  onChange={e => set('cpu', Number(e.target.value))}
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" /> Payment & Options
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-2 rounded-full", isConnected ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600")}>
-                      <Wallet className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{isConnected ? 'Wallet Connected' : 'Wallet Not Connected'}</p>
-                      {isConnected && address && (
-                        <p className="text-xs text-muted-foreground font-mono">{address.slice(0, 6)}...{address.slice(-4)}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isConnected ? (
-                      <Button variant="outline" size="sm" onClick={() => disconnect()}>Disconnect</Button>
-                    ) : (
-                      <Button variant="default" size="sm" onClick={() => connect({ connector: connectors[0] })} disabled={isConnecting}>
-                        {isConnecting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Connecting...</> : <><Wallet className="h-4 w-4 mr-2" />Connect Wallet</>}
-                      </Button>
-                    )}
-                  </div>
+              <FieldRow label="Memory">
+                <div className="flex gap-2">
+                  <Input
+                    type="number" min={1}
+                    value={editConfig.memory}
+                    onChange={e => set('memory', Number(e.target.value))}
+                    className="font-mono text-xs h-8 flex-1"
+                  />
+                  <Select value={editConfig.memoryUnit} onValueChange={v => set('memoryUnit', v as 'Mi' | 'Gi')}>
+                    <SelectTrigger className="w-16 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mi">Mi</SelectItem>
+                      <SelectItem value="Gi">Gi</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </FieldRow>
 
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label>Escrow Deposit (Testnet USDC)</Label>
-                  <div className="flex items-center gap-4">
-                    <input type="range" min="1" max="100" value={escrowAmount} onChange={(e) => setEscrowAmount(e.target.value)} className="flex-1" disabled={deployment.isLoading} />
-                    <span className="font-mono text-lg w-20 text-right">{escrowAmount} USDC</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Testnet USDC for demo payment flow. Necto sponsors actual Akash costs.</p>
+              <FieldRow label="Storage">
+                <div className="flex gap-2">
+                  <Input
+                    type="number" min={1}
+                    value={editConfig.storage}
+                    onChange={e => set('storage', Number(e.target.value))}
+                    className="font-mono text-xs h-8 flex-1"
+                  />
+                  <Select value={editConfig.storageUnit} onValueChange={v => set('storageUnit', v as 'Mi' | 'Gi')}>
+                    <SelectTrigger className="w-16 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mi">Mi</SelectItem>
+                      <SelectItem value="Gi">Gi</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </FieldRow>
 
-                <Separator />
+              <FieldRow label="GPU Model">
+                <Input
+                  value={editConfig.gpu}
+                  onChange={e => set('gpu', e.target.value)}
+                  placeholder="e.g. NVIDIA A100"
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Auto-sign</Label>
-                    <p className="text-xs text-muted-foreground">Automatically accept provider bids (streamlined demo flow)</p>
+              <FieldRow label="GPU Count">
+                <Input
+                  type="number" min={0} max={8}
+                  value={editConfig.gpuCount}
+                  onChange={e => set('gpuCount', Number(e.target.value))}
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
+
+              <FieldRow label="Port">
+                <Input
+                  type="number"
+                  value={editConfig.port}
+                  onChange={e => set('port', Number(e.target.value))}
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
+
+              <FieldRow label="Region">
+                <Input
+                  value={editConfig.region}
+                  onChange={e => set('region', e.target.value)}
+                  placeholder="e.g. us-east"
+                  className="font-mono text-xs h-8"
+                />
+              </FieldRow>
+            </div>
+
+            <Separator />
+
+            {/* SDL Preview */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <FileCode className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Generated SDL</span>
+              </div>
+              <pre className="text-[10px] font-mono bg-muted/30 border border-border/50 rounded-lg p-3 overflow-x-auto overflow-y-auto max-h-56 leading-relaxed whitespace-pre-wrap break-all">
+                {generatedSDL ?? '# Fill in docker image and name to generate SDL'}
+              </pre>
+            </div>
+          </div>
+
+          {/* ── Section 2: Payment ── */}
+          <div className="overflow-y-auto p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">Payment</h3>
+            </div>
+
+            {/* Price estimate */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="pt-4 space-y-3">
+                <div className="text-center">
+                  <div className="text-3xl font-bold font-mono text-primary">
+                    ${hourlyPrice.toFixed(4)}
                   </div>
-                  <Switch checked={autoSign} onCheckedChange={setAutoSign} disabled={deployment.isLoading} />
+                  <div className="text-xs text-muted-foreground mt-1">estimated / hour</div>
+                </div>
+                <Separator />
+                <div className="space-y-1.5 text-xs">
+                  <PriceLine label={`CPU (${editConfig.cpu} vCPU)`}     value={`$${(editConfig.cpu * 0.015).toFixed(3)}/hr`} />
+                  <PriceLine label={`RAM (${editConfig.memory}${editConfig.memoryUnit})`} value={`$${((editConfig.memoryUnit === 'Gi' ? editConfig.memory : editConfig.memory / 1024) * 0.008).toFixed(3)}/hr`} />
+                  {editConfig.gpu && (
+                    <PriceLine label={`GPU (${editConfig.gpuCount}× ${editConfig.gpu})`} value={`$${(editConfig.gpuCount * 0.65).toFixed(3)}/hr`} accent />
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Alert>
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Estimated Cost:</strong> ~${requirements.gpu ? '0.50' : '0.10'}/hr (Necto sponsors Akash hosting for hackathon demo)
-              </AlertDescription>
-            </Alert>
-
-            <div className="flex justify-center">
-              <Button size="lg" onClick={handleDeploy} disabled={deployment.isLoading || !isConnected}>
-                {deployment.isLoading ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{deployment.state === 'paying_escrow' ? getPaymentStatusText() : 'Deploying...'}</>
-                ) : !isConnected ? (
-                  <><Wallet className="h-4 w-4 mr-2" />Connect Wallet to Pay & Deploy</>
+            {/* Wallet */}
+            <div className="space-y-2">
+              <Label className="text-xs">Wallet</Label>
+              <div className={cn(
+                "flex items-center gap-3 p-3 rounded-lg border",
+                isConnected ? "border-green-500/30 bg-green-500/5" : "border-border/50 bg-muted/20"
+              )}>
+                <div className={cn("p-1.5 rounded-full", isConnected ? "bg-green-500/20 text-green-500" : "bg-muted text-muted-foreground")}>
+                  <Wallet className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium">{isConnected ? 'Connected' : 'Not Connected'}</p>
+                  {isConnected && address && (
+                    <p className="text-[10px] text-muted-foreground font-mono truncate">{address.slice(0, 8)}...{address.slice(-6)}</p>
+                  )}
+                </div>
+                {isConnected ? (
+                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => disconnect()}>Disconnect</Button>
                 ) : (
-                  <><CreditCard className="h-4 w-4 mr-2" />Pay {escrowAmount} USDC & Deploy</>
+                  <Button size="sm" className="h-6 text-xs px-2" onClick={() => connect({ connector: connectors[0] })} disabled={isConnecting}>
+                    {isConnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Connect'}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
 
-            {formErrors.wallet && (
+            {/* Escrow slider */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Escrow Deposit</Label>
+                <span className="text-sm font-mono font-semibold">{escrowAmount} USDC</span>
+              </div>
+              <input
+                type="range" min="1" max="100"
+                value={escrowAmount}
+                onChange={e => setEscrowAmount(e.target.value)}
+                className="w-full accent-primary"
+                disabled={isDeploying}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Testnet USDC · Necto sponsors actual Akash costs
+              </p>
+            </div>
+
+            <Separator />
+
+            {/* Deploy button */}
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleDeploy}
+              disabled={isDeploying || !isConnected}
+            >
+              {deployment.isLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{deployment.state === 'paying_escrow' ? getPaymentStatusText() : 'Deploying...'}</>
+              ) : !isConnected ? (
+                <><Wallet className="h-4 w-4 mr-2" />Connect Wallet First</>
+              ) : (
+                <><CreditCard className="h-4 w-4 mr-2" />Pay {escrowAmount} USDC & Deploy</>
+              )}
+            </Button>
+
+            {deployError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{formErrors.wallet}</AlertDescription>
+                <AlertDescription className="text-xs">{deployError}</AlertDescription>
+              </Alert>
+            )}
+
+            {isDeploying && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  ~${hourlyPrice.toFixed(4)}/hr · Necto sponsors Akash hosting for hackathon demo
+                </AlertDescription>
               </Alert>
             )}
           </div>
-        );
 
-      case 'deploy':
-        return (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Deployment Status</h2>
-              <p className="text-muted-foreground">Track your deployment progress</p>
+          {/* ── Section 3: Deploy Status ── */}
+          <div className="overflow-y-auto p-6 space-y-5">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold text-sm">Deploy Status</h3>
+              {deployment.state !== 'idle' && (
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {deployment.state === 'active' ? '● Live' : deployment.state}
+                </Badge>
+              )}
             </div>
 
-            <DeploymentStatus deployment={deployment} />
-
-            {(deployment.escrowTransactions.transferHash || deployment.escrowTransactions.submitJobHash) && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Payment Transactions</h3>
-
-                {deployment.escrowTransactions.transferHash && (
-                  <Card className="border-blue-200">
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <ArrowRightLeft className="h-4 w-4 text-blue-500" /> Transfer to Agent
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <span className="text-green-600 font-medium">USDC Transfer Completed</span>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">{truncateHash(deployment.escrowTransactions.transferHash)}</code>
-                          <Button variant="ghost" size="sm" onClick={() => copyTxHash(deployment.escrowTransactions.transferHash!)}><Copy className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="sm" asChild>
-                            <a href={`${EXPLORER_URL}/tx/${deployment.escrowTransactions.transferHash}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                          </Button>
-                        </div>
-                        {copiedHash && <p className="text-xs text-green-600">Copied to clipboard!</p>}
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Amount</Label>
-                        <p className="font-mono text-sm">{escrowAmount} USDC</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {deployment.escrowTransactions.submitJobHash && (
-                  <Card className="border-purple-200">
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <User className="h-4 w-4 text-purple-500" /> Agent Transaction to Contract
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <span className="text-green-600 font-medium">Job Submitted to Escrow Contract</span>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">{truncateHash(deployment.escrowTransactions.submitJobHash)}</code>
-                          <Button variant="ghost" size="sm" onClick={() => copyTxHash(deployment.escrowTransactions.submitJobHash!)}><Copy className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="sm" asChild>
-                            <a href={`${EXPLORER_URL}/tx/${deployment.escrowTransactions.submitJobHash}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                          </Button>
-                        </div>
-                      </div>
-                      {deployment.escrowJobId && (
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">Job ID</Label>
-                          <p className="font-mono text-sm">{deployment.escrowJobId.toString()}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+            {deployment.state === 'idle' && !deployment.error ? (
+              <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground space-y-2">
+                <Server className="h-8 w-8 opacity-20" />
+                <p className="text-xs">Deploy status will appear here once you pay and submit the job.</p>
               </div>
+            ) : (
+              <DeploymentStatus deployment={deployment} />
             )}
 
-            {(deployment.escrowTxHash || deployment.escrowJobId) &&
-              !deployment.escrowTransactions.transferHash &&
-              !deployment.escrowTransactions.submitJobHash && (
-              <Card className="border-amber-200">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" /> Escrow Payment
+            {/* Payment transactions */}
+            {deployment.escrowTransactions.transferHash && (
+              <TxCard
+                title="Transfer to Agent"
+                icon={<ArrowRightLeft className="h-4 w-4 text-blue-500" />}
+                hash={deployment.escrowTransactions.transferHash}
+                label="USDC Transfer Completed"
+                amount={`${escrowAmount} USDC`}
+                explorerUrl={EXPLORER_URL}
+                onCopy={() => copyText(deployment.escrowTransactions.transferHash!, 'hash')}
+                copied={copiedHash}
+              />
+            )}
+
+            {deployment.escrowTransactions.submitJobHash && (
+              <TxCard
+                title="Agent → Escrow Contract"
+                icon={<User className="h-4 w-4 text-purple-500" />}
+                hash={deployment.escrowTransactions.submitJobHash}
+                label="Job Submitted to Escrow"
+                jobId={deployment.escrowJobId?.toString()}
+                explorerUrl={EXPLORER_URL}
+                onCopy={() => copyText(deployment.escrowTransactions.submitJobHash!, 'hash')}
+                copied={copiedHash}
+              />
+            )}
+
+            {deployment.deployment?.id && (
+              <Card>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-xs flex items-center gap-2">
+                    <Server className="h-3.5 w-3.5" /> Akash Deployment
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="px-4 pb-4 space-y-3">
                   <div className="flex items-center gap-2">
-                    {deployment.escrowState === 'completed' ? (
-                      <><CheckCircle2 className="h-5 w-5 text-green-500" /><span className="text-green-600 font-medium">Payment Completed</span></>
-                    ) : deployment.escrowState === 'error' ? (
-                      <><AlertCircle className="h-5 w-5 text-red-500" /><span className="text-red-600 font-medium">Payment Failed</span></>
-                    ) : (
-                      <><Loader2 className="h-5 w-5 text-amber-500 animate-spin" /><span className="text-amber-600 font-medium">{getPaymentStatusText()}</span></>
-                    )}
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-xs text-green-500 font-medium">Deployment Created</span>
                   </div>
-                  {deployment.escrowTxHash && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Transaction Hash</Label>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 bg-muted p-2 rounded text-xs font-mono">{truncateHash(deployment.escrowTxHash)}</code>
-                        <Button variant="ghost" size="sm" onClick={() => copyTxHash(deployment.escrowTxHash!)}><Copy className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={`${EXPLORER_URL}/tx/${deployment.escrowTxHash}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                        </Button>
-                      </div>
-                      {copiedHash && <p className="text-xs text-green-600">Copied to clipboard!</p>}
-                    </div>
-                  )}
-                  {deployment.escrowJobId && (
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Job ID</Label>
-                      <p className="font-mono text-sm">{deployment.escrowJobId.toString()}</p>
-                    </div>
-                  )}
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Amount Deposited</Label>
-                    <p className="font-mono text-sm">{escrowAmount} USDC</p>
-                  </div>
-                  {deployment.escrowError && (
-                    <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm">
-                      <div className="flex items-center gap-2 font-medium"><AlertCircle className="h-4 w-4" />Error</div>
-                      <p className="mt-1">{deployment.escrowError}</p>
-                    </div>
-                  )}
+                  <code className="block bg-muted p-2 rounded text-[10px] font-mono truncate">
+                    {deployment.deployment.id}
+                  </code>
+                  <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                    <a href={`${AKASH_CONSOLE_URL}/deployments/${deployment.deployment.id}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3 w-3 mr-1.5" /> View on Akash Console
+                    </a>
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-            {(deployment.deployment?.id || serviceUris.length > 0) && (
-              <div className="grid gap-6 lg:grid-cols-2">
-                {deployment.deployment?.id && (
-                  <Card className="bg-card border">
-                    <CardHeader><CardTitle className="text-base flex items-center gap-2"><Server className="h-4 w-4" /> Akash Deployment</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <span className="text-green-600 font-medium">Deployment Created</span>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Deployment ID</Label>
-                        <div className="flex items-center gap-2">
-                          <code className="flex-1 bg-black p-2 rounded text-xs font-mono border">{deployment.deployment.id}</code>
-                          <Button variant="ghost" size="sm" onClick={() => copyTxHash(deployment.deployment!.id)}><Copy className="h-4 w-4" /></Button>
-                        </div>
-                      </div>
-                      <Button variant="outline" className="w-full" asChild>
-                        <a href={`${AKASH_CONSOLE_URL}/deployments/${deployment.deployment.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                          <ExternalLink className="h-4 w-4" /> View on Akash Console
+            {serviceUris.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-xs flex items-center gap-2">
+                    <Globe className="h-3.5 w-3.5" /> Service URLs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-2">
+                  {serviceUris.map((uri, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <code className="flex-1 bg-muted p-1.5 rounded text-[10px] font-mono truncate">{uri}</code>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => copyText(uri, uri)}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
+                        <a href={uri.startsWith('http') ? uri : `http://${uri}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </Button>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {serviceUris.length > 0 && (
-                  <Card className="bg-card border">
-                    <CardHeader><CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" /> Service URLs</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <span className="text-green-600 font-medium">Your services are live</span>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground">Access URLs</Label>
-                        <div className="space-y-2">
-                          {serviceUris.map((uri, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <code className="flex-1 bg-black p-2 rounded text-xs font-mono border truncate">{uri}</code>
-                              <Button variant="ghost" size="sm" onClick={() => copyUri(uri)}><Copy className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="sm" asChild>
-                                <a href={uri.startsWith('http') ? uri : `http://${uri}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        {copiedUri && <p className="text-xs text-green-600">Copied to clipboard!</p>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
-
-            {deployment.state === 'idle' && (
-              <div className="flex justify-center">
-                <Button size="lg" onClick={handleDeploy} disabled={deployment.isLoading}>
-                  {deployment.isLoading
-                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Starting...</>
-                    : <><Server className="h-4 w-4 mr-2" />Deploy to Akash</>}
-                </Button>
-              </div>
+                    </div>
+                  ))}
+                  {copiedUri && <p className="text-[10px] text-green-500">Copied!</p>}
+                </CardContent>
+              </Card>
             )}
 
             {deployment.state === 'active' && (
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <Card className="bg-green-500/5 border-green-500/20">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <div>
-                      <p className="font-medium text-green-800">Deployment Active</p>
-                      <p className="text-sm text-green-600">Your workload is running on Akash Network</p>
+                      <p className="text-xs font-medium text-green-500">Deployment Active</p>
+                      <p className="text-[10px] text-muted-foreground">Running on Akash Network</p>
                     </div>
                   </div>
                 </CardContent>
@@ -604,79 +566,92 @@ export function DeployModal({ open, onClose }: DeployModalProps) {
             {deployment.error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{deployment.error}</AlertDescription>
+                <AlertDescription className="text-xs">{deployment.error}</AlertDescription>
               </Alert>
             )}
+
+            {deployment.state !== 'idle' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => { deployment.reset(); }}
+              >
+                Reset
+              </Button>
+            )}
           </div>
-        );
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="!max-w-[90vw] w-[90vw] h-[92vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/50 shrink-0">
-          <DialogTitle className="text-lg font-semibold">Deploy to Akash Network</DialogTitle>
-
-          {/* Step progress */}
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between">
-              {STEPS.map((step, index) => (
-                <div key={step.id} className={cn("flex items-center", index < STEPS.length - 1 && "flex-1")}>
-                  <div className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm",
-                    STEP_ORDER.indexOf(currentStep) >= index
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  )}>
-                    {step.icon}
-                    <span className="hidden sm:inline">{step.label}</span>
-                  </div>
-                  {index < STEPS.length - 1 && (
-                    <div className={cn(
-                      "flex-1 h-0.5 mx-2",
-                      STEP_ORDER.indexOf(currentStep) > index ? "bg-primary" : "bg-muted"
-                    )} />
-                  )}
-                </div>
-              ))}
-            </div>
-            <Progress value={stepProgress} className="h-1" />
-          </div>
-        </DialogHeader>
-
-        {/* Scrollable step content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          {renderStepContent()}
-
-          {/* Navigation */}
-          {currentStep !== 'deploy' && currentStep !== 'review' && (
-            <div className="flex items-center justify-between mt-8 pt-6 border-t">
-              <Button variant="outline" onClick={goToPreviousStep} disabled={currentStep === 'input'}>
-                <ArrowLeft className="h-4 w-4 mr-2" /> Previous
-              </Button>
-              <Button onClick={goToNextStep}>
-                Next <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          )}
-
-          {/* Reset after completion */}
-          {deployment.state === 'completed' && (
-            <div className="flex justify-center mt-8">
-              <Button variant="outline" onClick={() => {
-                deployment.reset();
-                setCurrentStep('input');
-                setSelectedTemplate(null);
-                setRequirements({});
-                setSelectedProviderId(null);
-              }}>
-                Start New Deployment
-              </Button>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ── Small helper components ── */
+
+function SectionBadge({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <div className="w-5 h-5 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">
+        {n}
+      </div>
+      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+    </div>
+  );
+}
+
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function PriceLine({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn("font-mono", accent && "text-amber-500 font-semibold")}>{value}</span>
+    </div>
+  );
+}
+
+function TxCard({
+  title, icon, hash, label, amount, jobId, explorerUrl, onCopy, copied,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  hash: string;
+  label: string;
+  amount?: string;
+  jobId?: string;
+  explorerUrl: string;
+  onCopy: () => void;
+  copied: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-xs flex items-center gap-2">{icon} {title}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+          <span className="text-xs text-green-500 font-medium">{label}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <code className="flex-1 bg-muted p-1.5 rounded text-[10px] font-mono truncate">{hash ? `${hash.slice(0,10)}...${hash.slice(-8)}` : ''}</code>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onCopy}><Copy className="h-3 w-3" /></Button>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" asChild>
+            <a href={`${explorerUrl}/tx/${hash}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-3 w-3" /></a>
+          </Button>
+        </div>
+        {copied && <p className="text-[10px] text-green-500">Copied!</p>}
+        {amount && <p className="text-xs font-mono">{amount}</p>}
+        {jobId && <p className="text-xs text-muted-foreground">Job ID: <span className="font-mono">{jobId}</span></p>}
+      </CardContent>
+    </Card>
   );
 }

@@ -179,24 +179,21 @@ export function generateSDL(requirements: JobRequirements): SdlSpec {
   };
 
   if (requirements.gpu && requirements.gpu.units > 0) {
-    const gpuAttributes: GpuAttributes = {
-      vendor: {}
-    };
-    
+    const gpuAttributes: GpuAttributes = { vendor: {} };
+
     if (requirements.gpu.vendor) {
       if (requirements.gpu.models && requirements.gpu.models.length > 0) {
-        // With specific models: vendor:
-        //   nvidia:
-        //     - model: t4
-        gpuAttributes.vendor[requirements.gpu.vendor] = requirements.gpu.models.map(m => ({ model: m }));
+        // Normalize model names to lowercase short form (e.g. "NVIDIA A100" -> "a100")
+        const normalized = requirements.gpu.models.map(m =>
+          ({ model: m.replace(/nvidia\s*/i, '').replace(/\s+/g, '').toLowerCase() })
+        );
+        gpuAttributes.vendor[requirements.gpu.vendor.toLowerCase()] = normalized;
       } else {
-        // Without models: vendor:
-        //   nvidia:
-        // Use empty object which YAML will serialize as empty key
-        gpuAttributes.vendor[requirements.gpu.vendor] = [];
+        // Vendor only — omit models key entirely
+        gpuAttributes.vendor[requirements.gpu.vendor.toLowerCase()] = null as unknown as [];
       }
     }
-    
+
     resources.gpu = {
       units: requirements.gpu.units,
       attributes: gpuAttributes
@@ -211,9 +208,8 @@ export function generateSDL(requirements: JobRequirements): SdlSpec {
     }
   };
 
-  if (requirements.region) {
-    placementProfile.attributes = { region: requirements.region };
-  }
+  // Region is used for provider selection only — not included as SDL placement attribute
+  // to avoid "bad_request" rejections from the Akash Console API
 
   return {
     version: '2.0',

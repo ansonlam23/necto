@@ -436,7 +436,7 @@ export default function AgentPage() {
         </div>
       </Card>
 
-      <DeployModal open={isDeployOpen} onClose={() => setIsDeployOpen(false)} />
+      <DeployModal open={isDeployOpen} onClose={() => setIsDeployOpen(false)} config={deploymentConfig} />
     </div>
   );
 }

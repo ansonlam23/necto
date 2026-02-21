@@ -195,15 +195,20 @@ export async function routeToAkash(
 
     console.log('Routing with filters:', filters);
     
-    const filtered = filterProviders(providers, filters);
-    
+    let filtered = filterProviders(providers, filters);
+
     if (filtered.length === 0) {
-      log('error', 'No providers match requirements', { filters });
-      return { success: false, error: 'No matching providers found for your requirements', logs };
+      log('info', 'No providers matched filters, selecting from all available providers', { filters });
+      filtered = providers.length > 0 ? providers : [];
+    }
+
+    if (filtered.length === 0) {
+      log('error', 'No providers available on Akash Network', {});
+      return { success: false, error: 'No providers available on Akash Network', logs };
     }
 
     const ranked = rankProviders(filtered);
-    const selected = ranked[0];
+    const selected = ranked[Math.floor(Math.random() * Math.min(ranked.length, 3))];
     
     log('info', `Selected provider: ${selected.provider.name}`, {
       score: selected.totalScore,
