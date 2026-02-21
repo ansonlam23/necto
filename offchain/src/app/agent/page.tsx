@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RequirementsChecklist } from '@/components/agent/RequirementsChecklist';
+import { DeployModal } from '@/components/agent/DeployModal';
 import { Send, Bot, Sparkles, Server, Cpu, Gamepad2, Image, Database, CheckCircle2, Loader2, Rocket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DeploymentConfig, DeploymentScenario } from '@/types/deployment';
@@ -144,6 +145,7 @@ export default function AgentPage() {
   const [isThinking, setIsThinking] = useState(false);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [responseIndex, setResponseIndex] = useState(0);
+  const [isDeployOpen, setIsDeployOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scenarios: DeploymentScenario[] = [
@@ -288,6 +290,7 @@ export default function AgentPage() {
         <RequirementsChecklist config={deploymentConfig} />
         <Button
           disabled={responseIndex < 3}
+          onClick={() => setIsDeployOpen(true)}
           className={cn(
             "w-full gap-2 transition-all duration-300",
             responseIndex >= 3
@@ -432,6 +435,8 @@ export default function AgentPage() {
           </form>
         </div>
       </Card>
+
+      <DeployModal open={isDeployOpen} onClose={() => setIsDeployOpen(false)} />
     </div>
   );
 }
