@@ -1,155 +1,98 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RequirementsChecklist } from '@/components/agent/RequirementsChecklist';
 import { DeployModal } from '@/components/agent/DeployModal';
-import { Send, Bot, Sparkles, Server, Cpu, Gamepad2, Image, Database, CheckCircle2, Loader2, Rocket } from 'lucide-react';
+import { Send, Bot, Sparkles, Server, Cpu, Gamepad2, Image, Database, CheckCircle2, Loader2, Rocket, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DeploymentConfig, DeploymentScenario } from '@/types/deployment';
 import type { DeployCompleteInfo } from '@/components/agent/DeployModal';
 import { useAuditStore } from '@/lib/audit-store';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
+// AI SDK v5 tool parts are typed by tool name — use a local shape to avoid `any`
+interface ToolPart {
+  type: string;
+  state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
 }
 
-interface ThinkingStep {
-  id: string;
-  label: string;
-  status: 'pending' | 'active' | 'complete';
-}
+const agentTransport = new DefaultChatTransport({ api: '/api/agent-chat' });
 
-const RESPONSES: Array<{
-  config: DeploymentConfig;
-  text: string;
-  thinkingSteps: Array<{ id: string; label: string }>;
-}> = [
-  {
-    config: {
-      dockerImage: 'pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime',
-      cpu: 4,
-      memory: 16,
-      memoryUnit: 'Gi',
-      storage: 100,
-      storageUnit: 'Gi',
-      gpu: 'NVIDIA A100',
-      gpuCount: 1,
-      port: 8888,
-      region: 'us-east',
-      token: 'AKT',
-    },
-    thinkingSteps: [
-      { id: 'parse', label: 'Parsing workload requirements...' },
-      { id: 'gpu', label: 'Identifying optimal GPU configuration...' },
-      { id: 'akash', label: 'Checking provider availability...' },
-      { id: 'spec', label: 'Generating deployment specification...' },
-    ],
-    text: `Based on your PyTorch GPU training workload, I've analyzed the requirements and configured an optimal deployment spec:
-
-Deployment Configuration:
-  Docker Image:  pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
-  CPU:           4 vCPU
-  Memory:        16 Gi
-  Storage:       100 Gi
-  GPU:           NVIDIA A100 x1
-  Port:          8888 (Jupyter)
-  Region:        us-east
-
-Why this configuration?
-The NVIDIA A100 is purpose-built for ML training — 80 GB HBM2e memory, 3rd-gen Tensor Cores for mixed-precision training, and native CUDA 11.8 support. 16 Gi RAM handles large dataset preprocessing pipelines without swapping. 100 Gi storage gives you headroom for training data, model checkpoints, and experiment artifacts.
-
-Would you like me to find the best available provider for this configuration?`,
-  },
-  {
-    config: {
-      dockerImage: 'pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime',
-      cpu: 2,
-      memory: 16,
-      memoryUnit: 'Gi',
-      storage: 40,
-      storageUnit: 'Gi',
-      gpu: 'NVIDIA A100',
-      gpuCount: 1,
-      port: 8888,
-      region: 'us-east',
-      token: 'AKT',
-    },
-    thinkingSteps: [
-      { id: 'adjust', label: 'Applying resource adjustments...' },
-      { id: 'validate', label: 'Validating updated configuration...' },
-      { id: 'reprice', label: 'Re-evaluating provider pricing...' },
-      { id: 'confirm', label: 'Confirming spec changes...' },
-    ],
-    text: `Got it — trimming CPU and storage. Here's the updated configuration:
-
-Deployment Configuration:
-  Docker Image:  pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
-  CPU:           2 vCPU  (was 4)
-  Memory:        16 Gi   (unchanged)
-  Storage:       40 Gi   (was 100)
-  GPU:           NVIDIA A100 x1
-  Port:          8888 (Jupyter)
-  Region:        us-east
-
-What changed and why:
-  CPU 4 → 2 vCPU  — GPU training is compute-bound on CUDA, not CPU. 2 vCPU is enough to feed the data loader and handle preprocessing without bottlenecking.
-  Storage 100 → 40 Gi  — Sufficient for a mid-size dataset and checkpoint saves. You can always attach persistent storage later if experiments grow.
-  Memory unchanged  — 16 Gi keeps your data pipeline in RAM; going lower risks swapping during batch loading.
-
-This config will save you roughly 30-40% on hourly cost vs the original.`,
-  },
-  {
-    config: {
-      dockerImage: 'pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime',
-      cpu: 2,
-      memory: 16,
-      memoryUnit: 'Gi',
-      storage: 40,
-      storageUnit: 'Gi',
-      gpu: 'NVIDIA A100',
-      gpuCount: 1,
-      port: 8888,
-      region: 'us-east',
-      token: 'AKT',
-    },
-    thinkingSteps: [
-      { id: 'query', label: 'Querying decentralized provider network...' },
-      { id: 'score', label: 'Scoring 8 qualified candidates...' },
-      { id: 'verify', label: 'Verifying hardware specs...' },
-      { id: 'bid', label: 'Selecting lowest bid...' },
-    ],
-    text: `Found the best match on the Akash Network:
-
-  Provider:   akash1ccktptfkvkamvsauguyy6ygqwqnwzkfep3y2l3
-  Alias:      Equinix SV15 — Akash Node
-  Price:      $0.8340/hr  (bid won at 0.34 uakt/block)
-  Uptime:     99.8%  (90-day avg)
-  Region:     us-east  (San Jose, CA)
-  Match:      97%
-
-Hardware confirmed: NVIDIA A100 SXM4 80GB / 2 vCPU / 16 GB RAM / 40 GB NVMe
-
-Lowest bid among 8 active providers. Equinix SV15 has full PCIe Gen4 bandwidth to the GPU and bare-metal isolation — no noisy neighbours. On-chain lease will be opened once you confirm.
-
-Ready to deploy — confirm to submit the job.`,
-  },
-];
+const TOOL_LABELS: Record<string, string> = {
+  proposeDeployment: 'Analyzing workload requirements...',
+  searchAkash: 'Searching provider network...',
+  lookupDocs: 'Consulting documentation...',
+  generateSDL: 'Generating deployment manifest...',
+};
 
 export default function AgentPage() {
-  const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig>({});
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isThinking, setIsThinking] = useState(false);
-  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
-  const [responseIndex, setResponseIndex] = useState(0);
+  const [inputValue, setInputValue] = useState('');
   const [isDeployOpen, setIsDeployOpen] = useState(false);
+  const [deployMessage, setDeployMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const addAuditEntry = useAuditStore(state => state.addEntry);
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport: agentTransport,
+  });
+
+  const isLoading = status === 'streaming' || status === 'submitted';
+
+  // Derived: extract DeploymentConfig from the most recent proposeDeployment result
+  const deploymentConfig = useMemo<DeploymentConfig>(() => {
+    for (const msg of [...messages].reverse()) {
+      if (msg.role !== 'assistant') continue;
+      for (const part of msg.parts ?? []) {
+        const p = part as unknown as ToolPart;
+        if (p.type === 'tool-proposeDeployment' && p.state === 'output-available') {
+          const config = (p.output as { config?: DeploymentConfig } | undefined)?.config;
+          if (config) return config;
+        }
+      }
+    }
+    return {};
+  }, [messages]);
+
+  // Derived: whether searchAkash has returned a successful provider
+  const providerFound = useMemo<boolean>(() => {
+    for (const msg of messages) {
+      if (msg.role !== 'assistant') continue;
+      for (const part of msg.parts ?? []) {
+        const p = part as unknown as ToolPart;
+        if (p.type === 'tool-searchAkash' && p.state === 'output-available') {
+          if ((p.output as { success?: boolean } | undefined)?.success) return true;
+        }
+      }
+    }
+    return false;
+  }, [messages]);
+
+  // Derived: thinking steps from in-flight tool calls while streaming
+  const thinkingSteps = useMemo(() => {
+    if (!isLoading) return [];
+    const lastMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    const toolParts = (lastMsg?.parts ?? [])
+      .map(p => p as unknown as ToolPart)
+      .filter(p => p.type?.startsWith('tool-'));
+
+    const steps = toolParts.map(p => ({
+      id: p.type.replace('tool-', ''),
+      label: TOOL_LABELS[p.type.replace('tool-', '')] ?? p.type.replace('tool-', ''),
+      status: (p.state === 'output-available' ? 'complete' : 'active') as 'pending' | 'active' | 'complete',
+    }));
+
+    if (steps.length === 0) {
+      steps.push({ id: 'init', label: 'Processing request...', status: 'active' });
+    }
+    return steps;
+  }, [messages, isLoading]);
 
   const scenarios: DeploymentScenario[] = [
     {
@@ -208,67 +151,18 @@ export default function AgentPage() {
     },
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isThinking) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-
-    await new Promise<void>(resolve => setTimeout(resolve, 2000));
-    setIsThinking(true);
-
-    const response = RESPONSES[Math.min(responseIndex, RESPONSES.length - 1)];
-    const steps = response.thinkingSteps;
-
-    setThinkingSteps(steps.map(s => ({ ...s, status: 'pending' as const })));
-
-    // Progress through each thinking step
-    const stepDurations = [500, 750, 750, 650];
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise<void>(resolve => setTimeout(resolve, i === 0 ? 1200 : stepDurations[i]));
-      setThinkingSteps(prev =>
-        prev.map((s, idx) => ({
-          ...s,
-          status: idx === i ? 'active' : idx < i ? 'complete' : 'pending',
-        }))
-      );
-      await new Promise<void>(resolve => setTimeout(resolve, stepDurations[i]));
-      setThinkingSteps(prev =>
-        prev.map((s, idx) => ({
-          ...s,
-          status: idx <= i ? 'complete' : 'pending',
-        }))
-      );
-    }
-
-    await new Promise<void>(resolve => setTimeout(resolve, 350));
-    setIsThinking(false);
-    setThinkingSteps([]);
-
-    setMessages(prev => [
-      ...prev,
-      {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.text,
-      },
-    ]);
-
-    setDeploymentConfig(response.config);
-    setResponseIndex(prev => prev + 1);
+    if (!inputValue.trim() || isLoading) return;
+    sendMessage({ text: inputValue });
+    setInputValue('');
   };
 
   const handleScenarioClick = (scenario: DeploymentScenario) => {
     if (scenario.prompt) {
-      setInput(scenario.prompt);
+      setInputValue(scenario.prompt);
     }
+    inputRef.current?.focus();
   };
 
   const EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai';
@@ -289,14 +183,7 @@ export default function AgentPage() {
       lines.push(`Escrow Job (ADI Explorer):\n  ${EXPLORER_URL}/tx/${info.submitJobTxHash}`);
     }
 
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: lines.join('\n\n'),
-      },
-    ]);
+    setDeployMessage(lines.join('\n\n'));
 
     addAuditEntry({
       type: 'deployment',
@@ -312,7 +199,7 @@ export default function AgentPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isThinking]);
+  }, [messages, isLoading, deployMessage]);
 
   const getScenarioIcon = (iconName: string) => {
     switch (iconName) {
@@ -326,6 +213,19 @@ export default function AgentPage() {
     }
   };
 
+  // Extract plain text from a message's parts (AI SDK v5 uses parts instead of content)
+  const getMessageText = (msg: typeof messages[0]) => {
+    const parts = (msg.parts ?? []) as Array<{ type: string; text?: string }>;
+    const textParts = parts.filter(p => p.type === 'text' && typeof p.text === 'string');
+    if (textParts.length > 0) return textParts.map(p => p.text!).join('');
+    // Fallback: if user message has no parts, use content (older format)
+    const content = (msg as unknown as { content?: string }).content;
+    if (msg.role === 'user' && typeof content === 'string') return content;
+    return '';
+  };
+
+  const hasMessages = messages.length > 0 || isLoading || !!error;
+
   return (
     <div className="h-[calc(100vh-6rem)] md:h-[calc(100vh-7rem)] lg:h-[calc(100vh-8rem)] flex gap-6">
 
@@ -333,11 +233,11 @@ export default function AgentPage() {
       <div className="hidden lg:flex flex-col w-64 shrink-0 space-y-4 overflow-y-auto">
         <RequirementsChecklist config={deploymentConfig} />
         <Button
-          disabled={responseIndex < 3}
+          disabled={!providerFound}
           onClick={() => setIsDeployOpen(true)}
           className={cn(
             "w-full gap-2 transition-all duration-300",
-            responseIndex >= 3
+            providerFound
               ? "bg-primary hover:bg-primary/90 text-primary-foreground"
               : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
           )}
@@ -352,7 +252,7 @@ export default function AgentPage() {
 
         {/* Messages — the ONLY scrollable area */}
         <div className="flex-1 overflow-y-auto p-6">
-          {messages.length === 0 && !isThinking ? (
+          {!hasMessages ? (
             <div className="space-y-6">
               <div className="text-center py-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
@@ -395,34 +295,52 @@ export default function AgentPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={cn(
-                    "flex gap-3",
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  )}
-                >
-                  {message.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Bot className="h-4 w-4 text-primary" />
+              {messages.map((message) => {
+                const text = getMessageText(message);
+                if (!text) return null;
+                return (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "flex gap-3",
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    )}
+                  >
+                    {message.role === 'assistant' && (
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Bot className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <div className={cn(
+                      "rounded-xl px-4 py-2.5 max-w-[80%]",
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted/30 border border-border/50'
+                    )}>
+                      <p className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                        {text}
+                      </p>
                     </div>
-                  )}
-                  <div className={cn(
-                    "rounded-xl px-4 py-2.5 max-w-[80%]",
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted/30 border border-border/50'
-                  )}>
+                  </div>
+                );
+              })}
+
+              {/* Deploy complete confirmation */}
+              {deployMessage && (
+                <div className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="bg-muted/30 border border-border/50 rounded-xl px-4 py-2.5 max-w-[80%]">
                     <p className="text-sm whitespace-pre-wrap font-mono leading-relaxed">
-                      {message.content}
+                      {deployMessage}
                     </p>
                   </div>
                 </div>
-              ))}
+              )}
 
               {/* Thinking / processing bubble */}
-              {isThinking && (
+              {isLoading && thinkingSteps.length > 0 && (
                 <div className="flex gap-3 justify-start">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Bot className="h-4 w-4 text-primary" />
@@ -453,6 +371,21 @@ export default function AgentPage() {
                 </div>
               )}
 
+              {/* Error bubble */}
+              {error && (
+                <div className="flex gap-3 justify-start">
+                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                  </div>
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-2.5 max-w-[80%]">
+                    <p className="text-xs font-semibold text-destructive mb-0.5">Agent error</p>
+                    <p className="text-sm text-destructive/80 font-mono">
+                      {error.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -460,17 +393,18 @@ export default function AgentPage() {
 
         {/* Input — always pinned to bottom */}
         <div className="shrink-0 p-4 border-t border-border/50">
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleFormSubmit} className="flex gap-2">
             <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              ref={inputRef}
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
               placeholder="Describe what you want to deploy..."
-              disabled={isThinking}
+              disabled={isLoading}
               className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
             />
             <Button
               type="submit"
-              disabled={isThinking || !input.trim()}
+              disabled={isLoading || !inputValue.trim()}
               size="icon"
               className="shrink-0"
             >

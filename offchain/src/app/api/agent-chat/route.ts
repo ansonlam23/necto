@@ -1,5 +1,5 @@
 import { streamText, tool, convertToModelMessages } from 'ai';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { fetchAkashProviders } from '@/lib/providers/akash-fetcher';
 import type { DeploymentConfig } from '@/types/deployment';
@@ -75,17 +75,22 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
+      process.env.GOOGLE_AI_STUDIO_API_KEY ??
+      process.env.GOOGLE_GENAI_API_KEY;
+
+    if (!apiKey) {
       return new Response(
         JSON.stringify({
-          error: 'Gemini API key not configured. Please add GOOGLE_GENERATIVE_AI_API_KEY to your .env.local file.'
+          error: 'Gemini API key not configured. Please add GOOGLE_AI_STUDIO_API_KEY to your .env.local file.'
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Use Gemini 2.5 Flash Lite for faster responses
-    const model = google('gemini-2.5-flash-lite');
+    const google = createGoogleGenerativeAI({ apiKey });
+    const model = google('gemini-2.5-flash');
 
     const modelMessages = await convertToModelMessages(messages);
 
