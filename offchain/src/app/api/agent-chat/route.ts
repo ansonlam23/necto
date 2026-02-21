@@ -1,4 +1,4 @@
-  import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
+import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { fetchAkashProviders } from '@/lib/providers/akash-fetcher';
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model,
       messages: modelMessages,
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(3),
       system: `# ROLE
 You are an expert DevOps engineer and infrastructure specialist. Your job is to help users deploy applications by intelligently inferring ALL hardware requirements from their descriptions.
 
@@ -137,18 +137,16 @@ When you recognize a workload type, use these defaults:
 
 # REASONING OUTPUTS
 - After tool calls complete, provide detailed reasoning for each decision (workload type, specs, provider choice).
-- Base the reasoning explicitly on the first user input and any inferred defaults.
+- Base the reasoning explicitly on user input and any inferred defaults.
 - Keep reasoning in plain language; do not reveal tool mechanics.
 
 # PROVIDER MESSAGING
 - Do NOT mention which networks are available before you have a provider result.
 - When presenting results, use neutral language and then recommend the best option.
-- If Akash is the best option, say it in the recommendation sentence (e.g. "It seems Akash Network is the best option in this case because ...").
 
 # TOOL USAGE
 - **proposeDeployment**: Call this IMMEDIATELY with full config (don't wait for user to provide specs)
 - **searchAkash**: Call this right after proposeDeployment succeeds
-- **lookupDocs**: Use when user asks about Akash concepts, deployment process, or needs documentation
 - **generateSDL**: Use to create deployment manifest when user confirms provider selection
 
 # EXAMPLE INTERACTION
@@ -279,93 +277,6 @@ Remember: BE PROACTIVE. Don't ask questions first. Infer and confirm.`,
                 error: 'Failed to search Akash providers',
               };
             }
-          },
-        }),
-
-        lookupDocs: tool({
-          description: 'Look up Akash Network documentation using Context7',
-          inputSchema: z.object({
-            query: z.string().describe('Documentation query about Akash Network'),
-            topic: z.enum(['deployment', 'providers', 'sdl', 'gpu', 'pricing', 'general']).describe('Topic category'),
-          }),
-          execute: async ({ query, topic }) => {
-            // This would integrate with Context7 MCP for real-time docs
-            // For now, return structured guidance based on topic
-            const topicDocs: Record<string, any> = {
-              deployment: {
-                title: 'Akash Deployment Guide',
-                summary: 'Deploy containers on Akash Network using SDL manifests',
-                keyPoints: [
-                  'Create SDL manifest with service definitions',
-                  'Define compute profiles with CPU, memory, storage',
-                  'Set placement attributes for provider selection',
-                  'Use akash CLI or Console for deployment',
-                ],
-                example: 'akash tx deployment create deploy.yaml --from wallet',
-              },
-              providers: {
-                title: 'Provider Selection',
-                summary: 'Choose providers based on hardware, price, and uptime',
-                keyPoints: [
-                  'Filter by GPU availability for AI workloads',
-                  'Check uptime percentage for reliability',
-                  'Compare pricing in AKT or USDC',
-                  'Consider geographic location for latency',
-                ],
-              },
-              sdl: {
-                title: 'SDL Manifest Structure',
-                summary: 'Stack Definition Language for Akash deployments',
-                keyPoints: [
-                  'Services define containers and images',
-                  'Profiles specify resource requirements',
-                  'Placement controls provider selection',
-                  'Deployment maps services to profiles',
-                ],
-              },
-              gpu: {
-                title: 'GPU Deployment',
-                summary: 'Deploy GPU workloads for AI/ML tasks',
-                keyPoints: [
-                  'Specify GPU model in SDL (e.g., RTX4090, H100)',
-                  'Set GPU count for multi-GPU setups',
-                  'Use vendor attributes (nvidia, amd)',
-                  'Higher costs but essential for AI workloads',
-                ],
-              },
-              pricing: {
-                title: 'Akash Pricing',
-                summary: 'Understanding cost structure on Akash',
-                keyPoints: [
-                  'Pay per block (approximately 6 seconds)',
-                  'Prices in uAKT (micro AKT) or USDC',
-                  'GPU instances cost significantly more',
-                  'Reverse auction model for best prices',
-                ],
-              },
-              general: {
-                title: 'Akash Network Overview',
-                summary: 'Decentralized cloud compute marketplace',
-                keyPoints: [
-                  'Open-source alternative to AWS/GCP',
-                  'Permissionless and censorship-resistant',
-                  'Supports Docker containers',
-                  'Active provider network globally',
-                ],
-              },
-            };
-
-            return {
-              success: true,
-              query,
-              topic,
-              documentation: topicDocs[topic] || topicDocs.general,
-              context7Note: 'Full documentation available via Context7 MCP integration',
-              links: [
-                'https://docs.akash.network',
-                `https://docs.akash.network/${topic}`,
-              ],
-            };
           },
         }),
 
