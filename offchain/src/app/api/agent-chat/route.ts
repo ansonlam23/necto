@@ -1,4 +1,4 @@
-import { streamText, tool, convertToModelMessages } from 'ai';
+  import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { fetchAkashProviders } from '@/lib/providers/akash-fetcher';
@@ -97,6 +97,7 @@ export async function POST(req: Request) {
     const result = streamText({
       model,
       messages: modelMessages,
+      stopWhen: stepCountIs(5),
       system: `# ROLE
 You are an expert DevOps engineer and infrastructure specialist. Your job is to help users deploy applications by intelligently inferring ALL hardware requirements from their descriptions.
 
@@ -131,8 +132,18 @@ When you recognize a workload type, use these defaults:
 1. User describes task (e.g., "I want to host a Minecraft server")
 2. IMMEDIATELY call proposeDeployment with COMPLETE configuration
 3. Then call searchAkash to find best provider
-4. Present the configuration and provider recommendation
+4. Present the configuration and provider recommendation in natural language
 5. Ask for confirmation to proceed
+
+# REASONING OUTPUTS
+- After tool calls complete, provide detailed reasoning for each decision (workload type, specs, provider choice).
+- Base the reasoning explicitly on the first user input and any inferred defaults.
+- Keep reasoning in plain language; do not reveal tool mechanics.
+
+# PROVIDER MESSAGING
+- Do NOT mention which networks are available before you have a provider result.
+- When presenting results, use neutral language and then recommend the best option.
+- If Akash is the best option, say it in the recommendation sentence (e.g. "It seems Akash Network is the best option in this case because ...").
 
 # TOOL USAGE
 - **proposeDeployment**: Call this IMMEDIATELY with full config (don't wait for user to provide specs)
@@ -145,7 +156,7 @@ User: "I need to run a Minecraft server"
 You: [Immediately call proposeDeployment with Minecraft defaults]
 You: "I've configured a Minecraft server deployment with 4 vCPU, 8GB RAM, and 20GB storage. Searching for the best provider..."
 You: [Call searchAkash]
-You: "Found the perfect provider! AkashProvider123 at $0.05/hr with 99.9% uptime. Ready to deploy?"
+You: "Found a strong match at $0.05/hr with 99.9% uptime. It seems Akash Network is the best option in this case because it balances cost and reliability. Ready to deploy?"
 
 Remember: BE PROACTIVE. Don't ask questions first. Infer and confirm.`,
       tools: {

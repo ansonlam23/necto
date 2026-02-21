@@ -62,6 +62,21 @@ const HARDCODED_DEFAULTS: Required<Omit<DeploymentConfig, 'token'>> = {
   region: 'us-east',
 };
 
+function sanitizeServiceName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function deriveServiceName(image: string): string {
+  const base = image.split('/').pop() ?? image;
+  const namePart = base.split(':')[0];
+  const sanitized = sanitizeServiceName(namePart);
+  return sanitized || 'deployment';
+}
+
 interface EditableConfig {
   dockerImage: string;
   cpu: number;
@@ -77,7 +92,7 @@ interface EditableConfig {
 
 function configToRequirements(cfg: EditableConfig): JobRequirements {
   return {
-    name: 'pytorch-training',
+    name: deriveServiceName(cfg.dockerImage),
     image: cfg.dockerImage,
     cpu: cfg.cpu,
     memory: `${cfg.memory}${cfg.memoryUnit}`,
