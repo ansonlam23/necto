@@ -27,6 +27,13 @@ import { Button } from '@/components/ui/button'
 import { CustomNode } from '@/components/workflow/CustomNode'
 import { Sidebar } from '@/components/workflow/Sidebar'
 import { ConfigPanel } from '@/components/workflow/ConfigPanel'
+import { useSendTransaction, useAccount } from 'wagmi'
+import { parseEther } from 'viem'
+
+// Placeholder escrow address — replace with deployed contract
+const ESCROW_ADDRESS = '0x000000000000000000000000000000000000dEaD' as const
+// ~$1 USD in ETH (approximate, for demo purposes)
+const ONE_USD_IN_ETH = '0.0003'
 
 // Define node types
 const nodeTypes = {
@@ -46,6 +53,9 @@ function WorkflowContent() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [isConfigOpen, setIsConfigOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
+  const [txError, setTxError] = useState<string | null>(null)
+  const { address, isConnected } = useAccount()
+  const { sendTransactionAsync } = useSendTransaction()
   const [animatedEdges, setAnimatedEdges] = useState<Set<string>>(new Set())
   const [nextId, setNextId] = useState(1)
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
@@ -162,6 +172,26 @@ function WorkflowContent() {
   const runWorkflow = useCallback(async () => {
     if (nodes.length === 0) return
 
+    setTxError(null)
+
+    // Require wallet connection
+    if (!isConnected || !address) {
+      setTxError('Connect your wallet to run the workflow.')
+      return
+    }
+
+    // Prompt MetaMask to send $1 escrow deposit before executing
+    try {
+      await sendTransactionAsync({
+        to: ESCROW_ADDRESS,
+        value: parseEther(ONE_USD_IN_ETH),
+      })
+    } catch (err: any) {
+      // User rejected or tx failed — don't run workflow
+      setTxError(err?.shortMessage ?? err?.message ?? 'Transaction rejected.')
+      return
+    }
+
     setIsRunning(true)
     setAnimatedEdges(new Set())
 
@@ -249,7 +279,7 @@ function WorkflowContent() {
         </ReactFlow>
 
         {/* Run Workflow Button */}
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-2">
           <Button
             onClick={runWorkflow}
             disabled={isRunning || nodes.length === 0}
@@ -258,6 +288,11 @@ function WorkflowContent() {
             <Play className="h-4 w-4" />
             {isRunning ? 'Running...' : 'Run Workflow'}
           </Button>
+          {txError && (
+            <p className="text-xs text-destructive bg-background/80 px-2 py-1 rounded border border-destructive/30 max-w-[240px] text-right">
+              {txError}
+            </p>
+          )}
         </div>
       </div>
 

@@ -48,6 +48,11 @@ const navigationItems = [
     icon: Home,
   },
   {
+    title: "Providers",
+    url: "/providers",
+    icon: Server,
+  },
+  {
     title: "Agent",
     url: "/agent",
     icon: Bot,
@@ -56,11 +61,6 @@ const navigationItems = [
     title: "Workflow",
     url: "/workflow",
     icon: GitBranch,
-  },
-  {
-    title: "Providers",
-    url: "/providers",
-    icon: Server,
   },
   {
     title: "Host Compute",

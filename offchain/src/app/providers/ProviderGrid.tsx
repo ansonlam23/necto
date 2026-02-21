@@ -310,16 +310,18 @@ export function ProviderGrid() {
               className="pl-9"
             />
           </div>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-            <SelectTrigger className="w-[190px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.entries(SORT_LABELS) as [SortKey, string][]).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sm:ml-auto">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+              <SelectTrigger className="w-[190px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(SORT_LABELS) as [SortKey, string][]).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Network filter pills */}
@@ -354,12 +356,6 @@ export function ProviderGrid() {
             );
           })}
         </div>
-
-        {/* Result count */}
-        <p className="text-xs text-muted-foreground">
-          {filteredProviders.length} provider{filteredProviders.length !== 1 ? 's' : ''} shown
-          {selectedSource !== 'All' || searchQuery ? ` — filtered from ${providers.length} total` : ''}
-        </p>
       </div>
 
       {/* ── Grid ───────────────────────────────────────────────────────────── */}
