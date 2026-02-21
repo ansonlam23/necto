@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
 import { AppHeader } from "./AppHeader"
@@ -10,6 +11,12 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname()
+
+  if (pathname === "/") {
+    return <>{children}</>
+  }
+
   return (
     <SidebarProvider defaultOpen={true} className="h-screen bg-background">
       <AppSidebar />

@@ -9,6 +9,8 @@ import { DeployModal } from '@/components/agent/DeployModal';
 import { Send, Bot, Sparkles, Server, Cpu, Gamepad2, Image, Database, CheckCircle2, Loader2, Rocket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DeploymentConfig, DeploymentScenario } from '@/types/deployment';
+import type { DeployCompleteInfo } from '@/components/agent/DeployModal';
+import { useAuditStore } from '@/lib/audit-store';
 
 interface Message {
   id: string;
@@ -147,6 +149,7 @@ export default function AgentPage() {
   const [responseIndex, setResponseIndex] = useState(0);
   const [isDeployOpen, setIsDeployOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const addAuditEntry = useAuditStore(state => state.addEntry);
 
   const scenarios: DeploymentScenario[] = [
     {
@@ -264,6 +267,45 @@ export default function AgentPage() {
     if (scenario.prompt) {
       setInput(scenario.prompt);
     }
+  };
+
+  const EXPLORER_URL = 'https://explorer.ab.testnet.adifoundation.ai';
+
+  const handleDeployComplete = (info: DeployCompleteInfo) => {
+    const lines: string[] = ['Deployment is live on Akash Network!\n'];
+
+    if (info.akashUrl) {
+      lines.push(`Akash Console:\n  ${info.akashUrl}`);
+    }
+    if (info.serviceUris.length > 0) {
+      lines.push(`Service URL${info.serviceUris.length > 1 ? 's' : ''}:\n${info.serviceUris.map(u => `  ${u}`).join('\n')}`);
+    }
+    if (info.transferTxHash) {
+      lines.push(`USDC Transfer (ADI Explorer):\n  ${EXPLORER_URL}/tx/${info.transferTxHash}`);
+    }
+    if (info.submitJobTxHash) {
+      lines.push(`Escrow Job (ADI Explorer):\n  ${EXPLORER_URL}/tx/${info.submitJobTxHash}`);
+    }
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: lines.join('\n\n'),
+      },
+    ]);
+
+    addAuditEntry({
+      type: 'deployment',
+      provider: 'Akash',
+      deploymentId: info.deploymentId,
+      akashUrl: info.akashUrl,
+      transferTxHash: info.transferTxHash,
+      submitJobTxHash: info.submitJobTxHash,
+      serviceUris: info.serviceUris,
+      explorerBaseUrl: EXPLORER_URL,
+    });
   };
 
   useEffect(() => {
@@ -436,7 +478,7 @@ export default function AgentPage() {
         </div>
       </Card>
 
-      <DeployModal open={isDeployOpen} onClose={() => setIsDeployOpen(false)} config={deploymentConfig} />
+      <DeployModal open={isDeployOpen} onClose={() => setIsDeployOpen(false)} config={deploymentConfig} onDeployComplete={handleDeployComplete} />
     </div>
   );
 }

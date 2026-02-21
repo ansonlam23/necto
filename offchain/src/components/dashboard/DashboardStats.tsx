@@ -1,58 +1,71 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, TrendingUp, DollarSign, Cpu } from "lucide-react"
+import { Server, TrendingDown, BarChart3, Layers } from "lucide-react"
 
 const stats = [
   {
-    title: "Active Compute Units",
-    value: "2,847",
-    change: "+12.5%",
+    title: "Total GPU Nodes",
+    value: "143",
+    change: "+2.1%",
     changeType: "increase" as const,
-    icon: Cpu,
+    sub: "across 8 networks",
+    icon: Server,
+    color: "text-blue-500",
+    bg: "bg-blue-500/10",
   },
   {
-    title: "Total Value Locked",
-    value: "$1,247,892",
-    change: "+8.2%",
-    changeType: "increase" as const,
-    icon: DollarSign,
-  },
-  {
-    title: "Network Utilization",
-    value: "87.3%",
-    change: "-2.1%",
+    title: "Avg GPU Price",
+    value: "$0.42/hr",
+    change: "-3.2%",
     changeType: "decrease" as const,
-    icon: TrendingUp,
+    sub: "cheaper than last week",
+    icon: TrendingDown,
+    color: "text-green-500",
+    bg: "bg-green-500/10",
   },
   {
-    title: "Active Networks",
-    value: "23",
-    change: "+3",
+    title: "24h Volume",
+    value: "$38,492",
+    change: "+11.7%",
     changeType: "increase" as const,
-    icon: Activity,
+    sub: "in compute spend",
+    icon: BarChart3,
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
+  },
+  {
+    title: "Networks Online",
+    value: "0 / 0",
+    change: "—",
+    changeType: "increase" as const,
+    sub: "no active networks",
+    icon: Layers,
+    color: "text-emerald-500",
+    bg: "bg-emerald-500/10",
   },
 ]
 
 export function DashboardStats() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat, index) => (
+      {stats.map((stat) => (
         <Card key={stat.title} className="border-sidebar-border/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}
             </CardTitle>
-            <stat.icon className="h-4 w-4 text-muted-foreground" />
+            <div className={`p-1.5 rounded-md ${stat.bg}`}>
+              <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold terminal-data">{stat.value}</div>
-            <p className={`text-xs ${
-              stat.changeType === "increase"
-                ? "text-green-500"
-                : "text-red-500"
-            }`}>
-              {stat.change} from last period
+            <p className="text-xs text-muted-foreground mt-0.5">
+              <span className={stat.changeType === "increase" ? "text-green-500" : "text-green-500"}>
+                {stat.change}
+              </span>{" "}
+              {stat.sub}
             </p>
           </CardContent>
         </Card>

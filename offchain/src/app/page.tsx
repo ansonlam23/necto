@@ -1,74 +1,84 @@
-import { Home } from "lucide-react"
-import { DashboardStats } from "@/components/dashboard/DashboardStats"
-import { NetworkStatus } from "@/components/dashboard/NetworkStatus"
+'use client'
 
-export default function DashboardPage() {
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { useWallet } from "@/hooks/use-wallet"
+import { SparklesCore } from "@/components/ui/sparkles"
+import { Wallet } from "lucide-react"
+import { motion } from "framer-motion"
+
+const LETTERS = ["N", "e", "c", "t", "o"]
+
+export default function LandingPage() {
+  const router = useRouter()
+  const { isConnected, isConnecting, connect } = useWallet()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => { setMounted(true) }, [])
+
+  React.useEffect(() => {
+    if (isConnected) router.push("/dashboard")
+  }, [isConnected, router])
+
+  const handleConnect = async () => {
+    try { await connect() } catch { /* user rejected */ }
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Home className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        </div>
-        <div className="text-sm text-muted-foreground terminal-data">
-          Last updated: {new Date().toLocaleTimeString()}
-        </div>
+    <div className="relative h-screen w-screen overflow-hidden bg-black flex flex-col items-center justify-center">
+
+      {/* ── Connect Wallet — top right ── */}
+      <div className="absolute top-6 right-6 z-30">
+        <button
+          onClick={handleConnect}
+          disabled={!mounted || isConnecting}
+          className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Wallet className="h-4 w-4" />
+          {isConnecting ? "Connecting…" : "Connect Wallet"}
+        </button>
       </div>
 
-      <DashboardStats />
+      {/* ── Centered content ── */}
+      <div className="relative z-20 flex flex-col items-center">
+        <motion.h1
+          className="text-7xl md:text-8xl lg:text-9xl font-bold text-center text-white select-none tracking-tight flex"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        >
+          {LETTERS.map((letter, i) => (
+            <motion.span
+              key={i}
+              variants={{
+                hidden: { opacity: 0, y: 40, filter: "blur(12px)" },
+                visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+              }}
+            >
+              {letter}
+            </motion.span>
+          ))}
+        </motion.h1>
 
-      <div className="grid gap-4 md:grid-cols-7">
-        <div className="col-span-4">
-          <div className="rounded-lg border bg-card p-6 border-sidebar-border/50">
-            <h2 className="text-lg font-semibold mb-4">Compute Utilization</h2>
-            <div className="grid-lines rounded-md p-4 min-h-[300px] flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">
-                Real-time network utilization chart will be displayed here
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Sparkles strip */}
+        <div className="w-[52rem] h-52 relative -mt-2">
+          {/* gradient lines */}
+          <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[2px] w-3/4 blur-sm" />
+          <div className="absolute inset-x-20 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-px w-3/4" />
+          <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[5px] w-1/4 blur-sm" />
+          <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px w-1/4" />
 
-        <div className="col-span-3">
-          <NetworkStatus />
-        </div>
-      </div>
+          <SparklesCore
+            background="transparent"
+            minSize={0.4}
+            maxSize={1}
+            particleDensity={1200}
+            className="w-full h-full"
+            particleColor="#FFFFFF"
+          />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border bg-card p-6 border-sidebar-border/50">
-          <h2 className="text-lg font-semibold mb-4">Recent Transactions</h2>
-          <div className="space-y-3">
-            {[
-              { id: "TX001", amount: "$12,847", network: "Render", status: "Complete" },
-              { id: "TX002", amount: "$8,923", network: "Akash", status: "Pending" },
-              { id: "TX003", amount: "$15,672", network: "Flux", status: "Complete" },
-            ].map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-3 rounded-md bg-sidebar/20">
-                <div>
-                  <p className="text-sm font-medium terminal-data">{tx.id}</p>
-                  <p className="text-xs text-muted-foreground">{tx.network}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium terminal-data">{tx.amount}</p>
-                  <p className="text-xs text-muted-foreground">{tx.status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-lg border bg-card p-6 border-sidebar-border/50">
-          <h2 className="text-lg font-semibold mb-4">Alert Center</h2>
-          <div className="space-y-3">
-            <div className="p-3 rounded-md bg-blue-600/10 border border-blue-600/20">
-              <p className="text-sm text-blue-400">Network maintenance scheduled for Golem</p>
-              <p className="text-xs text-muted-foreground mt-1">2 hours ago</p>
-            </div>
-            <div className="p-3 rounded-md bg-green-600/10 border border-green-600/20">
-              <p className="text-sm text-green-400">Render Network utilization optimal</p>
-              <p className="text-xs text-muted-foreground mt-1">5 hours ago</p>
-            </div>
-          </div>
+          {/* fade edges */}
+          <div className="absolute inset-0 w-full h-full bg-black [mask-image:radial-gradient(420px_210px_at_top,transparent_20%,white)]" />
         </div>
       </div>
     </div>

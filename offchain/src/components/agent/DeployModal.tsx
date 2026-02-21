@@ -118,13 +118,22 @@ function extractServiceUris(leaseResponse: LeaseResponse | null): string[] {
   return uris;
 }
 
+export interface DeployCompleteInfo {
+  deploymentId?: string;
+  akashUrl?: string;
+  transferTxHash?: string;
+  submitJobTxHash?: string;
+  serviceUris: string[];
+}
+
 interface DeployModalProps {
   open: boolean;
   onClose: () => void;
   config?: DeploymentConfig;
+  onDeployComplete?: (info: DeployCompleteInfo) => void;
 }
 
-export function DeployModal({ open, onClose, config }: DeployModalProps) {
+export function DeployModal({ open, onClose, config, onDeployComplete }: DeployModalProps) {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
@@ -165,6 +174,25 @@ export function DeployModal({ open, onClose, config }: DeployModalProps) {
     () => extractServiceUris(deployment.leaseResponse),
     [deployment.leaseResponse]
   );
+
+  const firedComplete = React.useRef(false);
+  React.useEffect(() => {
+    if (deployment.state === 'active' && !firedComplete.current && onDeployComplete) {
+      firedComplete.current = true;
+      onDeployComplete({
+        deploymentId: deployment.deployment?.id,
+        akashUrl: deployment.deployment?.id
+          ? `${AKASH_CONSOLE_URL}/deployments/${deployment.deployment.id}`
+          : undefined,
+        transferTxHash: deployment.escrowTransactions.transferHash ?? undefined,
+        submitJobTxHash: deployment.escrowTransactions.submitJobHash ?? undefined,
+        serviceUris,
+      });
+    }
+    if (deployment.state === 'idle') {
+      firedComplete.current = false;
+    }
+  }, [deployment.state, deployment.deployment, deployment.escrowTransactions, serviceUris, onDeployComplete]);
 
   const getPaymentStatusText = () => {
     switch (deployment.escrowState) {

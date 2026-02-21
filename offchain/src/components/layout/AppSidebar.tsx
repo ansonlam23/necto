@@ -13,7 +13,6 @@ import {
   User2,
   FlaskConical,
   Server,
-  Shield,
   Bot,
   GitBranch,
   Sparkles,
@@ -44,7 +43,7 @@ import {
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
@@ -66,11 +65,6 @@ const navigationItems = [
     title: "Host Compute",
     url: "/host",
     icon: CloudUpload,
-  },
-  {
-    title: "Verify Agent",
-    url: "/verify-agent",
-    icon: Shield,
   },
   {
     title: "Audit Log",

@@ -140,13 +140,12 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: necto-gradient-flow 3s ease infinite;
+    animation: necto-gradient-flow 6s linear infinite;
     display: inline-block;
   }
   @keyframes necto-gradient-flow {
-    0%   { background-position: 0% center;   transform: scale(1); }
-    50%  { background-position: 100% center; transform: scale(1.08); }
-    100% { background-position: 0% center;   transform: scale(1); }
+    0%   { background-position: 0% center; }
+    100% { background-position: 200% center; }
   }
   .grid-lines {
     background-image:
