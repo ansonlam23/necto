@@ -127,9 +127,6 @@ export function RequirementsChecklist({ config, className }: RequirementsCheckli
                     isFilled ? "text-foreground" : "text-muted-foreground"
                   )}>
                     {req.label}
-                    {!req.required && (
-                      <span className="text-muted-foreground/50 ml-1">(optional)</span>
-                    )}
                   </span>
 
                   <span className={cn(
