@@ -6,6 +6,8 @@
 
 Necto is a decentralized infrastructure protocol built on ADI Chain that enables institutions to monetize, trade, and settle real-world compute assets. It bridges the gap between idle enterprise hardware (RWA) and global demand through an intelligent, compliant execution layer.
 
+**Devfolio / Demo:** [devfolio.co/projects/necto-20be](https://devfolio.co/projects/necto-20be)
+
 ---
 
 ## The Institutional Problem
